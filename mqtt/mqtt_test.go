@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"github.com/spf13/viper"
+	"fmt"
 )
 
 func TestPublish(t *testing.T) {
@@ -11,6 +12,6 @@ func TestPublish(t *testing.T) {
 	v.Set("mqtt.url", "tcp://192.168.88.57:1883")
 	v.Set("mqtt.username", "mqtt")
 	v.Set("mqtt.password", "mqtt")
-	err := Publish(v, []byte("go test"), "test")
+	err := Publish(v, []byte(fmt.Sprintf("{\"state\":\"%s\"}", "testing")), "test")
 	assert.NoError(t, err)
 }

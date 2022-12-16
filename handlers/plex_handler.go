@@ -334,25 +334,25 @@ func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vi
 	switch {
 	// 2.3 -> 2.4+ scope
 	case aspect >= 2.3:
-		err := mqtt.Publish(vip, []byte("2.4"), topic)
+		err := mqtt.Publish(vip, []byte("{\"aspect\":\"2.4\"}"), topic)
 		if err != nil {
 			log.Error()
 		}
 	// 2.1 -> 2.29
 	case aspect >= 2.1 && aspect < 2.3:
-		err := mqtt.Publish(vip, []byte("2.2"), topic)
+		err := mqtt.Publish(vip, []byte("{\"aspect\":\"2.2\"}"), topic)
 		if err != nil {
 			log.Error()
 		}
 	// for 1.85 -> 2.1 basically intention is to zoom aspect ratio, not adjust lens IMO
 	case aspect > 1.78 && aspect < 2.1:
-		err := mqtt.Publish(vip, []byte("1.85"), topic)
+		err := mqtt.Publish(vip, []byte("{\"aspect\":\"1.85\"}"), topic)
 		if err != nil {
 			log.Error()
 		}
 	// for 1.78 -> 16:9
 	default:
-		err := mqtt.Publish(vip, []byte("1.78"), topic)
+		err := mqtt.Publish(vip, []byte("{\"aspect\":\"1.78\"}"), topic)
 		if err != nil {
 			log.Error()
 		}
@@ -361,7 +361,7 @@ func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vi
 
 // trigger HA for MV change per type
 func changeMasterVolume(vip *viper.Viper, mediaType string) {
-	err := mqtt.Publish(vip, []byte(mediaType), vip.GetString("mqtt.topicVolume"))
+	err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), vip.GetString("mqtt.topicVolume"))
 	if err != nil {
 		log.Error()
 	}
@@ -370,7 +370,7 @@ func changeMasterVolume(vip *viper.Viper, mediaType string) {
 // trigger HA for light change given entity and desired state
 func changeLight(vip *viper.Viper, state string) {
 	log.Debug("Changing light")
-	err := mqtt.Publish(vip, []byte(state), vip.GetString("mqtt.topicLights"))
+	err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), vip.GetString("mqtt.topicLights"))
 	if err != nil {
 		log.Error()
 	}

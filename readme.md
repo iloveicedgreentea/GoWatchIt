@@ -1,23 +1,55 @@
 # Go-Plex
 
-# TODO:
-make container
-make service for systemd
+*In beta testing. Please monitor ezBEQ profiles*
 
 ## Features
 
 * Load/unload profiles automatically, no user action needed, correct codec detected
-* Detect aspect ratio and run scripts to adjust lens memory, raise/lower masking, etc
-* Adjust Master Volume based on media type (movie, TV, etc)
+* Detect aspect ratio and send command to HA to adjust accordingly
+* Set Master Volume based on media type (movie, TV, etc)
 * Trigger lights when playing or stopping automatically
 * Mobile notifications (via HA) to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * All options are highly configurable with hot reload 
 * Built in support for Home Assistant and Minidsp webhooks (e.x mute on)
 
+*note: all communication to HA is done via MQTT so you will need to set this up*
+
 I wrote this to be modular and extensible so adding additional listeners is simple. 
 
 Feel free to make PRs or feature requests
+
+## MQTT
+For flexibility, this uses MQTT to send commands. This is so you can decide what to do with that info. You will need to set MQTT up. Detailed instructions here https://www.home-assistant.io/integrations/mqtt/
+  
+1) Install mosquitto mqtt add on
+2) Install mqtt integration
+3) Set up Automations in HA based on the payloads of MQTT
+
+### Payloads
+In your Automations, you can action based on these payloads.
+
+#### Lights
+```json
+{
+    "state": "on" || "off"
+}
+```
+
+#### Master Volume
+```json
+{
+    "type": "movie" || "episode"
+}
+```
+
+#### Aspect Ratio
+```json
+{
+    "aspect": "2.4" || "2.2" || "1.85" || "1.78"
+}
+```
+
 
 ## How BEQ Support Works
 On play and resume, it will load the profile. On pause and stop, it will unload it. It has some logic to cache the profile so if you pause and unpause, the profile will get loaded much faster as it skips searching the DB and stuff. 
