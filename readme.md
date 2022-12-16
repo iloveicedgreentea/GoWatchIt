@@ -2,6 +2,8 @@
 
 *In beta testing. Please monitor ezBEQ profiles*
 
+*Please read the readme start to finish*
+
 ## Features
 
 * Load/unload profiles automatically, no user action needed, correct codec detected
@@ -50,9 +52,51 @@ In your Automations, you can action based on these payloads.
 }
 ```
 
+### HA Quickstart
+Here is an example of an automation to change lights based on MQTT
+
+Assuming you have the following sensor:
+```yaml
+mqtt:
+  sensor:
+    - name: "lights"
+      state_topic: "theater/lights/front"
+      value_template: "{{ value_json.state }}"
+```
+
+This will turn the light(s) on/off depending on the state of the sensor, triggered by an message sent to the topic
+
+```yaml
+alias: MQTT - Theater Lights
+description: Trigger lights when mqtt received, depending on state
+trigger:
+  - platform: mqtt
+    topic: theater/lights/front
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: sensor.lights
+        state: "on"
+    then:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.caseta_r_wireless_in_wall_dimmer
+  - if:
+      - condition: state
+        entity_id: sensor.lights
+        state: "off"
+    then:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.caseta_r_wireless_in_wall_dimmer
+mode: single
+```
 
 ## How BEQ Support Works
-On play and resume, it will load the profile. On pause and stop, it will unload it. It has some logic to cache the profile so if you pause and unpause, the profile will get loaded much faster as it skips searching the DB and stuff. 
+On play and resume, it will load the profile. On pause and stop, it will unload it (so you don't forget). It has some logic to cache the profile so if you pause and unpause, the profile will get loaded much faster as it skips searching the DB and stuff. 
 
 If enabled, it will also send a notification to Home Assistant via Notify. 
 
@@ -71,6 +115,8 @@ This tool will do its best to match editions. It will look for one of the follow
 
 There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety. If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
 
+You may set the ignore edition flag at your own risk.
+
 ## Usage
 Note: this assumes you have ezBEQ, Plex, and HomeAssistant working. Refer to their respective guides for installation help.
 
@@ -78,7 +124,7 @@ The binary is statically linked so all you need is the binary itself and config.
 
 0) Create `config.json` and set the values appropriately. See below.
 1) Either pull `ghcr.io/iloveicedgreentea/plex-webhook-automation:master` or build the binary directly
-    * if you deploy the container, mount config.json to a mount called `/config.json`
+    * if you deploy a container, mount config.json to a mount called exactly `/config.json`
 2) Set up Plex to send webhooks to your server IP and whatever `listenPort` you configured
 3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth, so I don't want to implement their locked-in auth method that has historically had outages.
 4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
@@ -88,12 +134,11 @@ You should deploy this as a container, systemd unit, etc.
 *side note: you should really set a compressor on your minidsp for safety as outlined in the BEQ forum post*
 
 ### Config
-The tool supports hot reload so you don't need to restart it when you change things
+*The tool supports hot reload so you don't need to restart it when you change things*
 
 create file named config.json, remove comments and paste it in
 ```json
 {
-    // TODO: sync with config and add instructions for settin gup mqtt
     "homeAssistant": {
         "url": "http://123.123.123.123",
         "port": "8123",
@@ -155,7 +200,7 @@ create file named config.json, remove comments and paste it in
 ### Authentication
 You must whitelist your server IP in "List of IP addresses and networks that are allowed without auth"
 
-Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I refuse to do that, so this is how it is.
+Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I don't want to do that so this is my form of protest.
 
 A local attacker hijacking my server and sending commands to Plex is not remotely in my threat model. 
 
@@ -163,9 +208,6 @@ A local attacker hijacking my server and sending commands to Plex is not remotel
 `export LOG_LEVEL=debug` to have it print out debug logs
 
 `export SUPER_DEBUG=true` for each line to have a trace to its call site and line number
-
-## Building Container
-make build_container
 
 ## Building Binary
 GOOS=xxxx make build
