@@ -1,4 +1,4 @@
-# Go-Plex
+# Plex Webhook Automation
 
 *In beta testing. Please monitor ezBEQ profiles*
 
@@ -77,7 +77,7 @@ Note: this assumes you have ezBEQ, Plex, and HomeAssistant working. Refer to the
 The binary is statically linked so all you need is the binary itself and config.json.
 
 0) Create `config.json` and set the values appropriately. See below.
-1) Either pull `ghcr.io/iloveicedgreentea/go-plex:master` or build the binary directly
+1) Either pull `ghcr.io/iloveicedgreentea/plex-webhook-automation:master` or build the binary directly
     * if you deploy the container, mount config.json to a mount called `/config.json`
 2) Set up Plex to send webhooks to your server IP and whatever `listenPort` you configured
 3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth, so I don't want to implement their locked-in auth method that has historically had outages.
