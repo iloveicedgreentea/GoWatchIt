@@ -26,7 +26,7 @@ Run the program with LOG_LEVEL=debug and send me the entire log output from star
 **Desktop (please complete the following information):**
  - OS: [Windows, Unraid, etc]
  - Version [e.g. 22]
-- Deployment method: [Docker, binary]
+ - Deployment method: [Docker, binary]
 
 **Additional context**
 Add any other context about the problem here.
