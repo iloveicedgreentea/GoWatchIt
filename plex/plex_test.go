@@ -26,18 +26,18 @@ type testData struct {
 
 // test to ensure server is white listed
 func TestGetPlexReq(t *testing.T) {
-	serverUrl := "http://192.168.88.61"
+	serverUrl := "http://192.168.88.56"
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
-	d, _ := c.getPlexReq("/library/metadata/6262")
-
+	d, err := c.getPlexReq("/library/metadata/6262")
+	assert.NoError(t, err)
 	res := string(d)
 
 	assert.NotContains(t, res, "Unauthorized", "Client is not authorized in plex server")
 }
 
 func TestGetMediaData(t *testing.T) {
-	serverUrl := "http://192.168.88.61"
+	serverUrl := "http://192.168.88.56"
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
 

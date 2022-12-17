@@ -125,15 +125,15 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 
 // play is both the "resume" button and play
 func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, mediaType string, codec string, edition string) {
+	if vip.GetBool("homeAssistant.triggerLightsOnEvent") && vip.GetBool("homeAssistant.enabled") {
+		go changeLight(vip, "off")
+	}
 	// adjust aspect if configured
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
 		go changeAspect(client, payload, vip)
 	}
 	if vip.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
 		go changeMasterVolume(vip, mediaType)
-	}
-	if vip.GetBool("homeAssistant.triggerLightsOnEvent") && vip.GetBool("homeAssistant.enabled") {
-		go changeLight(vip, "off")
 	}
 	if vip.GetBool("ezbeq.enabled") {
 		if payload.Metadata.Type == showItemTitle {
