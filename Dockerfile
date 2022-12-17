@@ -1,4 +1,4 @@
-FROM golang:1.18 as build
+FROM golang:1.19 as build
 
 WORKDIR /go/src/app
 COPY . .
@@ -8,7 +8,7 @@ RUN go vet -v
 
 RUN CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM gcr.io/distroless/static-debian11
+FROM alpine:latest
 
 COPY --from=build /go/bin/app /
 CMD ["/app"]
