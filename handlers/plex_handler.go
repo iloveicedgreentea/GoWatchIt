@@ -237,7 +237,6 @@ func getEditionName(data models.MediaContainer) string {
 
 // based on event type, determine what to do
 func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
-	log.Debug("\n")
 	// only trigger on movie or tvshow if that is enabled
 	var codec string
 	var err error

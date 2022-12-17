@@ -148,11 +148,9 @@ create file named config.json, remove comments and paste it in
         // Trigger a HA script to change aspect ratio for media.Play
         // if using a madvr envy, you can run a script to just adjust masking
         "triggerAspectRatioChangeOnEvent": true,
-        // Which script to trigger when on.Play is received
-        "onPlayScriptName": "script name to trigger on.play",
-        "onPauseScriptName": "script name to trigger on.pause",
-        "onResumeScriptName": "script name to trigger on.resume",
-        "onStopScriptName": "script name to trigger on.stop",
+        "triggerLightsOnEvent": true,
+        "triggerAvrMasterVolumeChangeOnEvent": true
+
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
