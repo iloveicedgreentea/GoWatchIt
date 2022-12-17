@@ -9,10 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/StalkR/imdb"
+	"github.com/stretchr/testify/assert"
 )
-
 
 type aspectTest struct {
 	Data          testData
@@ -21,8 +20,30 @@ type aspectTest struct {
 type testData struct {
 	Name    string
 	TitleID string
-	Year int
-	ID string
+	Year    int
+	ID      string
+}
+
+// test to ensure server is white listed
+func TestGetPlexReq(t *testing.T) {
+	serverUrl := "http://192.168.88.61"
+	serverPrt := "32400"
+	c := NewClient(serverUrl, serverPrt)
+	d, _ := c.getPlexReq("/library/metadata/6262")
+
+	res := string(d)
+
+	assert.NotContains(t, res, "Unauthorized", "Client is not authorized in plex server")
+}
+
+func TestGetMediaData(t *testing.T) {
+	serverUrl := "http://192.168.88.61"
+	serverPrt := "32400"
+	c := NewClient(serverUrl, serverPrt)
+
+	_, err := c.GetMediaData("/library/metadata/6262")
+	assert.NoError(t, err)
+
 }
 
 func TestImdbClient(t *testing.T) {
@@ -125,7 +146,6 @@ func TestGetImdbInfoAspect(t *testing.T) {
 		assert.Equal(test.ExpectedValue, aspect, fmt.Sprintf("%s Aspect ratio does not match", test.Data.TitleID))
 	}
 }
-
 
 // for dev only - get the entire table, ensure it can parse titles
 func TestGetImdbTechInfo(t *testing.T) {

@@ -259,7 +259,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 				log.Errorf("error getting codec: %s", err)
 
 				if codec == "" {
-					log.Error("ezBEQ is enabled but codec is blank. Not acting on webhook for safety")
+					log.Error("ezBEQ is enabled but codec is blank. Not loading BEQ for safety")
 				}
 
 				return
