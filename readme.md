@@ -149,8 +149,14 @@ create file named config.json, remove comments and paste it in
         // if using a madvr envy, you can run a script to just adjust masking
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
-        "triggerAvrMasterVolumeChangeOnEvent": true
+        "triggerAvrMasterVolumeChangeOnEvent": true,
+        "topicMadVR": "/theater/envy/state"
 
+    },
+    // MadVR *Envy* support
+    "madvr": {
+      // if enabled, it will source aspect ratio from envy isntead of imdb
+        "enabled": true
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {

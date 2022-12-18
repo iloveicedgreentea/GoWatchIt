@@ -102,7 +102,8 @@ func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassis
 		}
 	}
 }
-
+// TODO: add madvr flags
+// TODO: simplify logic? Maybe add the flag checks wihtin the functions to reduce clutter
 // pause only happens with literally pausing
 func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload) {
 	if vip.GetBool("homeAssistant.triggerLightsOnEvent") && vip.GetBool("homeAssistant.enabled") {
