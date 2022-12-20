@@ -26,7 +26,8 @@ func TestSearchCatalog(t *testing.T) {
 	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
 	assert.NoError(err)
 
-	res, err := c.searchCatalog("51497", 2011, "DTS-X", "none", "")
+	// fast five extended 
+	res, err := c.searchCatalog("51497", 2011, "DTS-X", "none", "Extended")
 	assert.NoError(err)
 	assert.Equal("Extended", res.Edition)
 	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
@@ -55,6 +56,13 @@ func TestSearchCatalog(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal("8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5", res.Digest, "12 strong does not match entry ID. Should match aron7awol version")
 	assert.Equal(-1.5, res.MvAdjust, "12 strong does not match MV. Should match aron7awol version")
+
+	// return DD+ Atmos of the old guard
+	// f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d
+	res, err = c.searchCatalog("547016", 2020, "DD+ Atmos", "none", "")
+	assert.NoError(err)
+	assert.Equal("f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d", res.Digest, "The old guard does not match entry ID. Should match aron7awol version")
+	assert.Equal(0.0, res.MvAdjust, "Old guard does not match MV. Should match aron7awol version")
 
 	// should be blank
 	res, err = c.searchCatalog("some random movie", 2018, "DTS-HD MA 5.1", "none", "")

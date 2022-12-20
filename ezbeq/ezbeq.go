@@ -41,7 +41,7 @@ func NewClient(url, port string) (*BeqClient, error) {
 	// update client with latest metadata
 	err := c.GetStatus()
 	if err != nil {
-		return c, errors.New("Error initializing beq client")
+		return c, errors.New("rrror initializing beq client")
 	}
 	return c, nil
 }
@@ -60,7 +60,7 @@ func (c *BeqClient) GetStatus() error {
 		return err
 	}
 	if beqPayload.Name == "" {
-		return errors.New("Could not get device name")
+		return errors.New("could not get device name")
 	}
 
 	c.DeviceName = beqPayload.Name
@@ -105,7 +105,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
-	if payload == nil || len(payload) == 0 {
+	if len(payload) == 0 {
 		req, err = http.NewRequest(method, url, nil)
 	} else {
 		req, err = http.NewRequest(method, url, bytes.NewBuffer(payload))
@@ -155,7 +155,7 @@ func( c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		if status >= 204 && status != 404 {
 			log.Debug(string(resp), status)
 			log.Debug("Retrying request...")
-			err = fmt.Errorf("Error in response: %v", res.Status)
+			err = fmt.Errorf("error in response: %v", res.Status)
 			continue
 		}
 	}
@@ -185,7 +185,7 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 
 	err = json.Unmarshal(res, &payload)
 	if err != nil {
-		return models.BeqCatalog{}, fmt.Errorf("Error: %v // response: %v", err, string(res))
+		return models.BeqCatalog{}, fmt.Errorf("error: %v // response: %v", err, string(res))
 	}
 
 	// search through results and find match
@@ -193,7 +193,7 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == tmdb && val.Year == year && val.AudioTypes[0] == codec {
 			// check edition
-			// TODO: add a flag to ignore editions
+			// TODO: verify wiht the old guard f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d
 			if checkEdition(val, edition) {
 				return payload[key], nil
 			} else {
@@ -246,7 +246,7 @@ func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSear
 
 
 	if entryID == "" {
-		return errors.New("Could not find catalog entry for ezbeq")
+		return errors.New("could not find catalog entry for ezbeq")
 	}
 
 	if dryrunMode {

@@ -131,7 +131,7 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "DTS-HD HR 7.1"
 	case strings.Contains(codecTitle, "DTS-HD HRA 5.1"):
 		return "DTS-HD HR 5.1"
-		// LPCM
+	// LPCM
 	case strings.Contains(codecTitle, "LPCM 5.1"):
 		return "LPCM 5.1"
 	case strings.Contains(codecTitle, "LPCM 7.1"):
@@ -139,16 +139,19 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	case strings.Contains(codecTitle, "LPCM 2.0"):
 		return "LPCM 2.0"
 	//DD+
-	// TODO: confirm Plex catalog with DD+ and DD+ Atmos I dont have any DD+ movies 
-	// case strings.Contains(codecTitle, "EAC3 5.1"):
-	// 	return "DD+"
-	// case strings.Contains(codecTitle, "EAC3 Stereo"):
-	// 	return "DD+"
-	// see above
+	//English (EAC3 5.1) -> dd+ atmos?
+	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
+	// may not always be the case but easier to assume so
+	case strings.Contains(codecTitle, "EAC3 5.1"):
+		return "DD+ Atmos" 
+	// probably not accurate, but what can you do
+	case strings.Contains(codecTitle, "EAC3 Stereo"):
+		return "DD+"
+	// disabled because most movies report real atmos as tHD 7.1
 	// case strings.Contains(codecExtendTitle, "Surround 7.1") && strings.Contains(codecExtendTitle, "TRUEHD"):
 	// 	return "TrueHD 7.1"
 	default:
-		return ""
+		return "Empty"
 	}
 
 }
