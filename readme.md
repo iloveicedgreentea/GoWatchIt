@@ -145,18 +145,11 @@ create file named config.json, remove comments and paste it in
         "enabled": true,
         // get a token from your user profile
         "token": "ey.xyzjwt",
-        // Trigger a HA script to change aspect ratio for media.Play
-        // if using a madvr envy, you can run a script to just adjust masking
+        // Trigger functions to change the following
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
         "triggerAvrMasterVolumeChangeOnEvent": true,
-        "topicMadVR": "/theater/envy/state"
 
-    },
-    // MadVR *Envy* support
-    "madvr": {
-      // if enabled, it will source aspect ratio from envy isntead of imdb
-        "enabled": true
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
