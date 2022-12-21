@@ -57,6 +57,7 @@ func muteOff(beqClient *ezbeq.BeqClient) {
 
 // process webhook 
 func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, vip *viper.Viper) http.Handler {
+	log.Debug("minidsp triggered")
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var payload models.MinidspRequest
 
@@ -75,7 +76,7 @@ func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, vip *viper.Vipe
 
 // entry point for background tasks
 func MiniDspWorker(minidspChan <-chan models.MinidspRequest, vip *viper.Viper) {
-	log.Info("PlexWorker started")
+	log.Info("Minidsp started")
 
 	var beqClient *ezbeq.BeqClient
 	var err error

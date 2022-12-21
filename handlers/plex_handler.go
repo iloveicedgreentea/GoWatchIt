@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/iloveicedgreentea/go-plex/ezbeq"
-	"github.com/iloveicedgreentea/go-plex/mqtt"
 	"github.com/iloveicedgreentea/go-plex/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
+	"github.com/iloveicedgreentea/go-plex/mqtt"
 	"github.com/iloveicedgreentea/go-plex/plex"
 	"github.com/spf13/viper"
 )
@@ -21,7 +21,7 @@ const movieItemTitle = "movie"
 
 var log = logger.GetLogger()
 
-func decodeWebhook(payload []string) (models.PlexWebhookPayload, error, int) {
+func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 	var pwhPayload models.PlexWebhookPayload
 
 	err := json.Unmarshal([]byte(payload[0]), &pwhPayload)
@@ -32,15 +32,15 @@ func decodeWebhook(payload []string) (models.PlexWebhookPayload, error, int) {
 		// unmarshall error
 		case errors.As(err, &unmarshalTypeError):
 			msg := fmt.Sprintf("Request has an invalid value in %q field at position %d", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			return pwhPayload, errors.New(msg), http.StatusBadRequest
+			return pwhPayload, http.StatusBadRequest, errors.New(msg)
 
 		default:
-			return pwhPayload, err, http.StatusInternalServerError
+			return pwhPayload, http.StatusInternalServerError, err
 		}
 	}
 
 	log.Debugf("Received event: %s", pwhPayload.Event)
-	return pwhPayload, nil, 0
+	return pwhPayload, 0, nil
 }
 
 // Sends the payload to the channel for background processing
@@ -53,10 +53,11 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 
 		payload, hasPayload := r.MultipartForm.Value["payload"]
 		if hasPayload {
-			decodedPayload, err, statusCode := decodeWebhook(payload)
+			decodedPayload, statusCode, err  := decodeWebhook(payload)
 			if err != nil {
 				log.Error(err)
 				http.Error(w, err.Error(), statusCode)
+				return
 			}
 			clientUUID := decodedPayload.Player.UUID
 			log.Debugf("!!! Your Player UUID is %s !!!!!", clientUUID)
@@ -64,13 +65,6 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			log.Debugf("Media type is: %s", decodedPayload.Metadata.Type)
 			log.Debugf("Media title is: %s", decodedPayload.Metadata.Title)
 
-			// perform function via worker
-			if clientUUID != "" {
-				if vip.GetString("plex.deviceUUIDFilter") != clientUUID {
-					log.Debug("Client UUID does not match filter")
-					return
-				}
-			}
 			// only respond to events on a particular account if you share servers and only for movies and shows
 			if decodedPayload.Account.Title == vip.GetString("plex.ownerNameFilter") {
 				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
@@ -85,7 +79,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
 func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload) {
-	changeLight(vip, "on")
+	go changeLight(vip, "on")
 
 	if vip.GetBool("ezbeq.enabled") {
 		err := beqClient.UnloadBeqProfile(vip.GetBool("ezbeq.dryRun"))
@@ -140,12 +134,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		}
 		// send notification of it loaded
 		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-			if err != nil {
-				err := haClient.SendNotification(fmt.Sprintf("Error loading profile: %v", err), vip.GetString("ezbeq.notifyEndpointName"))
-				if err != nil {
-					log.Error()
-				}
-			} else {
+			if err == nil {
 				err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, codec), vip.GetString("ezbeq.notifyEndpointName"))
 				if err != nil {
 					log.Error()
@@ -177,12 +166,7 @@ func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeass
 		}
 		// send notification of it loaded
 		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-			if err != nil {
-				err := haClient.SendNotification(fmt.Sprintf("Error loading profile: %v", err), vip.GetString("ezbeq.notifyEndpointName"))
-				if err != nil {
-					log.Error()
-				}
-			} else {
+			if err == nil {
 				err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, codec), vip.GetString("ezbeq.notifyEndpointName"))
 				if err != nil {
 					log.Error()
@@ -223,6 +207,15 @@ func getEditionName(data models.MediaContainer) string {
 
 // based on event type, determine what to do
 func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
+	
+	clientUUID := payload.Player.UUID
+	// perform function via worker
+	if clientUUID != "" {
+		if vip.GetString("plex.deviceUUIDFilter") != clientUUID {
+			log.Debug("Client UUID does not match filter")
+			return
+		}
+	}
 	// only trigger on movie or tvshow if that is enabled
 	var codec string
 	var err error

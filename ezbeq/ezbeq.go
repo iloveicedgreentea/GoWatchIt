@@ -201,7 +201,7 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 		}
 	}
 
-	return models.BeqCatalog{}, errors.New("not found")
+	return models.BeqCatalog{}, errors.New("beq profile was not found in catalog")
 }
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
 func checkEdition(val models.BeqCatalog, edition string) bool {

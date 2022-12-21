@@ -25,7 +25,7 @@ func TestDecodeWebhook(t *testing.T) {
 	jsonStr = append(jsonStr, string(jsonFile))
 
 	// mock request
-	payload, err, code := decodeWebhook(jsonStr)
+	payload, code, err := decodeWebhook(jsonStr)
 	if err != nil {
 		t.Fatalf("Error: %v", err)
 	}
