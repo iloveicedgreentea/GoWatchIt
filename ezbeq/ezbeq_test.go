@@ -58,7 +58,6 @@ func TestSearchCatalog(t *testing.T) {
 	assert.Equal(-1.5, res.MvAdjust, "12 strong does not match MV. Should match aron7awol version")
 
 	// return DD+ Atmos of the old guard
-	// f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d
 	res, err = c.searchCatalog("547016", 2020, "DD+ Atmos", "none", "")
 	assert.NoError(err)
 	assert.Equal("f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d", res.Digest, "The old guard does not match entry ID. Should match aron7awol version")
@@ -87,7 +86,7 @@ func TestLoadProfile(t *testing.T) {
 	assert.NoError(err)
 
 	// fast five dts-x extended edition
-	err = c.LoadBeqProfile("51497", 2011, "DTS-X", false, "bd4577c143e73851d6db0697e0940a8f34633eec\n_416", -1.5, false, "none", "Extended")
+	err = c.LoadBeqProfile("51497", 2011, "DTS-X", false, "bd4577c143e73851d6db0697e0940a8f34633eec\n_416", -1.5, false, "none", "Extended", "movie")
 	assert.NoError(err)
 
 	err = c.UnloadBeqProfile(false)

@@ -23,6 +23,7 @@ type BeqClient struct {
 	DeviceName          string
 	CurrentProfile      string
 	CurrentMasterVolume float64
+	CurrentMediaType string
 	MuteStatus          bool
 	MasterVolume        float64
 	HTTPClient          http.Client
@@ -175,7 +176,7 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 	default:
 		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, year, urlEncode(preferredAuthor))
 	}
-	log.Debug(endpoint)
+	log.Debugf("sending ezbeq search request to %s", endpoint)
 
 	var payload []models.BeqCatalog
 	res, err := c.makeReq(endpoint, nil, "get")
@@ -189,12 +190,13 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 	}
 
 	// search through results and find match
-	for key, val := range payload {
+	for _, val := range payload {
+		log.Debug(val)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == tmdb && val.Year == year && val.AudioTypes[0] == codec {
-			// check edition
+			// if it matches, check edition
 			if checkEdition(val, edition) {
-				return payload[key], nil
+				return val, nil
 			} else {
 				log.Error("Found a match but editions did not match entry. Not loading")
 			}
@@ -220,29 +222,46 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
-func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSearch bool, entryID string, mvAdjust float64, dryrunMode bool, preferredAuthor string, edition string) error {
+func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSearch bool, entryID string, mvAdjust float64, dryrunMode bool, preferredAuthor string, edition string, mediaType string) error {
 	var err error
 	var catalog models.BeqCatalog
 	
-	// if we have a case where the current profile is unknown and we are skipping search, dont do that because it will fail to load beq
-	if c.CurrentProfile == "" {
+
+	// This is to stop resume from loading the wrong thing if it gets out of sync
+	// TODO: why does this even happened
+	// TODO: if current media is not blank, and it doesnt match what we are loading
+	// if c.CurrentMediaType != "" && c.CurrentMediaType != mediaType {
+	// 	// it should clear if it changed types, maybe it should run elsewhere
+	// 	// basically its not clearing cache when it should
+	// 	log.Debug("Media type as changed, not loading and clearing")
+	// 	c.CurrentProfile = ""
+	// 	c.CurrentMasterVolume = 0
+	// 	c.CurrentMediaType = mediaType
+	// 	return nil
+	// }
+	
+	// if provided stuff is blank, we cant skip search
+	if entryID == "" || mvAdjust == 0 {
 		skipSearch = false
 	}
-	if skipSearch {
-		
-		log.Debug("Skipping search for extra speed")
-	}
+
 	// skip searching when resuming for speed
 	if !skipSearch {
 		catalog, err = c.searchCatalog(tmdb, year, codec, preferredAuthor, edition)
 		if err != nil {
 			return err
-		}
-
+		}	
+		// get the values from catalog search
 		entryID = catalog.ID
 		mvAdjust = catalog.MvAdjust
+	} else {
+		log.Debug("Skipping search for extra speed")
 	}
 
+	// save the current stuff for later, used in media.resume
+	c.CurrentMasterVolume = mvAdjust
+	c.CurrentProfile = entryID
+	c.CurrentMediaType = mediaType
 
 	if entryID == "" {
 		return errors.New("could not find catalog entry for ezbeq")
@@ -276,10 +295,6 @@ func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSear
 		return err
 	}
 
-	// save the current stuff for later
-	c.CurrentMasterVolume = mvAdjust
-	c.CurrentProfile = entryID
-
 	return nil
 }
 
@@ -287,6 +302,7 @@ func (c *BeqClient) UnloadBeqProfile(dryrunMode bool) error {
 	if dryrunMode {
 		return nil
 	}
+	log.Debug("Unloading ezBEQ profile")
 
 	// add our last entry id and stuff before deleting
 	_, err := c.makeReq("/api/1/devices/master/filter/1", nil, "delete")

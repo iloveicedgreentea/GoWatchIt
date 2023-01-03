@@ -43,13 +43,13 @@ func doMinidspCommand(action string, beqClient *ezbeq.BeqClient) {
 	beqClient.MakeCommand(j)
 
 }
-// TODO: test this
-// TODO: add this to home assistant via automation -> harmony button -> HA automation -> this path
+
 func muteOn(beqClient *ezbeq.BeqClient) {
 	log.Debug("running mute on")
 	doMinidspCommand("mute on", beqClient)
 }
 
+// TODO: mute off doesnt seem to work
 func muteOff(beqClient *ezbeq.BeqClient) {
 	log.Debug("running mute off")
 	doMinidspCommand("mute off", beqClient)
@@ -57,7 +57,6 @@ func muteOff(beqClient *ezbeq.BeqClient) {
 
 // process webhook 
 func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, vip *viper.Viper) http.Handler {
-	log.Debug("minidsp triggered")
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var payload models.MinidspRequest
 
@@ -76,13 +75,13 @@ func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, vip *viper.Vipe
 
 // entry point for background tasks
 func MiniDspWorker(minidspChan <-chan models.MinidspRequest, vip *viper.Viper) {
-	log.Info("Minidsp started")
+	log.Info("Minidsp worker started")
 
 	var beqClient *ezbeq.BeqClient
 	var err error
 
 	if vip.GetBool("ezbeq.enabled") {
-		log.Info("Started with ezbeq enabled")
+		log.Debug("Started minidsp worker with ezbeq")
 		beqClient, err = ezbeq.NewClient(vip.GetString("ezbeq.url"), vip.GetString("ezbeq.port"))
 		if err != nil {
 			log.Error(err)
