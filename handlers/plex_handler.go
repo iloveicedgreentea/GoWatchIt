@@ -43,13 +43,14 @@ func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 		}
 	}
 
-	log.Debugf("Received event: %s", pwhPayload.Event)
+	log.Debugf("Plex Handler: Received event: %s", pwhPayload.Event)
 	return pwhPayload, 0, nil
 }
 
 // Sends the payload to the channel for background processing
 func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		// fyi, sometimes media.play is not *SENT* by plex, I am investigating
 		if err := r.ParseMultipartForm(0); err != nil {
 			log.Error(err)
 			return
@@ -66,8 +67,8 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			clientUUID := decodedPayload.Player.UUID
 			log.Debugf("!!! Your Player UUID is %s !!!!!", clientUUID)
 
-			log.Debugf("Media type is: %s", decodedPayload.Metadata.Type)
-			log.Debugf("Media title is: %s", decodedPayload.Metadata.Title)
+			log.Debugf("Plex Handler:  Media type is: %s", decodedPayload.Metadata.Type)
+			log.Debugf("Plex Handler:  Media title is: %s", decodedPayload.Metadata.Title)
 
 			// only respond to events on a particular account if you share servers and only for movies and shows
 			if decodedPayload.Account.Title == vip.GetString("plex.ownerNameFilter") {
@@ -136,7 +137,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 				return
 			}
 		}
-		log.Debug("Triggering ezBEQ change")
+		log.Debug("Plex Handler: Triggering ezBEQ change")
 		tmdb := getPlexMovieDb(payload)
 		err = beqClient.LoadBeqProfile(tmdb, payload.Metadata.Year, codec, false, "", 0, vip.GetBool("ezbeq.dryRun"), vip.GetString("ezbeq.preferredAuthor"), edition, mediaType)
 		if err != nil {
@@ -226,7 +227,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 	clientUUID := payload.Player.UUID
 	// ensure the client matches so it doesnt trigger from unwanted clients
 	if vip.GetString("plex.deviceUUIDFilter") != clientUUID {
-		log.Debug("Client UUID does not match filter")
+		log.Debug("Plex Handler: Client UUID does not match filter")
 		return
 	}
 
@@ -244,40 +245,40 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 		} else {
 			// get the edition name
 			editionName = getEditionName(data)
-			log.Debugf("Found edition: %s", editionName)
+			log.Debugf("Plex Handler: Found edition: %s", editionName)
 
-			log.Debug("Getting codec from data")
+			log.Debug("Plex Handler: Getting codec from data")
 			codec, err = client.GetAudioCodec(data)
 			if err != nil {
-				log.Errorf("error getting codec, can't continue: %s", err)
+				log.Errorf("Plex Handler: error getting codec, can't continue: %s", err)
 
 				return
 			}
 		}
 	}
 
-	log.Debugf("Received codec: %s", codec)
-	log.Debugf("Got media type of: %s ", payload.Metadata.Type)
+	log.Debugf("Plex Handler: Received codec: %s", codec)
+	log.Debugf("Plex Handler: Got media type of: %s ", payload.Metadata.Type)
 
 	switch payload.Event {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
 	// play means a new file was started
 	case "media.play":
-		log.Debug("media.play received")
+		log.Debug("Plex Handler: media.play received")
 		mediaPlay(client, vip, beqClient, haClient, payload, payload.Metadata.Type, codec, editionName)
 	case "media.stop":
-		log.Debug("media.stop received")
+		log.Debug("Plex Handler: media.stop received")
 		mediaStop(vip, beqClient, haClient, payload)
 	case "media.pause":
-		log.Debug("media.pause received")
+		log.Debug("Plex Handler: media.pause received")
 		mediaPause(vip, beqClient, haClient, payload)
 	// Pressing the 'resume' button actually is media.play thankfully
 	case "media.resume":
-		log.Debug("media.resume received")
+		log.Debug("Plex Handler: media.resume received")
 		mediaResume(vip, beqClient, haClient, payload, payload.Metadata.Type, codec, editionName)
 	case "media.scrobble":
 	default:
-		log.Infof("Received unsupported event: %s", payload.Event)
+		log.Infof("Plex Handler: Received unsupported event: %s", payload.Event)
 	}
 }
 
@@ -286,7 +287,7 @@ func getPlexImdbID(payload models.PlexWebhookPayload) string {
 	// try to get IMDB title from plex to save time
 	for _, model := range payload.Metadata.GUID0 {
 		if strings.Contains(model.ID, "imdb") {
-			log.Debug("Got title ID from plex")
+			log.Debug("Plex Handler: Got title ID from plex")
 			return strings.Split(model.ID, "imdb://")[1]
 		}
 	}
@@ -299,7 +300,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 	// try to get IMDB title from plex to save time
 	for _, model := range payload.Metadata.GUID0 {
 		if strings.Contains(model.ID, "tmdb") {
-			log.Debug("Got tmdb ID from plex")
+			log.Debug("Plex Handler: Got tmdb ID from plex")
 			return strings.Split(model.ID, "tmdb://")[1]
 		}
 	}
@@ -310,7 +311,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 // will change aspect ratio
 func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
-		log.Debug("Changing aspect ratio")
+		log.Debug("Plex Handler: Changing aspect ratio")
 
 		// get the imdb title ID
 		imdbID := getPlexImdbID(payload)
@@ -343,12 +344,10 @@ func changeMasterVolume(vip *viper.Viper, mediaType string) {
 	}
 }
 
-// TODO: triggering is intermittent with play
 // trigger HA for light change given entity and desired state
 func changeLight(vip *viper.Viper, state string) {
 	if vip.GetBool("homeAssistant.triggerLightsOnEvent") && vip.GetBool("homeAssistant.enabled") {
-		log.Debug("Changing light")
-		// TODO: watch topic and see what happens when it fails to change
+		log.Debug("Plex Handler: Changing light")
 		err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), vip.GetString("mqtt.topicLights"))
 		if err != nil {
 			log.Error()

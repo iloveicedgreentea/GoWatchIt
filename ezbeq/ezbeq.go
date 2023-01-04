@@ -75,9 +75,27 @@ func urlEncode(s string) string {
 	return url.QueryEscape(s)
 }
 
+// MuteCommand sends a mute on/off true = mute
+func (c *BeqClient) MuteCommand(status bool) error {
+	endpoint := fmt.Sprintf("api/1/devices/%s/mute", c.DeviceName)
+	log.Debugf("ezbeq: Using endpoint %s", endpoint)
+	var method string
+	switch status {
+	case true:
+		method = "put"
+	case false:
+		method = "delete"
+	}
+
+	_, err := c.makeReq(endpoint, nil, method)
+
+	return err
+}
+
 func (c *BeqClient) MakeCommand(payload []byte) error {
-	endpoint := fmt.Sprintf("api/1/devices/%s/commands", c.DeviceName)
-	_, err := c.makeReq(endpoint, payload, "put")
+	endpoint := fmt.Sprintf("api/1/devices/%s", c.DeviceName)
+	log.Debugf("ezbeq: Using endpoint %s", endpoint)
+	_, err := c.makeReq(endpoint, payload, "patch")
 
 	return err
 }
@@ -225,20 +243,6 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSearch bool, entryID string, mvAdjust float64, dryrunMode bool, preferredAuthor string, edition string, mediaType string) error {
 	var err error
 	var catalog models.BeqCatalog
-	
-
-	// This is to stop resume from loading the wrong thing if it gets out of sync
-	// TODO: why does this even happened
-	// TODO: if current media is not blank, and it doesnt match what we are loading
-	// if c.CurrentMediaType != "" && c.CurrentMediaType != mediaType {
-	// 	// it should clear if it changed types, maybe it should run elsewhere
-	// 	// basically its not clearing cache when it should
-	// 	log.Debug("Media type as changed, not loading and clearing")
-	// 	c.CurrentProfile = ""
-	// 	c.CurrentMasterVolume = 0
-	// 	c.CurrentMediaType = mediaType
-	// 	return nil
-	// }
 	
 	// if provided stuff is blank, we cant skip search
 	if entryID == "" || mvAdjust == 0 {

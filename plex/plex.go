@@ -176,7 +176,9 @@ func imdbStoFloat64(s string) float64 {
 	// remove stuff after " : 1" and return the first part e.g 2.39
 	// return it as float64 so we can do math
 	sc := strings.Split(s, " :")
-	r, err := strconv.ParseFloat(strings.TrimSpace(sc[0]), 64)
+	str := sc[0]
+	// this will trim out stuff like "16:9 HD" to "16:9"
+	r, err := strconv.ParseFloat(strings.TrimSpace(str[:5]), 64)
 	log.Debugf("Converted val: %v", r)
 	if err != nil {
 		log.Error(err)

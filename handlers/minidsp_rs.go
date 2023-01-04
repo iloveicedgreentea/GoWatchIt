@@ -14,8 +14,6 @@ import (
 
 // based on event type, determine what to do
 func minidspRouter(payload models.MinidspRequest, vip *viper.Viper, beqClient *ezbeq.BeqClient) {
-	log.Debug(payload.Command)
-
 	switch {
 	case strings.Contains(payload.Command, "off"):
 		muteOff(beqClient)
@@ -25,34 +23,39 @@ func minidspRouter(payload models.MinidspRequest, vip *viper.Viper, beqClient *e
 }
 
 // send minidsp command via ezbeq
-func doMinidspCommand(action string, beqClient *ezbeq.BeqClient) {
-	r := models.MinidspCommandRequest{
-		Overwrite: true,
-		Slot: "1",
-		Inputs: []int{1, 2},
-		Outputs: []int{1, 2, 3, 4},
-		CommandType: "rs",
-		Commands: action,
+func doMinidspCommand(mute bool, beqClient *ezbeq.BeqClient) {
+	r := models.BeqPatchV1{
+		Mute: mute,
+		MasterVolume: 0,
+		Slots: []models.SlotsV1{
+			{
+				ID: "1",
+				Active: true,
+				Gains: []float64{0,0},
+				Mutes: []bool{mute, mute},
+				Entry: "",
+			},
+		},
 	}
 
 	j, err := json.Marshal(r)
 	if err != nil {
 		log.Error(err)
 	}
-
+	log.Debugf("minidsp: sending payload: %s", j)
 	beqClient.MakeCommand(j)
 
 }
 
+// TODO: test this
 func muteOn(beqClient *ezbeq.BeqClient) {
-	log.Debug("running mute on")
-	doMinidspCommand("mute on", beqClient)
+	log.Debug("Minidsp: running mute on")
+	beqClient.MuteCommand(true)
 }
 
-// TODO: mute off doesnt seem to work
 func muteOff(beqClient *ezbeq.BeqClient) {
-	log.Debug("running mute off")
-	doMinidspCommand("mute off", beqClient)
+	log.Debug("Minidsp: running mute off")
+	beqClient.MuteCommand(false)
 }
 
 // process webhook 
