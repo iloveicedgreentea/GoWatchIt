@@ -171,18 +171,39 @@ func (c *PlexClient) GetAudioCodec(data models.MediaContainer) (string, error) {
 }
 
 // remove garbage from imdb string and convert to float64
-func imdbStoFloat64(s string) float64 {
+func imdbStoFloat64(s string) (r float64) {
 	// remove spaces
 	// remove stuff after " : 1" and return the first part e.g 2.39
 	// return it as float64 so we can do math
-	sc := strings.Split(s, " :")
-	str := sc[0]
-	// this will trim out stuff like "16:9 HD" to "16:9"
-	r, err := strconv.ParseFloat(strings.TrimSpace(str[:5]), 64)
-	log.Debugf("Converted val: %v", r)
+	log.Debugf("Plex: converting imdb string: %s", s)
+	splitStr := strings.Split(s, ":")
+	// first index of split string without spaces
+	big := strings.TrimSpace(splitStr[0])
+	// convert it to float
+	firstVal, err := strconv.ParseFloat(big, 64)
+	if err != nil {
+		return r
+	}
+	// if the first number is larger than 3, its almost definitely something like 16:9
+	// basically if its "16:9"
+	if firstVal > 3 {
+		// get the second value, "9" as float
+		little, err := strconv.ParseFloat(strings.TrimSpace(splitStr[1]), 64)
+		if err != nil {
+			return r
+		}
+		// get the ratio, so 1.78 for 16:9
+		r = firstVal/little
+	} else {
+		// set the comparison to the first value, like 2.39
+		r = firstVal
+	}
+	
+	log.Debugf("Plex: Converted val: %v", r)
 	if err != nil {
 		log.Error(err)
-		log.Debugf("Length of input is %v", len(s))
+		log.Debugf("Plex: Length of input is %v", len(s))
+		return r
 	}
 	// there is an edge case where annoyingly imdb will list 16:9 instead of 1.78:1
 	if r > 3 && r <= 16 {
