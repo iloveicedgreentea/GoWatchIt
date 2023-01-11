@@ -23,7 +23,7 @@ type BeqClient struct {
 	DeviceName          string
 	CurrentProfile      string
 	CurrentMasterVolume float64
-	CurrentMediaType string
+	CurrentMediaType    string
 	MuteStatus          bool
 	MasterVolume        float64
 	HTTPClient          http.Client
@@ -75,9 +75,9 @@ func urlEncode(s string) string {
 	return url.QueryEscape(s)
 }
 
-// MuteCommand sends a mute on/off true = mute
+// MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
-	endpoint := fmt.Sprintf("api/1/devices/%s/mute", c.DeviceName)
+	endpoint := fmt.Sprintf("/api/1/devices/%s/mute", c.DeviceName)
 	log.Debugf("ezbeq: Using endpoint %s", endpoint)
 	var method string
 	switch status {
@@ -86,14 +86,28 @@ func (c *BeqClient) MuteCommand(status bool) error {
 	case false:
 		method = "delete"
 	}
+	log.Debugf("Running request with method: %s", method)
+	resp, err := c.makeReq(endpoint, nil, method)
+	if err != nil {
+		return err
+	}
 
-	_, err := c.makeReq(endpoint, nil, method)
+	// ensure we changed the status
+	var out models.BeqDevices
+	err = json.Unmarshal(resp, &out)
+	if err != nil {
+		return err
+	}
+	log.Debugf("Current mute status is %v", out.Mute)
+	if out.Mute != status {
+		return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
+	}
 
-	return err
+	return nil
 }
 
 func (c *BeqClient) MakeCommand(payload []byte) error {
-	endpoint := fmt.Sprintf("api/1/devices/%s", c.DeviceName)
+	endpoint := fmt.Sprintf("/api/1/devices/%s", c.DeviceName)
 	log.Debugf("ezbeq: Using endpoint %s", endpoint)
 	_, err := c.makeReq(endpoint, payload, "patch")
 
@@ -132,18 +146,19 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if err != nil {
 		return []byte{}, err
 	}
-	
+
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	
+
 	// simple retry
 	res, err := c.makeCallWithRetry(req, 5, endpoint)
 
 	return res, err
 }
 
-func( c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoint string) ([]byte, error) {
+// makeCallWithRetry returns response body and err
+func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoint string) ([]byte, error) {
 	// declaring here so we can return err outside of loop just by exiting it
 	var status int
 	var res *http.Response
@@ -157,14 +172,18 @@ func( c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 			continue
 		}
 		defer res.Body.Close()
-		
+
 		resp, err = io.ReadAll(res.Body)
 		if err != nil {
 			log.Debugf("Reading body failed - Retrying %v", err)
 			continue
 		}
-		
+
 		status = res.StatusCode
+
+		if status != http.StatusOK {
+			return nil, fmt.Errorf("got status: %d", status)
+		}
 
 		// don't retry for 404
 		if status == 404 {
@@ -223,13 +242,14 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 
 	return models.BeqCatalog{}, errors.New("beq profile was not found in catalog")
 }
+
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
 func checkEdition(val models.BeqCatalog, edition string) bool {
 	// if edition from beq is empty, any match will do
 	if val.Edition == "" {
 		return true
 	}
-	
+
 	// if the beq edition contains the string like Extended for "Extended Cut", its ok
 	if strings.Contains(val.Edition, edition) {
 		return true
@@ -243,7 +263,7 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSearch bool, entryID string, mvAdjust float64, dryrunMode bool, preferredAuthor string, edition string, mediaType string) error {
 	var err error
 	var catalog models.BeqCatalog
-	
+
 	// if provided stuff is blank, we cant skip search
 	if entryID == "" || mvAdjust == 0 {
 		skipSearch = false
@@ -254,7 +274,7 @@ func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSear
 		catalog, err = c.searchCatalog(tmdb, year, codec, preferredAuthor, edition)
 		if err != nil {
 			return err
-		}	
+		}
 		// get the values from catalog search
 		entryID = catalog.ID
 		mvAdjust = catalog.MvAdjust
@@ -278,11 +298,11 @@ func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSear
 	// build payload
 	var payload models.BeqPatchV2
 	payload.Slots = append(payload.Slots, models.SlotsV2{
-		ID:    "1",
-		Gains: []float64{mvAdjust, mvAdjust},
+		ID:     "1",
+		Gains:  []float64{mvAdjust, mvAdjust},
 		Active: true,
-		Mutes: []bool{false, false},
-		Entry: entryID,
+		Mutes:  []bool{false, false},
+		Entry:  entryID,
 	})
 	log.Debugf("sending BEQ payload: %#v", payload)
 	jsonPayload, err := json.Marshal(payload)
