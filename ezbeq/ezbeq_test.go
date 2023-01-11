@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO: test MuteCommand true and false, then check with get?
+
 func TestUrlEncode(t *testing.T) {
 	s := urlEncode("DTS-HD MA 7.1")
 	assert.Equal(t, "DTS-HD+MA+7.1", s)
