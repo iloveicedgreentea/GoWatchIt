@@ -23,36 +23,37 @@ func minidspRouter(payload models.MinidspRequest, vip *viper.Viper, beqClient *e
 }
 
 // send minidsp command via ezbeq
-func doMinidspCommand(mute bool, beqClient *ezbeq.BeqClient) {
-	r := models.BeqPatchV1{
-		Mute: mute,
-		MasterVolume: 0,
-		Slots: []models.SlotsV1{
-			{
-				ID: "1",
-				Active: true,
-				Gains: []float64{0,0},
-				Mutes: []bool{mute, mute},
-				Entry: "",
-			},
-		},
-	}
+// func doMinidspCommand(mute bool, beqClient *ezbeq.BeqClient) {
+// 	r := models.BeqPatchV1{
+// 		Mute: mute,
+// 		MasterVolume: 0,
+// 		Slots: []models.SlotsV1{
+// 			{
+// 				ID: "1",
+// 				Active: true,
+// 				Gains: []float64{0,0},
+// 				Mutes: []bool{mute, mute},
+// 				Entry: "",
+// 			},
+// 		},
+// 	}
 
-	j, err := json.Marshal(r)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Debugf("minidsp: sending payload: %s", j)
-	beqClient.MakeCommand(j)
+// 	j, err := json.Marshal(r)
+// 	if err != nil {
+// 		log.Error(err)
+// 	}
+// 	log.Debugf("minidsp: sending payload: %s", j)
+// 	beqClient.MakeCommand(j)
 
-}
+// }
 
-// TODO: test this
+// muteOn mutes all inputs for minidsp
 func muteOn(beqClient *ezbeq.BeqClient) {
 	log.Debug("Minidsp: running mute on")
 	beqClient.MuteCommand(true)
 }
 
+// muteOff unmutes all inputs for minidsp
 func muteOff(beqClient *ezbeq.BeqClient) {
 	log.Debug("Minidsp: running mute off")
 	beqClient.MuteCommand(false)
