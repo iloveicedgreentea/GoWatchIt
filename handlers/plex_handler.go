@@ -20,6 +20,7 @@ const showItemTitle = "episode"
 const movieItemTitle = "movie"
 
 // for trailers
+// TODO: if envy support enabled, read aspect for clips too?
 // could process clips == trailers as well, tbd
 // const clipTitle = "clip"
 
@@ -69,9 +70,11 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 
 			log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
 			log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
-
+			
+			// check filter for user if not blank
+			userID := vip.GetString("plex.ownerNameFilter")
 			// only respond to events on a particular account if you share servers and only for movies and shows
-			if decodedPayload.Account.Title == vip.GetString("plex.ownerNameFilter") {
+			if userID == "" || decodedPayload.Account.Title == userID {
 				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
 					plexChan <- decodedPayload
 				}
@@ -227,7 +230,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 
 	clientUUID := payload.Player.UUID
 	// ensure the client matches so it doesnt trigger from unwanted clients
-	if vip.GetString("plex.deviceUUIDFilter") != clientUUID {
+	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") != "" {
 		log.Debug("Event Router: Client UUID does not match filter")
 		return
 	}
