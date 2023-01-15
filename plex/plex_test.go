@@ -72,7 +72,6 @@ func TestImdbClient(t *testing.T) {
 
 // test parsing of aspect ratio given a title
 func TestImdbTechInfo(t *testing.T) {
-	t.Skip()
 	client := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &customTransport{http.DefaultTransport},
@@ -143,7 +142,7 @@ func TestGetImdbInfoAspect(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed for %s - %v", test.Data.Name, err)
 		}
-		assert.Equal(test.ExpectedValue, aspect, fmt.Sprintf("%s Aspect ratio does not match", test.Data.TitleID))
+		assert.Equal(test.ExpectedValue, aspect, fmt.Sprintf("%s Aspect ratio does not match", test.Data.ID))
 	}
 }
 
