@@ -78,6 +78,8 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
 					plexChan <- decodedPayload
 				}
+			} else {
+				log.Warningf("userID %s does not match filter", userID)
 			}
 		}
 	}
@@ -230,7 +232,8 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 
 	clientUUID := payload.Player.UUID
 	// ensure the client matches so it doesnt trigger from unwanted clients
-	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") != "" {
+
+	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") == "" {
 		log.Debug("Event Router: Client UUID does not match filter")
 		return
 	}
