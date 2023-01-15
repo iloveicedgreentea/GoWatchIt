@@ -20,6 +20,7 @@ const showItemTitle = "episode"
 const movieItemTitle = "movie"
 
 // for trailers
+// TODO: if envy support enabled, read aspect for clips too?
 // could process clips == trailers as well, tbd
 // const clipTitle = "clip"
 
@@ -69,9 +70,11 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 
 			log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
 			log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
-
+			
+			// check filter for user if not blank
+			userID := vip.GetString("plex.ownerNameFilter")
 			// only respond to events on a particular account if you share servers and only for movies and shows
-			if decodedPayload.Account.Title == vip.GetString("plex.ownerNameFilter") {
+			if userID == "" || decodedPayload.Account.Title == userID {
 				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
 					plexChan <- decodedPayload
 				}
@@ -227,7 +230,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 
 	clientUUID := payload.Player.UUID
 	// ensure the client matches so it doesnt trigger from unwanted clients
-	if vip.GetString("plex.deviceUUIDFilter") != clientUUID {
+	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") != "" {
 		log.Debug("Event Router: Client UUID does not match filter")
 		return
 	}
@@ -310,8 +313,23 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 }
 
 // will change aspect ratio
-// TODO: add switch for envy support
 func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
+
+	// if madvr enabled, only send a trigger via mqtt
+	// This needs to be triggered by MQTT in automation. This sends a pulse. The automation reads envy aspect ratio 5 sec later
+	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") && vip.GetBool("madvr.enabled") {
+		topic := vip.GetString("mqtt.topicAspectratioMadVrOnly")
+
+		// trigger automation
+		err := mqtt.Publish(vip, []byte(""), topic)
+		if err != nil {
+			log.Error()
+		}
+
+		return
+	}
+	// without envy
+	// send to topic
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
 		log.Debug("changeAspect: Changing aspect ratio")
 
