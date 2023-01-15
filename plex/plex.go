@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	// "unicode"
-
 	"github.com/StalkR/imdb"
 	"github.com/anaskhan96/soup"
 	"github.com/iloveicedgreentea/go-plex/logger"
@@ -39,7 +37,7 @@ func NewClient(url, port string) *PlexClient {
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
-		ImdbClient:  &http.Client{
+		ImdbClient: &http.Client{
 			Timeout:   10 * time.Second,
 			Transport: &customTransport{http.DefaultTransport},
 		},
@@ -143,7 +141,7 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
 	// may not always be the case but easier to assume so
 	case strings.Contains(codecTitle, "EAC3 5.1"):
-		return "DD+ Atmos" 
+		return "DD+ Atmos"
 	// probably not accurate, but what can you do
 	case strings.Contains(codecTitle, "EAC3 Stereo"):
 		return "DD+"
@@ -193,12 +191,12 @@ func imdbStoFloat64(s string) (r float64) {
 			return r
 		}
 		// get the ratio, so 1.78 for 16:9
-		r = firstVal/little
+		r = firstVal / little
 	} else {
 		// set the comparison to the first value, like 2.39
 		r = firstVal
 	}
-	
+
 	log.Debugf("Plex: Converted val: %v", r)
 	if err != nil {
 		log.Error(err)
@@ -225,14 +223,24 @@ func imdbStoFloat64(s string) (r float64) {
 func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
 	// use our slow client
 	resp, err := soup.GetWithClient(fmt.Sprintf("https://www.imdb.com/title/%s/technical", titleID), client)
+
 	if err != nil {
 		return []soup.Root{}, err
 	}
+	if len(resp) == 0 {
+		return []soup.Root{}, errors.New("soup response was empty")
+	}
 	log.Debug("Done getting soup response")
 	docs := soup.HTMLParse(resp)
-	
+
 	// the page uses tr/td to display the info
-	res := docs.Find("div", "id", "technical_content").Find("table").FindAll("tr")
+	techSoup := docs.Find("div", "id", "technical_content")
+
+	// catch nil pointer dereference
+	if techSoup.Pointer == nil {
+		return []soup.Root{}, techSoup.Error
+	}
+	res := techSoup.Find("table").FindAll("tr")
 
 	return res, nil
 }
@@ -272,10 +280,18 @@ func parseImdbAspectSchema(input soup.Root) []float64 {
 // determine the aspect ratio(s) from a given title
 func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error) {
 	log.Debugf("parsing info for %s", titleID)
-	res, err := getImdbTechInfo(titleID, client)
-	if err != nil {
-		return 0, err
+	var res []soup.Root
+	var err error
+	// try up to 3 times, it seems to sometimes return nil from imdb scraping
+	for i := 0; i < 3; i++ {
+		res, err = getImdbTechInfo(titleID, client)
+		if err != nil {
+			log.Error(err)
+			time.Sleep(time.Second * 1)
+			continue
+		}
 	}
+
 	// schema
 	// 	<td class="label"> Aspect Ratio </td>
 	//     <td>
@@ -297,6 +313,10 @@ func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error
 	//     </td>
 	//   </tr>
 	for _, val := range res {
+		if val.Pointer == nil {
+			return 0, val.Error
+		}
+
 		tableName := parseImdbTableSchema(val)
 		// loop through and search until we get to "camera", its after AR so we can exit faster
 		if tableName == "Camera" {
@@ -349,7 +369,7 @@ func (e *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 // get the aspect ratio like 1.78 (16:9) 1.85 ~17:9 from IMDB
 func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (float64, error) {
 	// Plex directly not useful since almost everything is in a 1.78:1 container
-	
+
 	// poll IMDB to get title id if its blank
 	if imdbID == "" {
 		results, err := imdb.SearchTitle(c.ImdbClient, title)
@@ -357,12 +377,12 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 			return 0, err
 		}
 		if len(results) == 0 {
-			return 0, errors.New("Not found")
+			return 0, errors.New("not found")
 		}
 
 		// get the title based on name and year match
 		for _, result := range results {
-			if result.Year == year && strings.Contains(strings.ToLower(result.Name), title){
+			if result.Year == year && strings.Contains(strings.ToLower(result.Name), title) {
 				// get technical info
 				log.Debugf("found year match: ID %s, Name %s", result.ID, result.Name)
 				return parseImdbTechnicalInfo(result.ID, c.ImdbClient)

@@ -70,7 +70,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 
 			log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
 			log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
-			
+
 			// check filter for user if not blank
 			userID := vip.GetString("plex.ownerNameFilter")
 			// only respond to events on a particular account if you share servers and only for movies and shows
@@ -317,44 +317,45 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 
 // will change aspect ratio
 func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
-
-	// if madvr enabled, only send a trigger via mqtt
-	// This needs to be triggered by MQTT in automation. This sends a pulse. The automation reads envy aspect ratio 5 sec later
-	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") && vip.GetBool("madvr.enabled") {
-		topic := vip.GetString("mqtt.topicAspectratioMadVrOnly")
-
-		// trigger automation
-		err := mqtt.Publish(vip, []byte(""), topic)
-		if err != nil {
-			log.Error()
-		}
-
-		return
-	}
-	// without envy
-	// send to topic
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
-		log.Debug("changeAspect: Changing aspect ratio")
+		
+		// if madvr enabled, only send a trigger via mqtt
+		// This needs to be triggered by MQTT in automation. This sends a pulse. The automation reads envy aspect ratio 5 sec later
+		if vip.GetBool("madvr.enabled") {
+			log.Debug("Using madvr for aspect")
+			topic := vip.GetString("mqtt.topicAspectratioMadVrOnly")
 
-		// get the imdb title ID
-		imdbID := getPlexImdbID(payload)
+			// trigger automation
+			err := mqtt.Publish(vip, []byte(""), topic)
+			if err != nil {
+				log.Error()
+			}
 
-		// lookup aspect based on imdb technical info
-		aspect, err := client.GetAspectRatio(payload.Metadata.Title, payload.Metadata.Year, imdbID)
-		if err != nil {
-			log.Error(err)
 			return
-		}
+		} else {
+			log.Debug("changeAspect: Changing aspect ratio")
 
-		// handle logic for aspect ratios
-		topic := vip.GetString("mqtt.topicAspectratio")
+			// get the imdb title ID
+			imdbID := getPlexImdbID(payload)
 
-		// better to have you just decide what to do in HA, I'm not your mom
-		err = mqtt.Publish(vip, []byte(fmt.Sprintf("{\"aspect\":%f}", aspect)), topic)
-		if err != nil {
-			log.Error()
+			// lookup aspect based on imdb technical info
+			aspect, err := client.GetAspectRatio(payload.Metadata.Title, payload.Metadata.Year, imdbID)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			// handle logic for aspect ratios
+			topic := vip.GetString("mqtt.topicAspectratio")
+
+			// better to have you just decide what to do in HA, I'm not your mom
+			err = mqtt.Publish(vip, []byte(fmt.Sprintf("{\"aspect\":%f}", aspect)), topic)
+			if err != nil {
+				log.Error()
+			}
 		}
 	}
+
 }
 
 // trigger HA for MV change per type
