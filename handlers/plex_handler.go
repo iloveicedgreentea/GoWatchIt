@@ -313,8 +313,23 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 }
 
 // will change aspect ratio
-// TODO: add switch for envy support
 func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
+
+	// if madvr enabled, only send a trigger via mqtt
+	// This needs to be triggered by MQTT in automation. This sends a pulse. The automation reads envy aspect ratio 5 sec later
+	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") && vip.GetBool("madvr.enabled") {
+		topic := vip.GetString("mqtt.topicAspectratioMadVrOnly")
+
+		// trigger automation
+		err := mqtt.Publish(vip, []byte(""), topic)
+		if err != nil {
+			log.Error()
+		}
+
+		return
+	}
+	// without envy
+	// send to topic
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
 		log.Debug("changeAspect: Changing aspect ratio")
 

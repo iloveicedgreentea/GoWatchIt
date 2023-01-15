@@ -99,11 +99,12 @@ In your Automations, you can action based on these payloads.
 
 #### Aspect Ratio
 ```json
-#TODO: update this with envy support
 {
     "aspect": "2.4" || "2.2" || "1.85" || "1.78"
 }
 ```
+
+*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic is topicAspectratioMadVrOnly. Run you actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 5 seconds or so until the envy scales the display correctly*
 
 ### HA Quickstart
 Here is an example of an automation to change lights based on MQTT.
