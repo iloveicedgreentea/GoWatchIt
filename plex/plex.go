@@ -282,7 +282,7 @@ func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error
 	log.Debugf("parsing info for %s", titleID)
 	var res []soup.Root
 	var err error
-	// try up to 3 times, it seems to sometimes return nil from imdb scraping
+	// try up to n times, it seems to sometimes return nil from imdb scraping
 	for i := 0; i < 5; i++ {
 		res, err = getImdbTechInfo(titleID, client)
 		if err != nil {

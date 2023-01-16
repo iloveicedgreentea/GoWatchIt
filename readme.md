@@ -104,7 +104,7 @@ In your Automations, you can action based on these payloads.
 }
 ```
 
-*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic is topicAspectratioMadVrOnly. Run you actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 5 seconds or so until the envy scales the display correctly*
+*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic is topicAspectratioMadVrOnly. Run you actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 12 seconds or so until the envy scales the display correctly and the attribute changes*
 
 ### HA Quickstart
 Here is an example of an automation to change lights based on MQTT.
