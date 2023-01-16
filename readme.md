@@ -104,7 +104,73 @@ In your Automations, you can action based on these payloads.
 }
 ```
 
+### Masking System Support
+
+You can use the default (IMDB) or a MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail, but I tried to add retries for that. 
+
+
 *Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic is topicAspectratioMadVrOnly. Run you actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 12 seconds or so until the envy scales the display correctly and the attribute changes*
+
+Here is an automation which uses MQTT and Envy attributes ([via my Envy integration](https://github.com/iloveicedgreentea/madvr-envy-homeassistant)). Modify to your needs. My masking system is set up for CIH so I mask off beyond 17:9. 
+
+```yaml
+alias: Envy - MQTT - Masking system
+description: >-
+  Trigger masking if it changed, but not within 5 min so alternating scenes
+  don't trigger
+trigger:
+  - platform: mqtt
+    topic: theater/envy/aspectratio
+condition: []
+action:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 12
+      milliseconds: 0
+  - if:
+      - condition: numeric_state
+        entity_id: remote.envy
+        attribute: aspect_ratio
+        above: 0
+        below: 1.89
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.masking_down
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 35
+          milliseconds: 0
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.masking_down
+  - if:
+      - condition: numeric_state
+        entity_id: remote.envy
+        attribute: aspect_ratio
+        below: 10
+        above: 1.88
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.masking_up
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 35
+          milliseconds: 0
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.masking_up
+mode: single
+
+```
 
 ### HA Quickstart
 Here is an example of an automation to change lights based on MQTT.
