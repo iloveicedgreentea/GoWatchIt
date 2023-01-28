@@ -329,7 +329,8 @@ func (c *BeqClient) UnloadBeqProfile(dryrunMode bool) error {
 	log.Debug("Unloading ezBEQ profile")
 
 	// add our last entry id and stuff before deleting
-	_, err := c.makeReq("/api/1/devices/master/filter/1", nil, "delete")
+	endpoint := fmt.Sprintf("/api/1/devices/%s/filter/1", c.DeviceName)
+	_, err := c.makeReq(endpoint, nil, "delete")
 	if err != nil {
 		return err
 	}
