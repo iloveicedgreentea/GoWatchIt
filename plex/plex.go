@@ -115,15 +115,15 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// DTS 5.1
 	case strings.Contains(codecTitle, "DTS 5.1"):
 		return "DTS 5.1"
-	// some Atmos titles return True HD 7.1 annoyingly, so lets just assume atmos for now
-	case strings.Contains(codecExtendTitle, "Atmos") || strings.Contains(codecExtendTitle, "Surround 7.1") && strings.Contains(codecExtendTitle, "TRUEHD"):
-		return "Atmos"
-	// TrueHD 5.1
 	case strings.Contains(codecTitle, "TRUEHD 5.1"):
 		return "TrueHD 5.1"
 	// TrueHD 6.1
 	case strings.Contains(codecTitle, "TRUEHD 6.1"):
 		return "TrueHD 6.1"
+	// some Atmos titles return True HD 7.1 annoyingly, so lets just assume atmos for now
+	case strings.Contains(codecExtendTitle, "Atmos") || strings.Contains(codecExtendTitle, "TRUEHD"):
+		return "Atmos"
+// TrueHD 5.1
 	// DTS HRA
 	case strings.Contains(codecTitle, "DTS-HD HRA 7.1"):
 		return "DTS-HD HR 7.1"
