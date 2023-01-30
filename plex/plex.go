@@ -97,53 +97,57 @@ func (c *PlexClient) GetMediaData(libraryKey string) (models.MediaContainer, err
 	return data, nil
 }
 
+func insensitiveContains(s string, sub string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
+}
+
 // map a plex to a beq codec name
 func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	log.Debugf("Full codec from plex received: %v", codecExtendTitle)
 	switch {
 	// DTS:X
-	case strings.Contains(codecExtendTitle, "DTS:X"):
+	case insensitiveContains(codecExtendTitle, "DTS:X"):
 		return "DTS-X"
-	case strings.Contains(codecExtendTitle, "DTS-X"):
+	case insensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-X"
 	// DTS MA 7.1 containers but not DTS:X codecs
-	case strings.Contains(codecTitle, "DTS-HD MA 7.1") && !strings.Contains(codecExtendTitle, "DTS:X") && !strings.Contains(codecExtendTitle, "DTS-X"):
+	case insensitiveContains(codecTitle, "DTS-HD MA 7.1") && !insensitiveContains(codecExtendTitle, "DTS:X") && !insensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-HD MA 7.1"
 	// DTS HA MA 5.1
-	case strings.Contains(codecTitle, "DTS-HD MA 5.1"):
+	case insensitiveContains(codecTitle, "DTS-HD MA 5.1"):
 		return "DTS-HD MA 5.1"
 	// DTS 5.1
-	case strings.Contains(codecTitle, "DTS 5.1"):
+	case insensitiveContains(codecTitle, "DTS 5.1"):
 		return "DTS 5.1"
-	case strings.Contains(codecTitle, "TRUEHD 5.1"):
+	case insensitiveContains(codecTitle, "TRUEHD 5.1"):
 		return "TrueHD 5.1"
 	// TrueHD 6.1
-	case strings.Contains(codecTitle, "TRUEHD 6.1"):
+	case insensitiveContains(codecTitle, "TRUEHD 6.1"):
 		return "TrueHD 6.1"
 	// some Atmos titles return True HD 7.1 annoyingly, so lets just assume atmos for now
-	case strings.Contains(codecExtendTitle, "Atmos") || strings.Contains(codecExtendTitle, "TRUEHD"):
+	case insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecExtendTitle, "TRUEHD"):
 		return "Atmos"
-// TrueHD 5.1
+		// TrueHD 5.1
 	// DTS HRA
-	case strings.Contains(codecTitle, "DTS-HD HRA 7.1"):
+	case insensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
 		return "DTS-HD HR 7.1"
-	case strings.Contains(codecTitle, "DTS-HD HRA 5.1"):
+	case insensitiveContains(codecTitle, "DTS-HD HRA 5.1"):
 		return "DTS-HD HR 5.1"
 	// LPCM
-	case strings.Contains(codecTitle, "LPCM 5.1"):
+	case insensitiveContains(codecTitle, "LPCM 5.1"):
 		return "LPCM 5.1"
-	case strings.Contains(codecTitle, "LPCM 7.1"):
+	case insensitiveContains(codecTitle, "LPCM 7.1"):
 		return "LPCM 7.1"
-	case strings.Contains(codecTitle, "LPCM 2.0"):
+	case insensitiveContains(codecTitle, "LPCM 2.0"):
 		return "LPCM 2.0"
 	//DD+
 	//English (EAC3 5.1) -> dd+ atmos?
 	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
 	// may not always be the case but easier to assume so
-	case strings.Contains(codecTitle, "EAC3 5.1"):
+	case insensitiveContains(codecTitle, "EAC3 5.1"):
 		return "DD+ Atmos"
 	// probably not accurate, but what can you do
-	case strings.Contains(codecTitle, "EAC3 Stereo"):
+	case insensitiveContains(codecTitle, "EAC3 Stereo"):
 		return "DD+"
 	// disabled because most movies report real atmos as tHD 7.1
 	// case strings.Contains(codecExtendTitle, "Surround 7.1") && strings.Contains(codecExtendTitle, "TRUEHD"):

@@ -46,6 +46,44 @@ func TestGetMediaData(t *testing.T) {
 
 }
 
+type codecTest struct {
+	codec string
+	fullcodec string
+	expected string
+}
+
+func TestMapCodecs(t *testing.T) {
+	assert := assert.New(t)
+	tests := []codecTest{
+		{
+			codec: "English (TRUEHD 7.1)",
+			fullcodec: "Surround 7.1 (English TRUEHD)",
+			expected: "Atmos",
+		},
+		{
+			codec: "English (TRUEHD 5.1)",
+			fullcodec: "Dolby TrueHD Audio / 5.1 / 48 kHz / 1541 kbps / 16-bit (English)",
+			expected: "TrueHD 5.1",
+		},
+		{
+			codec: "English (DTS-HD MA 5.1)",
+			fullcodec: "DTS-HD Master Audio / 5.1 / 48 kHz / 3887 kbps / 24-bit (English)",
+			expected: "DTS-HD MA 5.1",
+		},
+		{
+			codec: "English (TRUEHD 7.1)",
+			fullcodec: "TrueHD Atmos 7.1 (English)",
+			expected: "Atmos",
+		},
+	}
+	// execute each test
+	for _, test := range tests {
+		s := mapPlexToBeqAudioCodec(test.codec, test.fullcodec)
+		assert.Equal(test.expected, s)
+	}
+
+}
+
 func TestImdbClient(t *testing.T) {
 
 	client := &http.Client{
