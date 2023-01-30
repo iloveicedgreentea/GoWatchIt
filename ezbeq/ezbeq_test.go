@@ -44,25 +44,25 @@ func TestSearchCatalog(t *testing.T) {
 	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
 	assert.NoError(err)
 
-	// fast five extended 
+	// fast five extended
 	res, err := c.searchCatalog("51497", 2011, "DTS-X", "none", "Extended")
 	assert.NoError(err)
 	assert.Equal("Extended", res.Edition)
 	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
-	
+
 	// 12 strong has multiple codecs AND authors, so good for testing
 	// return 7.1 version of aron7awol
 	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "none", "")
 	assert.NoError(err)
 	assert.Equal("c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d", res.Digest, "12 strong does not match entry ID. Should match aron7awol version")
 	assert.Equal(-3.5, res.MvAdjust, "12 strong does not match MV. Should match aron7awol version")
-	
+
 	// return 7.1 version of mobe1969
 	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "mobe1969", "")
 	assert.NoError(err)
 	assert.Equal("d4ffd507ac9a6597c5039a67f587141ca866013787ed2c06fe9ef6a86f3e5534", res.Digest, "12 strong does not match entry ID. Should match mobe1969 version")
 	assert.Equal(0.0, res.MvAdjust, "12 strong does not match MV. Should match mobe1969 version")
-	
+
 	// return 7.1 version of aron7awol
 	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "aron7awol", "")
 	assert.NoError(err)
@@ -117,7 +117,14 @@ func TestLoadProfile(t *testing.T) {
 	assert.NoError(err)
 
 	// MI: ghost proto truehd 7.1
-	err = c.LoadBeqProfile("56292", 2011, "TrueHD 7.1", false, "", 0.0, false, "none", "", "movie")
+	err = c.LoadBeqProfile("56292", 2011, "AtmosMaybe", false, "", 0.0, false, "none", "", "movie")
+	assert.NoError(err)
+
+	err = c.UnloadBeqProfile(false)
+	assert.NoError(err)
+
+	// Alita is atmos but metadata says THD 7.1
+	err = c.LoadBeqProfile("399579", 2019, "AtmosMaybe", false, "", 0.0, false, "none", "", "movie")
 	assert.NoError(err)
 
 	err = c.UnloadBeqProfile(false)
