@@ -228,7 +228,7 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 
 	// search through results and find match
 	for _, val := range payload {
-		log.Debug(val)
+		log.Debugf("Beq results: %v", val)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == tmdb && val.Year == year && val.AudioTypes[0] == codec {
 			// if it matches, check edition
@@ -271,9 +271,20 @@ func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSear
 
 	// skip searching when resuming for speed
 	if !skipSearch {
-		catalog, err = c.searchCatalog(tmdb, year, codec, preferredAuthor, edition)
-		if err != nil {
-			return err
+		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
+		if codec == "AtmosMaybe" {
+			catalog, err = c.searchCatalog(tmdb, year, "TrueHD 7.1", preferredAuthor, edition)
+			if err != nil {
+				catalog, err = c.searchCatalog(tmdb, year, "Atmos", preferredAuthor, edition)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			catalog, err = c.searchCatalog(tmdb, year, codec, preferredAuthor, edition)
+			if err != nil {
+				return err
+			}
 		}
 		// get the values from catalog search
 		entryID = catalog.ID

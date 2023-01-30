@@ -101,14 +101,12 @@ func insensitiveContains(s string, sub string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
 }
 
-// map a plex to a beq codec name
+// map a plex to a beq catalog name
 func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	log.Debugf("Full codec from plex received: %v", codecExtendTitle)
 	switch {
 	// DTS:X
-	case insensitiveContains(codecExtendTitle, "DTS:X"):
-		return "DTS-X"
-	case insensitiveContains(codecExtendTitle, "DTS-X"):
+	case insensitiveContains(codecExtendTitle, "DTS:X") || insensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-X"
 	// DTS MA 7.1 containers but not DTS:X codecs
 	case insensitiveContains(codecTitle, "DTS-HD MA 7.1") && !insensitiveContains(codecExtendTitle, "DTS:X") && !insensitiveContains(codecExtendTitle, "DTS-X"):
@@ -119,15 +117,20 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// DTS 5.1
 	case insensitiveContains(codecTitle, "DTS 5.1"):
 		return "DTS 5.1"
+	// TrueHD 5.1
 	case insensitiveContains(codecTitle, "TRUEHD 5.1"):
 		return "TrueHD 5.1"
 	// TrueHD 6.1
 	case insensitiveContains(codecTitle, "TRUEHD 6.1"):
 		return "TrueHD 6.1"
-	// some Atmos titles return True HD 7.1 annoyingly, so lets just assume atmos for now
-	case insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecExtendTitle, "TRUEHD"):
+	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
+		return "AtmosMaybe"
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
+		return "AtmosMaybe"
+	// some Atmos titles return True HD 7.1 annoyingly
+	case insensitiveContains(codecExtendTitle, "Atmos"):
 		return "Atmos"
-		// TrueHD 5.1
 	// DTS HRA
 	case insensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
 		return "DTS-HD HR 7.1"

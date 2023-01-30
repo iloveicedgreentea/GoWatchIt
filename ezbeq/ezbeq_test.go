@@ -86,13 +86,18 @@ func TestSearchCatalog(t *testing.T) {
 	assert.Error(err)
 	assert.Equal("", res.Digest)
 	assert.Equal(0.0, res.MvAdjust)
+
+	// should be TrueHD 7.1
+	res, err = c.searchCatalog("56292", 2011, "TrueHD 7.1", "none", "")
+	assert.NoError(err)
+	assert.Equal("f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7", res.Digest)
+	assert.Equal(0.0, res.MvAdjust)
 }
 
 // load and unload a profile. Watch ezbeq UI to confirm, but if it doesnt error it probably loaded fine
 // ezbeq doesnt expose a failure if the entry_id is wrong, so need to look at UI for now
 // I could write a scraper to find instance of fast five in slot one, thats a lot of work for a small test
 func TestLoadProfile(t *testing.T) {
-	t.Skip()
 	v := viper.New()
 	v.SetConfigFile("../config.json")
 	err := v.ReadInConfig()
@@ -106,6 +111,13 @@ func TestLoadProfile(t *testing.T) {
 
 	// fast five dts-x extended edition
 	err = c.LoadBeqProfile("51497", 2011, "DTS-X", false, "bd4577c143e73851d6db0697e0940a8f34633eec\n_416", -1.5, false, "none", "Extended", "movie")
+	assert.NoError(err)
+
+	err = c.UnloadBeqProfile(false)
+	assert.NoError(err)
+
+	// MI: ghost proto truehd 7.1
+	err = c.LoadBeqProfile("56292", 2011, "TrueHD 7.1", false, "", 0.0, false, "none", "", "movie")
 	assert.NoError(err)
 
 	err = c.UnloadBeqProfile(false)
