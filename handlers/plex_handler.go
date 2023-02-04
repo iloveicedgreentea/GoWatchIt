@@ -20,9 +20,7 @@ const showItemTitle = "episode"
 const movieItemTitle = "movie"
 
 // for trailers
-// TODO: if envy support enabled, read aspect for clips too?
-// could process clips == trailers as well, tbd
-// const clipTitle = "clip"
+const clipTitle = "clip"
 
 var log = logger.GetLogger()
 
@@ -75,11 +73,11 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			userID := vip.GetString("plex.ownerNameFilter")
 			// only respond to events on a particular account if you share servers and only for movies and shows
 			if userID == "" || decodedPayload.Account.Title == userID {
-				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
+				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle || decodedPayload.Metadata.Type == clipTitle {
 					plexChan <- decodedPayload
 				}
 			} else {
-				log.Warningf("userID %s does not match filter", userID)
+				log.Debugf("userID '%s' does not match filter", userID)
 			}
 		}
 	}
@@ -133,7 +131,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(false)
 		if err != nil {
-			log.Errorf("Error on startup - unloading beq %v", err)
+			log.Errorf("Error unloading beq on startup!! : %v", err)
 		}
 
 		// if its a show and you dont want beq enabled, exit
@@ -234,9 +232,19 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 	// ensure the client matches so it doesnt trigger from unwanted clients
 
 	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") == "" {
-		log.Debug("Event Router: Client UUID does not match filter")
+		log.Debug("Client UUID does not match enabled filter")
 		return
 	}
+
+	// if its a clip and you didnt enable support for it, return
+	if payload.Metadata.Type == clipTitle {
+		if !vip.GetBool("plex.enableTrailerSupport") {
+			log.Debug("Clip received but support not enabled")
+			return
+		}
+	}
+
+	log.Infof("Processing media type: %s", payload.Metadata.Type)
 
 	var codec string
 	var err error
@@ -285,7 +293,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 		mediaResume(vip, beqClient, haClient, payload, payload.Metadata.Type, codec, editionName)
 	case "media.scrobble":
 	default:
-		log.Infof("Event Router: Received unsupported event: %s", payload.Event)
+		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
 }
 
@@ -318,7 +326,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 // will change aspect ratio
 func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
-		
+
 		// if madvr enabled, only send a trigger via mqtt
 		// This needs to be triggered by MQTT in automation. This sends a pulse. The automation reads envy aspect ratio 5 sec later
 		if vip.GetBool("madvr.enabled") {

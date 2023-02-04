@@ -254,6 +254,8 @@ create file named config.json, paste this in, remove the comments after
         "port": "31245",
         // unused for now, whitelist your server IP
         "token": "PLACEHOLDER for future use",
+        // if you enable trailers before movies, it can process it like turn off lights. no BEQ 
+        "enableTrailerSupport": true || false
     },
     "ezbeq": {
         // note this will use slot1/config1. I don't see a good reason to support multiple slots since this is event driven
@@ -270,7 +272,7 @@ create file named config.json, paste this in, remove the comments after
         "notifyOnLoad": true,
         // name of the endpoint in HA to send notification to. Look at the notify service in HA to see endpoints
         "notifyEndpointName": "mobile_app_iphone",
-        // which author you want. None or blank will find the best match according to ezbeq application
+        // which author you want. none or blank will find the best match according to ezbeq application
         "preferredAuthor": "aron7awol" || "mobe1969" || "none" || ""
     },
     "main": {

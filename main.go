@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Debug("Started in debug mode")
+	log.Debug("Started in debug mode...")
 	mux := http.NewServeMux()
 
 	// you can copy this schema to create event handlers for any service
