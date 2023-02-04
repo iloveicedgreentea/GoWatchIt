@@ -270,8 +270,8 @@ create file named config.json, paste this in, remove the comments after
         "notifyOnLoad": true,
         // name of the endpoint in HA to send notification to. Look at the notify service in HA to see endpoints
         "notifyEndpointName": "mobile_app_iphone",
-        // which author you want. None will find the best match according to ezbeq application
-        "preferredAuthor": "aron7awol" || "mobe1969" || "none" || "author1,author2" || "some future authors name"
+        // which author you want. None or blank will find the best match according to ezbeq application
+        "preferredAuthor": "aron7awol" || "mobe1969" || "none" || ""
     },
     "main": {
         "listenPort": "9999"
