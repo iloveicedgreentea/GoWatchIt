@@ -208,7 +208,7 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 	var endpoint string
 	// done this way to make it easier to add future authors
 	switch preferredAuthor {
-	case "none", "":
+	case "None", "none", "":
 		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d", code, year)
 	default:
 		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, year, urlEncode(preferredAuthor))

@@ -50,6 +50,16 @@ func TestSearchCatalog(t *testing.T) {
 	assert.Equal("Extended", res.Edition)
 	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
 
+	res, err = c.searchCatalog("51497", 2011, "DTS-X", "", "Extended")
+	assert.NoError(err)
+	assert.Equal("Extended", res.Edition)
+	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
+
+	res, err = c.searchCatalog("51497", 2011, "DTS-X", "None", "Extended")
+	assert.NoError(err)
+	assert.Equal("Extended", res.Edition)
+	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
+
 	// 12 strong has multiple codecs AND authors, so good for testing
 	// return 7.1 version of aron7awol
 	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "none", "")
