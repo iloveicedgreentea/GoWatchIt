@@ -66,6 +66,16 @@ func parseMediaContainer(payload []byte) (models.MediaContainer, error) {
 	return data, nil
 }
 
+func parseSessionMediaContainer(payload []byte) (models.SessionMediaContainer, error) {
+	var data models.SessionMediaContainer
+	err := xml.Unmarshal(payload, &data)
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
+}
+
 // pass the path (/library/123) to the plex server
 func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
 	res, err := c.HTTPClient.Get(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
@@ -81,6 +91,31 @@ func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
 
 	return data, err
 }
+
+func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
+	// Get session object
+	res, err := c.getPlexReq("/status/sessions")
+	if err != nil {
+		return models.SessionMediaContainer{}, err
+	}
+	data, err := parseSessionMediaContainer(res)
+	if err != nil {
+		return models.SessionMediaContainer{}, err
+	}
+
+	return data, err
+}
+
+// TODO: use this for audio codec? on play
+// TODO: filter session playing based on uuid or something with multiple sessions?
+func (c *PlexClient) getCodecFromSession(data models.SessionMediaContainer) (string, error) {
+	sess, err := c.getRunningSession()
+	if err != nil {
+		return "", err
+	}
+	return sess.Video.Media.AudioCodec, nil
+}
+
 
 // send a request to Plex to get data about something
 func (c *PlexClient) GetMediaData(libraryKey string) (models.MediaContainer, error) {

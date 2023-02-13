@@ -41,10 +41,32 @@ func TestGetMediaData(t *testing.T) {
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
 
-	_, err := c.GetMediaData("/library/metadata/6262")
+	// no time to die
+	med, err := c.GetMediaData("/library/metadata/7278")
 	assert.NoError(t, err)
 
+	code, err := c.GetAudioCodec(med)
+	assert.NoError(t, err)
+	t.Log(code)
+
 }
+func TestGetCodecFromSession(t *testing.T) {
+	serverUrl := "http://192.168.88.56"
+	serverPrt := "32400"
+	c := NewClient(serverUrl, serverPrt)
+
+	// no time to die
+	sess, err := c.getRunningSession()
+	assert.NoError(t, err)
+	codec, err := c.getCodecFromSession(sess)
+	assert.NoError(t, err)
+
+	t.Log(codec)
+
+
+}
+
+
 
 type codecTest struct {
 	codec     string
