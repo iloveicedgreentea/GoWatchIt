@@ -63,10 +63,7 @@ func TestGetCodecFromSession(t *testing.T) {
 
 	t.Log(codec)
 
-
 }
-
-
 
 type codecTest struct {
 	codec     string
@@ -213,22 +210,23 @@ func TestGetImdbInfoAspect(t *testing.T) {
 
 // for dev only - get the entire table, ensure it can parse titles
 func TestGetImdbTechInfo(t *testing.T) {
-	t.Skip()
-
 	client := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &customTransport{http.DefaultTransport},
 	}
 	// assert := assert.New(t)
-	// test tenet to make sure loop works also
-	res, err := getImdbTechInfo("tt6723592", client)
+	// superbad
+	res, err := getImdbTechInfo("tt0829482", client)
+	// multple aspects tenet
+	// res, err := getImdbTechInfo("tt6723592", client)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, val := range res {
-		t.Log(parseImdbTableSchema(val))
+	// Test that pulled technical info titles match
+	expectedTitles := []string{"Runtime", "Sound mix", "Color", "Aspect ratio", "Camera", "Laboratory", "Film Length", "Negative Format", "Cinematographic Process", "Printed Film Format"}
+	for index, title := range expectedTitles {
+		assert.Equal(t, title, parseImdbTableSchema(res[index]))
 	}
-
 }
 
 // For dev only - gets a list of every audio codec present in library
