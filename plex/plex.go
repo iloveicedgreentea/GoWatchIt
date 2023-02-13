@@ -265,7 +265,6 @@ func imdbStoFloat64(s string) (r float64) {
 // http request to the tech info page
 func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
 	// use our slow client
-	// TODO: this is failing
 	resp, err := soup.GetWithClient(fmt.Sprintf("https://www.imdb.com/title/%s/technical", titleID), client)
 
 	if err != nil {
@@ -312,22 +311,24 @@ func parseImdbTableSchema(input soup.Root) string {
 }
 
 // return the ratios as float64 given a schema of ratios
-func parseImdbAspectSchema(input soup.Root) []float64 {
+func parseImdbAspectSchema(input []soup.Root) []float64 {
 	var aspects []float64
 	// get the items as text
-	text := input.FullText()
-	// split text by newline
-	htmlLines := strings.Split(text, " \n")
-	// get only the number
-	for _, s := range htmlLines {
-		// ignore empty strings
-		if len(s) > 8 {
-			aspects = append(aspects, imdbStoFloat64(s))
+	for _, aspect := range input {
+		text := aspect.FullText()
+		log.Debugf("parsed aspect text: %v", text)
+		// split text by newline
+		htmlLines := strings.Split(text, " \n")
+		// get only the number
+		for _, s := range htmlLines {
+			// ignore empty strings
+			if len(s) >= 8 {
+				aspects = append(aspects, imdbStoFloat64(s))
+			}
 		}
 	}
-	log.Debugf("discovered aspects: %v", aspects)
 	sort.Float64s(aspects)
-
+	log.Debugf("discovered aspects: %v", aspects)
 	return aspects
 }
 
@@ -381,11 +382,17 @@ func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error
 			// loop through and find all aspects
 			// the second element will be the data
 			// find the max ratio and return it - max because I would rather zoom to scope and have 16:9 shots cropped
-			aspects := parseImdbAspectSchema(val.FindAll("label")[0])
-			log.Debugf("Aspects found: %v", aspects)
-			log.Debug("finished searching")
+			// log.Debug(val.HTML())
+			// break
+			vals := val.FindAll("li", "class", "ipc-inline-list__item")
+			aspects := parseImdbAspectSchema(vals)
 			// return the maximum value in slice
-			return aspects[len(aspects)-1], nil
+			if len(aspects) > 1 {
+				return aspects[len(aspects)-1], nil
+			} else {
+				return aspects[0], nil
+			}
+			
 		}
 	}
 

@@ -142,6 +142,10 @@ func TestImdbTechInfo(t *testing.T) {
 	tests := []aspectTest{
 		// test each kind of aspect + variable aspect movies until Nolan gets with the times
 		{
+			Data:          testData{Name: "tenet", TitleID: "tt6723592"},
+			ExpectedValue: 2.39,
+		},
+		{
 			Data:          testData{Name: "matrix", TitleID: "tt0133093"},
 			ExpectedValue: 2.39,
 		},
@@ -156,11 +160,6 @@ func TestImdbTechInfo(t *testing.T) {
 		{
 			Data:          testData{Name: "theoffice", TitleID: "tt0386676"},
 			ExpectedValue: 1.78,
-		},
-		// variable aspect
-		{
-			Data:          testData{Name: "tenet", TitleID: "tt6723592"},
-			ExpectedValue: 2.39,
 		},
 		{
 			Data:          testData{Name: "ZSjusticleague", TitleID: "tt12361974"},
