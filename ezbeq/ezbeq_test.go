@@ -50,6 +50,13 @@ func TestSearchCatalog(t *testing.T) {
 	assert.Equal("Extended", res.Edition)
 	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
 
+	// Jung E
+	//{d37ffd6911686fa5c8bf1866d7b323a8f1d49998\n_4556 junge 2023 [DD+ Atmos] 1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0 0 843794}"
+	res, err = c.searchCatalog("843794", 2023, "DD+ Atmos", "none", "")
+	assert.NoError(err)
+	assert.Equal("", res.Edition)
+	assert.Equal("1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0", res.Digest)
+
 	res, err = c.searchCatalog("51497", 2011, "DTS-X", "", "Extended")
 	assert.NoError(err)
 	assert.Equal("Extended", res.Edition)

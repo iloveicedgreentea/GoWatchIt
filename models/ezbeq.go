@@ -2,13 +2,14 @@ package models
 
 type BeqCatalog struct {
 	ID         string   `json:"id"`
+	Title      string   `json:"title"`
 	SortTitle  string   `json:"sortTitle"`
 	Year       int      `json:"year"`
 	AudioTypes []string `json:"audioTypes"`
 	Digest     string   `json:"digest"`
 	MvAdjust   float64  `json:"mvAdjust"`
 	Edition    string   `json:"edition"`
-	MovieDbID string `json:"theMovieDB"`
+	MovieDbID  string   `json:"theMovieDB"`
 }
 
 type BeqDevices struct {
