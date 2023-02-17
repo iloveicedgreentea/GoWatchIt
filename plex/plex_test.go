@@ -75,6 +75,21 @@ func TestMapCodecs(t *testing.T) {
 	assert := assert.New(t)
 	tests := []codecTest{
 		{
+			codec:     "EAC3",
+			fullcodec: "EAC3",
+			expected:  "DD+",
+		},
+		{
+			codec:     "EAC3 5.1",
+			fullcodec: "German (German EAC3 5.1)",
+			expected:  "DD+ Atmos",
+		},
+		{
+			codec:     "DDP 5.1 Atmos",
+			fullcodec: "DDP 5.1 Atmos (Engelsk EAC3)",
+			expected:  "DD+ Atmos",
+		},
+		{
 			codec:     "English (TRUEHD 7.1)",
 			fullcodec: "Surround 7.1 (English TRUEHD)",
 			expected:  "AtmosMaybe",

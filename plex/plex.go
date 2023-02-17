@@ -117,7 +117,6 @@ func (c *PlexClient) getCodecFromSession(data models.SessionMediaContainer) (str
 	return sess.Video.Media.AudioCodec, nil
 }
 
-
 // send a request to Plex to get data about something
 func (c *PlexClient) GetMediaData(libraryKey string) (models.MediaContainer, error) {
 	res, err := c.getPlexReq(libraryKey)
@@ -137,10 +136,60 @@ func insensitiveContains(s string, sub string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
 }
 
+// check if its DD+ codec
+func containsDDP(s string) bool {
+	//English (EAC3 5.1) -> dd+ atmos?
+	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
+	// may not always be the case but easier to assume so
+	ddPlusNames := []string{"ddp", "eac3", "e-ac3", "dd+"}
+	for _, name := range ddPlusNames {
+		if insensitiveContains(strings.ToLower(s), name) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // map a plex to a beq catalog name
 func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
-	log.Debugf("Full codec from plex received: %v", codecExtendTitle)
+	log.Debugf("Codecs from plex received: %v, %v", codecTitle, codecExtendTitle)
+
+	// Titles are more likely to have atmos so check it first
+	// check if it contains atmos
+	atmosFlag := insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecTitle, "Atmos")
+
+	// check if contains DDP
+	ddpFlag := containsDDP(codecTitle) || containsDDP(codecExtendTitle)
+
+	log.Debugf("Atmos: %v - DD+: %v", atmosFlag, ddpFlag)
+	// if true and false, then Atmos
+	if atmosFlag && !ddpFlag {
+		return "Atmos"
+	}
+
+	// if true and true, DD+ Atmos
+	if atmosFlag && ddpFlag {
+		return "DD+ Atmos"
+	}
+
+	// Assume eac-3 5.1 is dd+ atmos since almost all metadata says so
+	if strings.Contains(codecExtendTitle, "5.1") && ddpFlag {
+		return "DD+ Atmos"
+	}
+
+	// if false and true, DD+
+	if !atmosFlag && ddpFlag {
+		return "DD+"
+	}
+
+	// if False and false, then check others
 	switch {
+	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata. This will get confirmed later
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
+		return "AtmosMaybe"
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
+		return "AtmosMaybe"
 	// DTS:X
 	case insensitiveContains(codecExtendTitle, "DTS:X") || insensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-X"
@@ -159,14 +208,6 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// TrueHD 6.1
 	case insensitiveContains(codecTitle, "TRUEHD 6.1"):
 		return "TrueHD 6.1"
-	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata
-	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
-		return "AtmosMaybe"
-	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
-		return "AtmosMaybe"
-	// some Atmos titles return True HD 7.1 annoyingly
-	case insensitiveContains(codecExtendTitle, "Atmos"):
-		return "Atmos"
 	// DTS HRA
 	case insensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
 		return "DTS-HD HR 7.1"
@@ -179,15 +220,7 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "LPCM 7.1"
 	case insensitiveContains(codecTitle, "LPCM 2.0"):
 		return "LPCM 2.0"
-	//DD+
-	//English (EAC3 5.1) -> dd+ atmos?
-	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
-	// may not always be the case but easier to assume so
-	case insensitiveContains(codecTitle, "EAC3 5.1"):
-		return "DD+ Atmos"
-	// probably not accurate, but what can you do
-	case insensitiveContains(codecTitle, "EAC3 Stereo"):
-		return "DD+"
+
 	// disabled because most movies report real atmos as tHD 7.1
 	// case strings.Contains(codecExtendTitle, "Surround 7.1") && strings.Contains(codecExtendTitle, "TRUEHD"):
 	// 	return "TrueHD 7.1"
@@ -392,7 +425,7 @@ func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error
 			} else {
 				return aspects[0], nil
 			}
-			
+
 		}
 	}
 
