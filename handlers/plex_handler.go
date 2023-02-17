@@ -319,7 +319,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 			return strings.Split(model.ID, "tmdb://")[1]
 		}
 	}
-
+	log.Error("TMDB id not found in Plex. ezBEQ will not work. Please check your metadata for this title!")
 	return ""
 }
 
