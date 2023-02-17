@@ -261,6 +261,10 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSearch bool, entryID string, mvAdjust float64, dryrunMode bool, preferredAuthor string, edition string, mediaType string) error {
+	if tmdb == "" {
+		return errors.New("tmdb is empty. Can't find a match")
+	}
+	
 	var err error
 	var catalog models.BeqCatalog
 
