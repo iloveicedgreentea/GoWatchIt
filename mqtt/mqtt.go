@@ -3,9 +3,12 @@ package mqtt
 import (
 	"time"
 
-	"github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/iloveicedgreentea/go-plex/logger"
 	"github.com/spf13/viper"
 )
+
+var log = logger.GetLogger()
 
 func connect(vip *viper.Viper, clientID string) (mqtt.Client, error) {
 	broker := vip.GetString("mqtt.url")
@@ -37,17 +40,22 @@ func Publish(vip *viper.Viper, payload []byte, topic string) error {
 
 	// if there is some error, retry up to attempts
 	for i := 0; i < attempts; i++ {
+		log.Debugf("Sending payload %v to topic %v", string(payload), topic)
 		token := c.Publish(topic, 1, false, payload)
 		err = token.Error()
+		log.Debugf("Error with sending MQTT: %v. Attemps: %v", err, i)
 		// sleep for 1 sec and try again
 		if err != nil {
-			time.Sleep(1*time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
-		token.WaitTimeout(10*time.Second)
+		// if this doesnt return true, it timed out
+		if !token.WaitTimeout(10 * time.Second) {
+			log.Debug("Timeout when waiting for mqtt token")
+			continue
+		}
 	}
-	
 
 	return nil
 }
