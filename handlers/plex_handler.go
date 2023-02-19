@@ -195,6 +195,11 @@ func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeass
 	}
 }
 
+func mediaScrobble(vip *viper.Viper) {
+	// trigger lights
+	go changeLight(vip, "on")
+}
+
 // getEditionName tries to extract the edition from plex or file name. Assumes you have well named files
 // Returned types, Unrated, Ultimate, Theatrical, Extended, Director, Criterion
 func getEditionName(data models.MediaContainer) string {
@@ -292,6 +297,8 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 		log.Debug("Event Router: media.resume received")
 		mediaResume(vip, beqClient, haClient, payload, payload.Metadata.Type, codec, editionName)
 	case "media.scrobble":
+		log.Debug("Scrobble received")
+		mediaScrobble(vip)
 	default:
 		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
