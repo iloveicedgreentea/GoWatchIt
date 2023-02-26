@@ -230,7 +230,7 @@ create file named config.json, paste this in, remove the comments after
         // Trigger functions to change the following
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
-        "triggerAvrMasterVolumeChangeOnEvent": true,
+        "triggerAvrMasterVolumeChangeOnEvent": true
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
@@ -251,9 +251,7 @@ create file named config.json, paste this in, remove the comments after
         // Must be UUID. Easy way to get it is running this in debug mode and then play a movie
         "deviceUUIDFilter": "",
         "url": "http://xyz",
-        "port": "31245",
-        // unused for now, whitelist your server IP
-        "token": "PLACEHOLDER for future use",
+        "port": "32400",
         // if you enable trailers before movies, it can process it like turn off lights. no BEQ 
         "enableTrailerSupport": true || false
     },

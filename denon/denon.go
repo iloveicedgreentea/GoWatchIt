@@ -1,9 +1,9 @@
 package denon
 
 import (
+	"bytes"
 	"fmt"
 	"time"
-	"bytes"
 
 	"github.com/iloveicedgreentea/go-plex/logger"
 	// "github.com/iloveicedgreentea/go-plex/models"
@@ -41,7 +41,7 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	time.Sleep(500*time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	// receive
 	var buffer [1]byte
 	p := buffer[:]
@@ -50,20 +50,22 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 	log.Debug("Receiving data")
 	// Read until carriage return
 	for {
+		// this function is weird, it will just read the length of the byte[] given, but block
+		// so you need to give it 1 length array and read 1 byte at a time
 		n, err := conn.Read(p) // will block if nothing else to send
 		if n > 0 {
 			data := p[:n]
 			// store val in final result
 			result = append(result, data[0])
 			// read response one at a time
-			// if char is 13 (CR) then break 
+			// if char is 13 (CR) then break
 			if bytes.Equal(data, []byte{13}) {
 				break
 			}
 		}
 
 		if err != nil {
-			break 
+			break
 		}
 	}
 
@@ -76,6 +78,8 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 	return string(result), nil
 }
 
-func (c *DenonClient) GetCodec() error {
-	return nil
+func (c *DenonClient) GetAudioMode() (string, error) {
+	return c.makeReq("MS?")
+	// TODO: map different codec types to ezbeq stuff like denond DD whateer == DD+, astmos, etc
+	// TODO: test with hitmans bodyguard
 }
