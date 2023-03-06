@@ -127,6 +127,8 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	go changeAspect(client, payload, vip)
 	go changeMasterVolume(vip, mediaType)
 
+	// TODO: function to check expected codec, poll avr directly
+
 	if vip.GetBool("ezbeq.enabled") {
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(false)
