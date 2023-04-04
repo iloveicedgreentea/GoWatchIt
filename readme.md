@@ -1,7 +1,5 @@
 # Plex Webhook Automation
 
-*In beta testing. Please monitor ezBEQ profiles*
-
 *Please read the readme start to finish*
 
 ## Features
