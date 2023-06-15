@@ -42,12 +42,12 @@ func NewClient(url, port string) (*BeqClient, error) {
 	// update client with latest metadata
 	err := c.GetStatus()
 	if err != nil {
-		return c, errors.New("rrror initializing beq client")
+		return c, errors.New("Error initializing beq client")
 	}
 	return c, nil
 }
 
-// GetStatus will get metadata from eqbeq and load into client
+// GetStatus will get metadata from ezbeq and load into client
 func (c *BeqClient) GetStatus() error {
 	var beqPayload models.BeqDevices
 
