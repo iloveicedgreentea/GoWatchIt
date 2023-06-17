@@ -182,7 +182,20 @@ func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeass
 		// get the tmdb id to match with ezbeq catalog
 		tmdb := getPlexMovieDb(payload)
 		// load beq with cache
-		err = beqClient.LoadBeqProfile(tmdb, payload.Metadata.Year, codec, true, beqClient.CurrentProfile, beqClient.MasterVolume, vip.GetBool("ezbeq.dryRun"), vip.GetString("ezbeq.preferredAuthor"), edition, mediaType)
+		err = beqClient.LoadBeqProfile(models.SearchRequest{
+			TMDB: tmdb,
+			Year: payload.Metadata.Year,
+			Codec: codec,
+			SkipSearch: true,
+			EntryID: beqClient.CurrentProfile,
+			MVAdjust: beqClient.MasterVolume,
+			DryrunMode: vip.GetBool("ezbeq.dryRun"),
+			PreferredAuthor: vip.GetString("ezbeq.preferredAuthor"),
+			Edition: edition,
+			MediaType: mediaType,
+			Devices: vip.GetStringSlice("ezbeq.devices"),
+			Slots: vip.GetIntSlice("ezbeq.slots"),
+		})
 		if err != nil {
 			log.Error(err)
 			return

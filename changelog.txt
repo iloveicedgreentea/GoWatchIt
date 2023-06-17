@@ -1,0 +1,6 @@
+6-14-23
+* check the readme example config for latest schema *
+Support multiple minidsp
+Support specifying a slot
+other speedups and improvements 
+

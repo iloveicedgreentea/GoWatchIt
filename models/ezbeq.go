@@ -1,5 +1,20 @@
 package models
 
+type SearchRequest struct {
+	TMDB            string
+	Year            int
+	Codec           string
+	PreferredAuthor string
+	Edition         string
+	SkipSearch      bool
+	EntryID         string
+	MVAdjust        float64
+	DryrunMode      bool
+	MediaType       string
+	Devices         []string
+	Slots           []int
+}
+
 type BeqCatalog struct {
 	ID         string   `json:"id"`
 	Title      string   `json:"title"`

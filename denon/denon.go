@@ -78,8 +78,10 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 	return string(result), nil
 }
 
+// TODO: normalize this with plex codec names
 func (c *DenonClient) GetAudioMode() (string, error) {
 	return c.makeReq("MS?")
+	// TODO: use this to get current audio mode
 	// TODO: map different codec types to ezbeq stuff like denond DD whateer == DD+, astmos, etc
 	// TODO: test with hitmans bodyguard
 }
