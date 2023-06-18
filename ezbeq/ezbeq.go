@@ -124,26 +124,26 @@ func (c *BeqClient) MakeCommand(payload []byte) error {
 
 // generic func for beq requests. Payload should be nil
 func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) ([]byte, error) {
-	var method string
 	var setHeader bool
 	var req *http.Request
 	var err error
-
+	
+	log.Debugf("Using method %s", methodType)
 	switch methodType {
 	case http.MethodPut:
 		setHeader = true
 	case http.MethodPatch:
 		setHeader = true
 	}
+	log.Debugf("Header is set to %v", setHeader)
 
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
-
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
-		req, err = http.NewRequest(method, url, nil)
+		req, err = http.NewRequest(methodType, url, nil)
 	} else {
-		req, err = http.NewRequest(method, url, bytes.NewBuffer(payload))
+		req, err = http.NewRequest(methodType, url, bytes.NewBuffer(payload))
 	}
 	if err != nil {
 		return []byte{}, err
@@ -152,7 +152,8 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-
+	log.Debugf("Using url %s", req.URL)
+	log.Debugf("Headers from req %v", req.Header)
 	// simple retry
 	res, err := c.makeCallWithRetry(req, 5, endpoint)
 
@@ -184,7 +185,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		status = res.StatusCode
 
 		if status != http.StatusOK {
-			return nil, fmt.Errorf("got status: %d", status)
+			return nil, fmt.Errorf("got status: %d -- error from body is %v", status, string(resp))
 		}
 
 		// don't retry for 404
@@ -267,6 +268,11 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 		return errors.New("tmdb is empty. Can't find a match")
 	}
 
+	// if no devices provided, error
+	if len(m.Devices) == 0 {
+		return fmt.Errorf("no ezbeq devices provided. Can't load")
+	}
+
 	var err error
 	var catalog models.BeqCatalog
 
@@ -321,7 +327,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 	if len(m.Slots) == 0 {
 		m.Slots = []int{1}
 	}
-	for k := range m.Slots {
+	for _, k := range m.Slots {
 		// append a slot to payload for each
 		payload.Slots = append(payload.Slots, models.SlotsV2{
 			ID:     strconv.Itoa(k),
@@ -336,10 +342,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 	if err != nil {
 		return err
 	}
-	// if no devices provided, error
-	if len(m.Devices) == 0 {
-		return fmt.Errorf("no ezbeq devices provided. Can't load")
-	}
+	
 	// write payload to each device
 	for _, v := range m.Devices {
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
@@ -363,8 +366,9 @@ func (c *BeqClient) UnloadBeqProfile(m models.SearchRequest) error {
 	log.Debug("Unloading ezBEQ profiles")
 
 	for _, v := range m.Devices {
-		for k := range m.Slots {
+		for _, k := range m.Slots {
 			endpoint := fmt.Sprintf("/api/1/devices/%s/filter/%v", v, k)
+			log.Debugf("using endpoint %s", endpoint)
 			_, err := c.makeReq(endpoint, nil, http.MethodDelete)
 			if err != nil {
 				return err

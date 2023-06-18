@@ -2,6 +2,7 @@ package ezbeq
 
 import (
 	// "strings"
+	"fmt"
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/models"
@@ -61,8 +62,9 @@ func TestSearchCatalog(t *testing.T) {
 				PreferredAuthor: "none",
 				Edition:         "Extended",
 			},
-			expectedEdition: "Extended",
-			expectedDigest:  "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedEdition:  "Extended",
+			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedMvAdjust: -1.5,
 		},
 		{
 			// Jung E
@@ -84,8 +86,9 @@ func TestSearchCatalog(t *testing.T) {
 				PreferredAuthor: "",
 				Edition:         "Extended",
 			},
-			expectedEdition: "Extended",
-			expectedDigest:  "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedEdition:  "Extended",
+			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedMvAdjust: -1.5,
 		},
 		{
 			m: models.SearchRequest{
@@ -95,8 +98,9 @@ func TestSearchCatalog(t *testing.T) {
 				PreferredAuthor: "None",
 				Edition:         "Extended",
 			},
-			expectedEdition: "Extended",
-			expectedDigest:  "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedEdition:  "Extended",
+			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedMvAdjust: -1.5,
 		},
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing
@@ -109,8 +113,8 @@ func TestSearchCatalog(t *testing.T) {
 				Edition:         "",
 			},
 			expectedEdition:  "",
-			expectedDigest:   "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
-			expectedMvAdjust: -1.5,
+			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedMvAdjust: -3.5,
 		},
 		{
 			// return 7.1 version of mobe1969
@@ -165,19 +169,6 @@ func TestSearchCatalog(t *testing.T) {
 			expectedMvAdjust: 0.0,
 		},
 		{
-			// should be blank
-			m: models.SearchRequest{
-				TMDB:            "ojdsfojnekfw",
-				Year:            2018,
-				Codec:           "DTS-HD MA 5.1",
-				PreferredAuthor: "none",
-				Edition:         "",
-			},
-			expectedEdition:  "",
-			expectedDigest:   "",
-			expectedMvAdjust: 0.0,
-		},
-		{
 			// should be TrueHD 7.1
 			m: models.SearchRequest{
 				TMDB:            "56292",
@@ -197,10 +188,19 @@ func TestSearchCatalog(t *testing.T) {
 		// should be TrueHD 7.1
 		res, err := c.searchCatalog(tc.m)
 		assert.NoError(err)
-		assert.Equal(tc.expectedDigest, res.Digest)
-		assert.Equal(tc.expectedEdition, res.Edition)
-		assert.Equal(tc.expectedMvAdjust, res.MvAdjust)
+		assert.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
+		assert.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
+		assert.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
 	}
+
+	_, err = c.searchCatalog(models.SearchRequest{
+		TMDB:            "ojdsfojnekfw",
+		Year:            2018,
+		Codec:           "DTS-HD MA 5.1",
+		PreferredAuthor: "none",
+		Edition:         "",
+	})
+	assert.Error(err)
 }
 
 // load and unload a profile. Watch ezbeq UI to confirm, but if it doesnt error it probably loaded fine
