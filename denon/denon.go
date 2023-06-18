@@ -3,6 +3,7 @@ package denon
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/iloveicedgreentea/go-plex/logger"
@@ -78,15 +79,9 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 	return string(result), nil
 }
 
-// TODO: normalize this with plex codec names
-func (c *DenonClient) GetAudioMode() (string, error) {
-	return c.makeReq("MS?")
-	// TODO: use this to get current audio mode
-	// TODO: map different codec types to ezbeq stuff like denond DD whateer == DD+, astmos, etc
-	// TODO: test with hitmans bodyguard
-}
+// GetAudioMode returns the current audio mode like atmos, stereo, etc
 func (c *DenonClient) GetCodec() (string, error) {
-	// TODO: find a way to see if its playing something first, maybe query plex?
-	return c.makeReq("MS?")
-
+	// TODO: create function to map the names to plex in audio check
+	mode, err := c.makeReq("MS?")
+	return strings.ToLower(mode[2:]), err
 }

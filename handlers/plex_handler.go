@@ -130,7 +130,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 
 	// call function to check expected codec on play
 	if vip.GetBool("ezbeq.useAVRCodecSearch") {
-		if !isExpectedCodecPlaying(denonClient) {
+		if !isExpectedCodecPlaying(denonClient, client, payload.Player.UUID) {
 			log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
 			if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
 				err := haClient.SendNotification("Expected codec is not playing! Please check your AVR and Plex settings!", vip.GetString("ezbeq.notifyEndpointName"))
@@ -281,6 +281,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 			log.Debugf("Event Router: Found edition: %s", editionName)
 
 			if useDenonCodec {
+				// TODO: wait for HDMI sync or something
 				codec, err = denonClient.GetCodec()
 				if err != nil {
 					log.Errorf("Event Router: error getting codec from denon, can't continue: %s", err)

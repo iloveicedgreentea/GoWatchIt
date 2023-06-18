@@ -110,10 +110,11 @@ func TestMapCodecs(t *testing.T) {
 			fullcodec: "DTS:X / 7.1 / 48 kHz / 4213 kbps / 24-bit (English DTS-HD MA)",
 			expected:  "DTS-X",
 		},
+		// TODO: verify other codecs without using extended display title
 	}
 	// execute each test
 	for _, test := range tests {
-		s := mapPlexToBeqAudioCodec(test.codec, test.fullcodec)
+		s := MapPlexToBeqAudioCodec(test.codec, test.fullcodec)
 		assert.Equal(test.expected, s)
 	}
 

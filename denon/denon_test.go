@@ -16,3 +16,12 @@ func TestMakeReq(t *testing.T) {
 	assert.Equal(t, "PWSTANDBY\r", res)
 
 }
+func TestGetAudioMode(t *testing.T) {
+	c := setupTest()
+
+	mode, err := c.GetCodec()
+	assert.NoError(t, err)
+	t.Log(mode)
+	assert.NotEmpty(t, mode)
+
+}

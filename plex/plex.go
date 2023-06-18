@@ -118,7 +118,7 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 		if video.Player.MachineIdentifier == uuid {
 			for _, stream := range video.Media.Part.Stream {
 				if stream.StreamType == "2" {
-					return mapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
+					return MapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
 				}
 			}
 		}
@@ -162,7 +162,7 @@ func containsDDP(s string) bool {
 }
 
 // mapPlexToBeqAudioCodec maps a plex codec metadata to a beq catalog codec name
-func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
+func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	log.Debugf("Codecs from plex received: %v, %v", codecTitle, codecExtendTitle)
 
 	// Titles are more likely to have atmos so check it first
@@ -247,7 +247,7 @@ func (c *PlexClient) GetAudioCodec(data models.MediaContainer) (string, error) {
 	// loop instead of index because of edge case with two or more video streams
 	for _, val := range data.Video.Media.Part.Stream {
 		if val.StreamType == "2" {
-			return mapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
+			return MapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
 		}
 	}
 
