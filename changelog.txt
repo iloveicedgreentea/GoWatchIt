@@ -3,4 +3,4 @@
 Support multiple minidsp - will get from API automatically
 Support specifying slot(s) to use
 other speedups and improvements 
-
+use Denon avr to get codec for BEQ profile matching (more accurate than plex)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/iloveicedgreentea/go-plex/denon"
 	"github.com/iloveicedgreentea/go-plex/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/logger"
@@ -122,13 +123,21 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 }
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m models.SearchRequest) {
+func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m models.SearchRequest) {
 	go changeLight(vip, "off")
 	go changeAspect(client, payload, vip)
 	go changeMasterVolume(vip, m.MediaType)
 
-	// TODO: function to check expected codec, poll avr directly
-
+	// call function to check expected codec on play
+	if !isExpectedCodecPlaying(denonClient) {
+		log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
+		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
+			err := haClient.SendNotification("Expected codec is not playing! Please check your AVR and Plex settings!", vip.GetString("ezbeq.notifyEndpointName"))
+			if err != nil {
+				log.Error()
+			}
+		}
+	}
 	if vip.GetBool("ezbeq.enabled") {
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(m)
@@ -232,7 +241,7 @@ func getEditionName(data models.MediaContainer) string {
 }
 
 // based on event type, determine what to do
-func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, vip *viper.Viper, model models.SearchRequest) {
+func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, vip *viper.Viper, model models.SearchRequest) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -260,7 +269,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 
 	if vip.GetBool("ezbeq.enabled") {
 		// make a call to plex to get the data based on key
-		data, err = client.GetMediaData(payload.Metadata.Key)
+		data, err = plexClient.GetMediaData(payload.Metadata.Key)
 		if err != nil {
 			log.Error(err)
 			return
@@ -270,14 +279,22 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 			log.Debugf("Event Router: Found edition: %s", editionName)
 
 			log.Debug("Event Router: Getting codec from data")
-			// TODO: get this from denon?
-			// TODO: add config option to use avr instead of plex, more accurate
-			codec, err = client.GetAudioCodec(data)
-			if err != nil {
-				log.Errorf("Event Router: error getting codec, can't continue: %s", err)
 
-				return
+			if useDenonCodec {
+				// TODO: need to make sure it gets the right one because if it doesnt HDMI sync first, codec will be wrong
+				codec, err = denonClient.GetCodec()
+				if err != nil {
+					log.Errorf("Event Router: error getting codec, can't continue: %s", err)
+					return
+				}
+			} else {
+				codec, err = plexClient.GetAudioCodec(data)
+				if err != nil {
+					log.Errorf("Event Router: error getting codec, can't continue: %s", err)
+					return
+				}
 			}
+
 		}
 	}
 
@@ -296,7 +313,7 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		mediaPlay(client, vip, beqClient, haClient, payload, model)
+		mediaPlay(plexClient, vip, beqClient, haClient, denonClient, payload, model)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
 		mediaStop(vip, beqClient, haClient, payload, model)
@@ -415,6 +432,8 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	var err error
 	var deviceNames []string
 	var model models.SearchRequest
+	var denonClient *denon.DenonClient
+	var useDenonCodec bool
 
 	// Server Info
 	plexClient := plex.NewClient(vip.GetString("plex.url"), vip.GetString("plex.port"))
@@ -450,9 +469,14 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		log.Info("Started with HA enabled")
 		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"))
 	}
+	if vip.GetBool("ezbeq.useAVRCodecSearch") {
+		log.Info("Started with AVR codec search enabled")
+		denonClient = denon.NewClient(vip.GetString("ezbeq.DenonIP"), vip.GetString("ezbeq.DenonPort"))
+		useDenonCodec = true
+	}
 	// block forever until closed so it will wait in background for work
 	for i := range plexChan {
 		// determine what to do
-		eventRouter(plexClient, beqClient, haClient, i, vip, model)
+		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, vip, model)
 	}
 }

@@ -273,7 +273,11 @@ create file named config.json, paste this in, remove the comments after
         // which author you want. none or blank will find the best match according to ezbeq application
         "preferredAuthor": "aron7awol" || "mobe1969" || "none" || "",
         // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
-        "slots": [1]
+        "slots": [1],
+        // use an IP enabled Denon AVR to get the codec instead of querying plex. This is faster and more reliable
+        "useAVRCodecSearch": true,
+        "DenonIP": "",
+        "DenonPort": "23",
     },
     "main": {
         "listenPort": "9999"

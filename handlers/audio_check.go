@@ -17,21 +17,23 @@ func getPlexAudioStream() (string, error) {
 	return "", nil
 }
 
-func isExpectedCodecPlaying(c denon.DenonClient) (bool, error) {
+func isExpectedCodecPlaying(c *denon.DenonClient) bool {
 	denonPlaying, err := c.GetAudioMode()
 	if err != nil {
-		return false, err
+		log.Errorf("Error getting denon audio mode: %s", err)
+		return false
 	}
 
 	plexPlaying, err := getPlexAudioStream()
 	if err != nil {
-		return false, err
+		log.Errorf("Error getting plex audio stream: %s", err)
+		return false
 	}
 
 	// compare the two
 	if denonPlaying != plexPlaying {
-		return false, nil
+		return false
 	}
 
-	return true, nil
+	return true
 }
