@@ -27,6 +27,7 @@ type BeqClient struct {
 	MuteStatus          bool
 	MasterVolume        float64
 	HTTPClient          http.Client
+	DeviceInfo          []models.BeqDevices
 }
 
 // return a new instance of a plex client
@@ -39,19 +40,20 @@ func NewClient(url, port string) (*BeqClient, error) {
 		},
 	}
 
-	// update client with latest metadata
+	// update client with latest metadata from minidsp
 	err := c.GetStatus()
 	if err != nil {
-		return c, errors.New("rrror initializing beq client")
+		return c, errors.New("error initializing beq client")
 	}
 	return c, nil
 }
 
 // GetStatus will get metadata from eqbeq and load into client
 func (c *BeqClient) GetStatus() error {
-	var beqPayload models.BeqDevices
+	beqPayload := make(map[string]models.BeqDevices)
 
-	res, err := c.makeReq("/api/1/devices", nil, "get")
+	// get all devices
+	res, err := c.makeReq("/api/2/devices", nil, http.MethodGet)
 	if err != nil {
 		return err
 	}
@@ -60,13 +62,12 @@ func (c *BeqClient) GetStatus() error {
 	if err != nil {
 		return err
 	}
-	if beqPayload.Name == "" {
-		return errors.New("could not get device name")
-	}
+	log.Debugf("BEQ payload: %#v", beqPayload)
 
-	c.DeviceName = beqPayload.Name
-	c.MuteStatus = beqPayload.Mute
-	c.MasterVolume = beqPayload.MasterVolume
+	// add devices to client, it returns as a map not list
+	for _, v := range beqPayload {
+		c.DeviceInfo = append(c.DeviceInfo, v)
+	}
 
 	return nil
 }
@@ -77,41 +78,48 @@ func urlEncode(s string) string {
 
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
-	endpoint := fmt.Sprintf("/api/1/devices/%s/mute", c.DeviceName)
-	log.Debugf("ezbeq: Using endpoint %s", endpoint)
-	var method string
-	switch status {
-	case true:
-		method = "put"
-	case false:
-		method = "delete"
-	}
-	log.Debugf("Running request with method: %s", method)
-	resp, err := c.makeReq(endpoint, nil, method)
-	if err != nil {
-		return err
-	}
+	for _, v := range c.DeviceInfo {
+		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
+		log.Debugf("ezbeq: Using endpoint %s", endpoint)
+		var method string
+		switch status {
+		case true:
+			method = http.MethodPut
+		case false:
+			method = http.MethodDelete
+		}
+		log.Debugf("Running request with method: %s", method)
+		resp, err := c.makeReq(endpoint, nil, method)
+		if err != nil {
+			return err
+		}
 
-	// ensure we changed the status
-	var out models.BeqDevices
-	err = json.Unmarshal(resp, &out)
-	if err != nil {
-		return err
+		// ensure we changed the status
+		var out models.BeqDevices
+		err = json.Unmarshal(resp, &out)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Current mute status is %v", out.Mute)
+		if out.Mute != status {
+			return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
+		}
 	}
-	log.Debugf("Current mute status is %v", out.Mute)
-	if out.Mute != status {
-		return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
-	}
-
 	return nil
 }
 
+// MakeCommand sends the command of payload
 func (c *BeqClient) MakeCommand(payload []byte) error {
-	endpoint := fmt.Sprintf("/api/1/devices/%s", c.DeviceName)
-	log.Debugf("ezbeq: Using endpoint %s", endpoint)
-	_, err := c.makeReq(endpoint, payload, "patch")
+	for _, v := range c.DeviceInfo {
+		endpoint := fmt.Sprintf("/api/1/devices/%s", v.Name)
+		log.Debugf("ezbeq: Using endpoint %s", endpoint)
+		_, err := c.makeReq(endpoint, payload, http.MethodPatch)
+		if err != nil {
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
 
 // generic func for beq requests. Payload should be nil
@@ -122,16 +130,10 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	var err error
 
 	switch methodType {
-	case "put":
-		method = http.MethodPut
+	case http.MethodPut:
 		setHeader = true
-	case "patch":
-		method = http.MethodPatch
+	case http.MethodPatch:
 		setHeader = true
-	case "delete":
-		method = http.MethodDelete
-	case "get":
-		method = http.MethodGet
 	}
 
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
@@ -216,7 +218,7 @@ func (c *BeqClient) searchCatalog(m models.SearchRequest) (models.BeqCatalog, er
 	log.Debugf("sending ezbeq search request to %s", endpoint)
 
 	var payload []models.BeqCatalog
-	res, err := c.makeReq(endpoint, nil, "get")
+	res, err := c.makeReq(endpoint, nil, http.MethodGet)
 	if err != nil {
 		return models.BeqCatalog{}, err
 	}
@@ -343,7 +345,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
 		log.Debugf("json payload %v", string(jsonPayload))
 		log.Debugf("using endpoint %s", endpoint)
-		_, err = c.makeReq(endpoint, jsonPayload, "patch")
+		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
 			log.Debugf("json payload %v", string(jsonPayload))
 			log.Debugf("using endpoint %s", endpoint)
@@ -352,6 +354,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 	}
 	return nil
 }
+
 // UnloadBeqProfile will unload all profiles from all devices
 func (c *BeqClient) UnloadBeqProfile(m models.SearchRequest) error {
 	if m.DryrunMode {
@@ -362,7 +365,7 @@ func (c *BeqClient) UnloadBeqProfile(m models.SearchRequest) error {
 	for _, v := range m.Devices {
 		for k := range m.Slots {
 			endpoint := fmt.Sprintf("/api/1/devices/%s/filter/%v", v, k)
-			_, err := c.makeReq(endpoint, nil, "delete")
+			_, err := c.makeReq(endpoint, nil, http.MethodDelete)
 			if err != nil {
 				return err
 			}

@@ -47,147 +47,147 @@ func TestSearchCatalog(t *testing.T) {
 
 	// list of testing structs
 	type testStruct struct {
-		m models.SearchRequest
+		m                               models.SearchRequest
 		expectedEdition, expectedDigest string
-		expectedMvAdjust float64
+		expectedMvAdjust                float64
 	}
 	tt := []testStruct{
-		{ 
+		{
 			// fast five extended
 			m: models.SearchRequest{
-				TMDB: "51497",
-				Year: 2011,
-				Codec: "DTS-X",
+				TMDB:            "51497",
+				Year:            2011,
+				Codec:           "DTS-X",
 				PreferredAuthor: "none",
-				Edition: "Extended",
+				Edition:         "Extended",
 			},
 			expectedEdition: "Extended",
-			expectedDigest: "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedDigest:  "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
 		},
 		{
 			// Jung E
 			m: models.SearchRequest{
-				TMDB: "843794",	
-				Year: 2023,
-				Codec: "DD+ Atmos",
+				TMDB:            "843794",
+				Year:            2023,
+				Codec:           "DD+ Atmos",
 				PreferredAuthor: "none",
-				Edition: "",
+				Edition:         "",
 			},
 			expectedEdition: "",
-			expectedDigest: "1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0",
+			expectedDigest:  "1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0",
 		},
 		{
 			m: models.SearchRequest{
-				TMDB: "51497",
-				Year: 2011,
-				Codec: "DTS-X",
+				TMDB:            "51497",
+				Year:            2011,
+				Codec:           "DTS-X",
 				PreferredAuthor: "",
-				Edition: "Extended",
+				Edition:         "Extended",
 			},
 			expectedEdition: "Extended",
-			expectedDigest: "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedDigest:  "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
 		},
 		{
 			m: models.SearchRequest{
-				TMDB: "51497",
-				Year: 2011,
-				Codec: "DTS-X",
+				TMDB:            "51497",
+				Year:            2011,
+				Codec:           "DTS-X",
 				PreferredAuthor: "None",
-				Edition: "Extended",
+				Edition:         "Extended",
 			},
 			expectedEdition: "Extended",
-			expectedDigest: "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedDigest:  "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
 		},
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing
 			// return 7.1 version of aron7awol
 			m: models.SearchRequest{
-				TMDB: "429351",
-				Year: 2018,
-				Codec: "DTS-HD MA 7.1",
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
 				PreferredAuthor: "none",
-				Edition: "",
+				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest: "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
+			expectedEdition:  "",
+			expectedDigest:   "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
 			expectedMvAdjust: -1.5,
 		},
 		{
 			// return 7.1 version of mobe1969
 			m: models.SearchRequest{
-				TMDB: "429351",
-				Year: 2018,
-				Codec: "DTS-HD MA 7.1",
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
 				PreferredAuthor: "mobe1969",
-				Edition: "",
+				Edition:         "",
 			},
 			expectedEdition: "",
-			expectedDigest: "d4ffd507ac9a6597c5039a67f587141ca866013787ed2c06fe9ef6a86f3e5534",
+			expectedDigest:  "d4ffd507ac9a6597c5039a67f587141ca866013787ed2c06fe9ef6a86f3e5534",
 		},
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing
 			// return 7.1 version of aron7awol
 			m: models.SearchRequest{
-				TMDB: "429351",
-				Year: 2018,
-				Codec: "DTS-HD MA 7.1",
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
 				PreferredAuthor: "aron7awol",
-				Edition: "",
+				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest: "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedEdition:  "",
+			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
 			expectedMvAdjust: -3.5,
 		},
 		{
 			// return 5.1 version of aron7awol
 			m: models.SearchRequest{
-				TMDB: "429351",
-				Year: 2018,
-				Codec: "DTS-HD MA 5.1",
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 5.1",
 				PreferredAuthor: "none",
-				Edition: "",
+				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest: "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
+			expectedEdition:  "",
+			expectedDigest:   "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
 			expectedMvAdjust: -1.5,
 		},
 		{
 			// return 5.1 version of aron7awol
 			m: models.SearchRequest{
-				TMDB: "547016",
-				Year: 2020,
-				Codec: "DD+ Atmos",
+				TMDB:            "547016",
+				Year:            2020,
+				Codec:           "DD+ Atmos",
 				PreferredAuthor: "none",
-				Edition: "",
+				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest: "f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d",
-			expectedMvAdjust: -0.0,
+			expectedEdition:  "",
+			expectedDigest:   "f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d",
+			expectedMvAdjust: 0.0,
 		},
 		{
 			// should be blank
 			m: models.SearchRequest{
-				TMDB: "ojdsfojnekfw",
-				Year: 2018,
-				Codec: "DTS-HD MA 5.1",
+				TMDB:            "ojdsfojnekfw",
+				Year:            2018,
+				Codec:           "DTS-HD MA 5.1",
 				PreferredAuthor: "none",
-				Edition: "",
+				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest: "",
+			expectedEdition:  "",
+			expectedDigest:   "",
 			expectedMvAdjust: 0.0,
 		},
 		{
 			// should be TrueHD 7.1
 			m: models.SearchRequest{
-				TMDB: "56292",
-				Year: 2011,
-				Codec: "TrueHD 7.1",
+				TMDB:            "56292",
+				Year:            2011,
+				Codec:           "TrueHD 7.1",
 				PreferredAuthor: "none",
-				Edition: "",
+				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest: "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
+			expectedEdition:  "",
+			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
 			expectedMvAdjust: 0.0,
 		},
 	}
@@ -218,58 +218,58 @@ func TestLoadProfile(t *testing.T) {
 	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
 	assert.NoError(err)
 
-	// fast five dts-x extended edition
-	err = c.LoadBeqProfile(models.SearchRequest{
-		TMDB: "51497",
-		Year: 2011,
-		Codec: "DTS-X",
-		SkipSearch: false,
-		EntryID: "bd4577c143e73851d6db0697e0940a8f34633eec\n_416",
-		MVAdjust: -1.5,
-		DryrunMode: false,
-		PreferredAuthor: "none",
-		Edition: "Extended",
-		MediaType: "movie",
-	})
-	assert.NoError(err)
+	tt := []models.SearchRequest{
+		{
+			TMDB:            "51497",
+			Year:            2011,
+			Codec:           "DTS-X",
+			SkipSearch:      false,
+			EntryID:         "bd4577c143e73851d6db0697e0940a8f34633eec\n_416",
+			MVAdjust:        -1.5,
+			DryrunMode:      false,
+			PreferredAuthor: "none",
+			Edition:         "Extended",
+			MediaType:       "movie",
+			Devices:         []string{"master", "master2"},
+			Slots:           []int{1},
+		},
+		{
+			TMDB:            "56292",
+			Year:            2011,
+			Codec:           "AtmosMaybe",
+			SkipSearch:      false,
+			EntryID:         "",
+			MVAdjust:        0.0,
+			DryrunMode:      false,
+			PreferredAuthor: "none",
+			Edition:         "",
+			MediaType:       "movie",
+			Devices:         []string{"master", "master2"},
+			Slots:           []int{1},
+		},
+		{
+			TMDB:            "399579",
+			Year:            2019,
+			Codec:           "AtmosMaybe",
+			SkipSearch:      false,
+			EntryID:         "",
+			MVAdjust:        0.0,
+			DryrunMode:      false,
+			PreferredAuthor: "none",
+			Edition:         "",
+			MediaType:       "movie",
+			Devices:         []string{"master", "master2"},
+			Slots:           []int{1},
+		},
+	}
 
-	err = c.UnloadBeqProfile(false)
-	assert.NoError(err)
+	for _, tc := range tt {
+		tc := tc
+		err = c.LoadBeqProfile(tc)
+		assert.NoError(err)
 
-	// MI: ghost proto truehd 7.1
-	err = c.LoadBeqProfile(models.SearchRequest{
-		TMDB: "56292",
-		Year: 2011,
-		Codec: "AtmosMaybe",
-		SkipSearch: false,
-		EntryID: "",
-		MVAdjust: 0.0,
-		DryrunMode: false,
-		PreferredAuthor: "none",
-		Edition: "",
-		MediaType: "movie",
-	})
-	assert.NoError(err)
-
-	err = c.UnloadBeqProfile(false)
-	assert.NoError(err)
-
-	// Alita is atmos but metadata says THD 7.1
-	err = c.LoadBeqProfile(models.SearchRequest{
-		TMDB: "399579",
-		Year: 2019,
-		Codec: "AtmosMaybe",
-		SkipSearch: false,
-		EntryID: "",
-		MVAdjust: 0.0,
-		DryrunMode: false,
-		PreferredAuthor: "none",
-		Edition: "",
-		MediaType: "movie",
-	})
-	assert.NoError(err)
-
-	err = c.UnloadBeqProfile(false)
-	assert.NoError(err)
+		err = c.UnloadBeqProfile(tc)
+		assert.NoError(err)
+	}
 
 }
