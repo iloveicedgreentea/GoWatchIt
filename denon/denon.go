@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iloveicedgreentea/go-plex/logger"
-	// "github.com/iloveicedgreentea/go-plex/models"
 	"github.com/reiver/go-telnet"
 )
 
@@ -81,7 +80,6 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 
 // GetAudioMode returns the current audio mode like atmos, stereo, etc
 func (c *DenonClient) GetCodec() (string, error) {
-	// TODO: create function to map the names to plex in audio check
 	mode, err := c.makeReq("MS?")
 	return strings.ToLower(mode[2:]), err
 }
