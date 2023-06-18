@@ -232,7 +232,7 @@ func getEditionName(data models.MediaContainer) string {
 }
 
 // based on event type, determine what to do
-func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, vip *viper.Viper) {
+func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, vip *viper.Viper, model models.SearchRequest) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -284,19 +284,12 @@ func eventRouter(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 	log.Debugf("Event Router: Received codec: %s", codec)
 	log.Debugf("Event Router: Got media type of: %s ", payload.Metadata.Type)
 
-	model := models.SearchRequest{
-		Year:  payload.Metadata.Year,
-		Codec: codec,
-		// TODO: skip?
-		SkipSearch:      true,
-		EntryID:         beqClient.CurrentProfile,
-		MVAdjust:        beqClient.MasterVolume,
-		DryrunMode:      vip.GetBool("ezbeq.dryRun"),
-		PreferredAuthor: vip.GetString("ezbeq.preferredAuthor"),
-		// TODO: get from beqclient
-		Devices: vip.GetStringSlice("ezbeq.devices"),
-		Slots:   vip.GetIntSlice("ezbeq.slots"),
-	}
+	model.Year = payload.Metadata.Year
+	model.Codec = codec
+	// this should be updated with every event
+	model.EntryID = beqClient.CurrentProfile
+	model.MVAdjust = beqClient.MasterVolume
+
 	log.Debugf("Event Router: Using search model: %v", model)
 	switch payload.Event {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
@@ -420,6 +413,8 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	var beqClient *ezbeq.BeqClient
 	var haClient *homeassistant.HomeAssistantClient
 	var err error
+	var deviceNames []string
+	var model models.SearchRequest
 
 	// Server Info
 	plexClient := plex.NewClient(vip.GetString("plex.url"), vip.GetString("plex.port"))
@@ -430,18 +425,27 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		if err != nil {
 			log.Error(err)
 		}
+
+		// get the device names from the API call
+		for _, k := range beqClient.DeviceInfo {
+			deviceNames = append(deviceNames, k.Name)
+		}
 		model := models.SearchRequest{
 			DryrunMode: vip.GetBool("ezbeq.dryRun"),
-			// TODO: get from beqclient
-			Devices: vip.GetStringSlice("ezbeq.devices"),
-			Slots:   vip.GetIntSlice("ezbeq.slots"),
+			Devices:    deviceNames,
+			Slots:      vip.GetIntSlice("ezbeq.slots"),
+			// try to skip by default
+			SkipSearch:      true,
+			PreferredAuthor: vip.GetString("ezbeq.preferredAuthor"),
 		}
+
 		// unload existing profile for safety
 		err = beqClient.UnloadBeqProfile(model)
 		if err != nil {
 			log.Errorf("Error on startup - unloading beq %v", err)
 		}
 	}
+
 	if vip.GetBool("homeAssistant.enabled") {
 		log.Info("Started with HA enabled")
 		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"))
@@ -449,6 +453,6 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	// block forever until closed so it will wait in background for work
 	for i := range plexChan {
 		// determine what to do
-		eventRouter(plexClient, beqClient, haClient, i, vip)
+		eventRouter(plexClient, beqClient, haClient, i, vip, model)
 	}
 }

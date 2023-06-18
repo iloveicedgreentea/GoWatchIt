@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/iloveicedgreentea/go-plex/denon"
-	"github.com/iloveicedgreentea/go-plex/logger"
 )
 
 // functions to ensure plex is not being stupid and transcoding atmos for no reason
@@ -14,6 +13,8 @@ import (
 func getPlexAudioStream() (string, error) {
 	// get file playing
 	// determine the codec like truehd, atmos, etc
+
+	return "", nil
 }
 
 func isExpectedCodecPlaying(c denon.DenonClient) (bool, error) {

@@ -272,8 +272,6 @@ create file named config.json, paste this in, remove the comments after
         "notifyEndpointName": "mobile_app_iphone",
         // which author you want. none or blank will find the best match according to ezbeq application
         "preferredAuthor": "aron7awol" || "mobe1969" || "none" || "",
-        // device name(s) that you set in your ezbeq.yml
-        "devices" : ["name1", "name2"],
         // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
         "slots": [1]
     },
