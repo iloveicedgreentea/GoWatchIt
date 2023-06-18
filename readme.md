@@ -275,6 +275,7 @@ create file named config.json, paste this in, remove the comments after
         // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
         "slots": [1],
         // use an IP enabled Denon AVR to get the codec instead of querying plex. This is faster and more reliable
+        // will also compare denon and plex to ensure correct codec is playing
         "useAVRCodecSearch": true,
         "DenonIP": "",
         "DenonPort": "23",

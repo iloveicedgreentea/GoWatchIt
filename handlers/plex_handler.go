@@ -129,12 +129,14 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	go changeMasterVolume(vip, m.MediaType)
 
 	// call function to check expected codec on play
-	if !isExpectedCodecPlaying(denonClient) {
-		log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
-		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-			err := haClient.SendNotification("Expected codec is not playing! Please check your AVR and Plex settings!", vip.GetString("ezbeq.notifyEndpointName"))
-			if err != nil {
-				log.Error()
+	if vip.GetBool("ezbeq.useAVRCodecSearch") {
+		if !isExpectedCodecPlaying(denonClient) {
+			log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
+			if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
+				err := haClient.SendNotification("Expected codec is not playing! Please check your AVR and Plex settings!", vip.GetString("ezbeq.notifyEndpointName"))
+				if err != nil {
+					log.Error()
+				}
 			}
 		}
 	}
@@ -279,18 +281,17 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 			log.Debugf("Event Router: Found edition: %s", editionName)
 
 			log.Debug("Event Router: Getting codec from data")
-
 			if useDenonCodec {
 				// TODO: need to make sure it gets the right one because if it doesnt HDMI sync first, codec will be wrong
 				codec, err = denonClient.GetCodec()
 				if err != nil {
-					log.Errorf("Event Router: error getting codec, can't continue: %s", err)
+					log.Errorf("Event Router: error getting codec from denon, can't continue: %s", err)
 					return
 				}
 			} else {
 				codec, err = plexClient.GetAudioCodec(data)
 				if err != nil {
-					log.Errorf("Event Router: error getting codec, can't continue: %s", err)
+					log.Errorf("Event Router: error getting codec from plex, can't continue: %s", err)
 					return
 				}
 			}
