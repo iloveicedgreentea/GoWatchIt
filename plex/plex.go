@@ -94,6 +94,7 @@ func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
 
 func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 	// Get session object
+
 	res, err := c.getPlexReq("/status/sessions")
 	if err != nil {
 		return models.SessionMediaContainer{}, err
@@ -106,15 +107,20 @@ func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 	return data, err
 }
 
-// TODO: use this for audio codec? on play
-// TODO: filter session playing based on uuid or something with multiple sessions?
-// TODO: test multiple streams at once
-func (c *PlexClient) getCodecFromSession(data models.SessionMediaContainer) (string, error) {
+// GetCodecFromSession gets the codec from a running session
+func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 	sess, err := c.getRunningSession()
 	if err != nil {
 		return "", err
 	}
-	return sess.Video.Media.AudioCodec, nil
+	// filter by uuid
+	for _, video := range sess.Video {
+		if video.Player.MachineIdentifier == uuid {
+			return video.Media.AudioCodec, nil
+		}
+	}
+
+	return "", fmt.Errorf("error getting codec. no session found with uuid %s", uuid)
 }
 
 // send a request to Plex to get data about something

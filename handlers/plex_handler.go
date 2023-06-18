@@ -273,29 +273,28 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 		// make a call to plex to get the data based on key
 		data, err = plexClient.GetMediaData(payload.Metadata.Key)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("Error getting media data from plex: %s", err)
 			return
 		} else {
 			// get the edition name
 			editionName = getEditionName(data)
 			log.Debugf("Event Router: Found edition: %s", editionName)
 
-			log.Debug("Event Router: Getting codec from data")
 			if useDenonCodec {
-				// TODO: need to make sure it gets the right one because if it doesnt HDMI sync first, codec will be wrong
 				codec, err = denonClient.GetCodec()
 				if err != nil {
 					log.Errorf("Event Router: error getting codec from denon, can't continue: %s", err)
 					return
 				}
 			} else {
-				codec, err = plexClient.GetAudioCodec(data)
+				codec, err = plexClient.GetCodecFromSession(clientUUID)
 				if err != nil {
 					log.Errorf("Event Router: error getting codec from plex, can't continue: %s", err)
 					return
 				}
 			}
 
+			log.Debugf("Event Router: Found codec: %s", codec)
 		}
 	}
 

@@ -86,8 +86,7 @@ func (c *DenonClient) GetAudioMode() (string, error) {
 	// TODO: test with hitmans bodyguard
 }
 func (c *DenonClient) GetCodec() (string, error) {
+	// TODO: find a way to see if its playing something first, maybe query plex?
 	return c.makeReq("MS?")
-	// TODO: use this to get current audio mode
-	// TODO: map different codec types to ezbeq stuff like denond DD whateer == DD+, astmos, etc
-	// TODO: test with hitmans bodyguard
+
 }

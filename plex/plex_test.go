@@ -55,14 +55,10 @@ func TestGetCodecFromSession(t *testing.T) {
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
 
-	// no time to die
-	sess, err := c.getRunningSession()
-	assert.NoError(t, err)
-	codec, err := c.getCodecFromSession(sess)
+	codec, err := c.GetCodecFromSession("21508E68-F074-46BD-B307-097F77EB0A05")
 	assert.NoError(t, err)
 
 	t.Log(codec)
-
 }
 
 type codecTest struct {

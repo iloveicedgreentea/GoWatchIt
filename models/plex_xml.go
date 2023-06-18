@@ -246,7 +246,7 @@ type SessionMediaContainer struct {
 	XMLName xml.Name `xml:"MediaContainer"`
 	Text    string   `xml:",chardata"`
 	Size    string   `xml:"size,attr"`
-	Video   struct {
+	Video   []struct {
 		Text                  string `xml:",chardata"`
 		AddedAt               string `xml:"addedAt,attr"`
 		Art                   string `xml:"art,attr"`
