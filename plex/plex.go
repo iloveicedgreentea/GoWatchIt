@@ -116,7 +116,11 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 	// filter by uuid
 	for _, video := range sess.Video {
 		if video.Player.MachineIdentifier == uuid {
-			return video.Media.AudioCodec, nil
+			for _, stream := range video.Media.Part.Stream {
+				if stream.StreamType == "2" {
+					return mapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
+				}
+			}
 		}
 	}
 
@@ -157,7 +161,7 @@ func containsDDP(s string) bool {
 	return false
 }
 
-// map a plex to a beq catalog name
+// mapPlexToBeqAudioCodec maps a plex codec metadata to a beq catalog codec name
 func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	log.Debugf("Codecs from plex received: %v, %v", codecTitle, codecExtendTitle)
 
@@ -226,10 +230,10 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "LPCM 7.1"
 	case insensitiveContains(codecTitle, "LPCM 2.0"):
 		return "LPCM 2.0"
-
-	// disabled because most movies report real atmos as tHD 7.1
-	// case strings.Contains(codecExtendTitle, "Surround 7.1") && strings.Contains(codecExtendTitle, "TRUEHD"):
-	// 	return "TrueHD 7.1"
+	case insensitiveContains(codecTitle, "AAC Stereo"):
+		return "AAC 2.0"
+	case insensitiveContains(codecTitle, "AC3 5.1") || insensitiveContains(codecTitle, "EAC3 5.1"):
+		return "AC3 5.1"
 	default:
 		return "Empty"
 	}

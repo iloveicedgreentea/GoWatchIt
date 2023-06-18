@@ -55,7 +55,7 @@ func TestGetCodecFromSession(t *testing.T) {
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
 
-	codec, err := c.GetCodecFromSession("21508E68-F074-46BD-B307-097F77EB0A05")
+	codec, err := c.GetCodecFromSession("7263B056-FE3F-4E23-BC4F-1F7D9A4230DF")
 	assert.NoError(t, err)
 
 	t.Log(codec)
