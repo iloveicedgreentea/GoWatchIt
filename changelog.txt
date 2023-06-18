@@ -1,5 +1,6 @@
 6-14-23
 * check the readme example config for latest schema *
+enableTrailerSupport -> run actions when playing trailers
 Support multiple minidsp - will get from API automatically
 Support specifying slot(s) to use
 other speedups and improvements 
