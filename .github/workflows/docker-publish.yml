@@ -11,7 +11,7 @@ on:
     # Publish semver tags as releases.
     tags: ["v*.*.*"]
   pull_request:
-    branches: ["master", "develop"]
+    branches: ["master", "develop", "clip_support"]
     
 
 env:
