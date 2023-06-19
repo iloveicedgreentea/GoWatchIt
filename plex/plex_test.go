@@ -41,9 +41,24 @@ func TestGetMediaData(t *testing.T) {
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
 
-	_, err := c.GetMediaData("/library/metadata/6262")
+	// no time to die
+	med, err := c.GetMediaData("/library/metadata/7278")
 	assert.NoError(t, err)
 
+	code, err := c.GetAudioCodec(med)
+	assert.NoError(t, err)
+	t.Log(code)
+
+}
+func TestGetCodecFromSession(t *testing.T) {
+	serverUrl := "http://192.168.88.56"
+	serverPrt := "32400"
+	c := NewClient(serverUrl, serverPrt)
+
+	codec, err := c.GetCodecFromSession("7263B056-FE3F-4E23-BC4F-1F7D9A4230DF")
+	assert.NoError(t, err)
+
+	t.Log(codec)
 }
 
 type codecTest struct {
@@ -55,6 +70,21 @@ type codecTest struct {
 func TestMapCodecs(t *testing.T) {
 	assert := assert.New(t)
 	tests := []codecTest{
+		{
+			codec:     "EAC3",
+			fullcodec: "EAC3",
+			expected:  "DD+",
+		},
+		{
+			codec:     "EAC3 5.1",
+			fullcodec: "German (German EAC3 5.1)",
+			expected:  "DD+ Atmos",
+		},
+		{
+			codec:     "DDP 5.1 Atmos",
+			fullcodec: "DDP 5.1 Atmos (Engelsk EAC3)",
+			expected:  "DD+ Atmos",
+		},
 		{
 			codec:     "English (TRUEHD 7.1)",
 			fullcodec: "Surround 7.1 (English TRUEHD)",
@@ -80,10 +110,11 @@ func TestMapCodecs(t *testing.T) {
 			fullcodec: "DTS:X / 7.1 / 48 kHz / 4213 kbps / 24-bit (English DTS-HD MA)",
 			expected:  "DTS-X",
 		},
+		// TODO: verify other codecs without using extended display title
 	}
 	// execute each test
 	for _, test := range tests {
-		s := mapPlexToBeqAudioCodec(test.codec, test.fullcodec)
+		s := MapPlexToBeqAudioCodec(test.codec, test.fullcodec)
 		assert.Equal(test.expected, s)
 	}
 
@@ -123,6 +154,10 @@ func TestImdbTechInfo(t *testing.T) {
 	tests := []aspectTest{
 		// test each kind of aspect + variable aspect movies until Nolan gets with the times
 		{
+			Data:          testData{Name: "tenet", TitleID: "tt6723592"},
+			ExpectedValue: 2.39,
+		},
+		{
 			Data:          testData{Name: "matrix", TitleID: "tt0133093"},
 			ExpectedValue: 2.39,
 		},
@@ -137,11 +172,6 @@ func TestImdbTechInfo(t *testing.T) {
 		{
 			Data:          testData{Name: "theoffice", TitleID: "tt0386676"},
 			ExpectedValue: 1.78,
-		},
-		// variable aspect
-		{
-			Data:          testData{Name: "tenet", TitleID: "tt6723592"},
-			ExpectedValue: 2.39,
 		},
 		{
 			Data:          testData{Name: "ZSjusticleague", TitleID: "tt12361974"},
@@ -191,22 +221,23 @@ func TestGetImdbInfoAspect(t *testing.T) {
 
 // for dev only - get the entire table, ensure it can parse titles
 func TestGetImdbTechInfo(t *testing.T) {
-	t.Skip()
-
 	client := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &customTransport{http.DefaultTransport},
 	}
 	// assert := assert.New(t)
-	// test tenet to make sure loop works also
-	res, err := getImdbTechInfo("tt6723592", client)
+	// superbad
+	res, err := getImdbTechInfo("tt0829482", client)
+	// multple aspects tenet
+	// res, err := getImdbTechInfo("tt6723592", client)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, val := range res {
-		t.Log(parseImdbTableSchema(val))
+	// Test that pulled technical info titles match
+	expectedTitles := []string{"Runtime", "Sound mix", "Color", "Aspect ratio", "Camera", "Laboratory", "Film Length", "Negative Format", "Cinematographic Process", "Printed Film Format"}
+	for index, title := range expectedTitles {
+		assert.Equal(t, title, parseImdbTableSchema(res[index]))
 	}
-
 }
 
 // For dev only - gets a list of every audio codec present in library

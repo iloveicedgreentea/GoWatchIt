@@ -228,7 +228,7 @@ create file named config.json, paste this in, remove the comments after
         // Trigger functions to change the following
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
-        "triggerAvrMasterVolumeChangeOnEvent": true,
+        "triggerAvrMasterVolumeChangeOnEvent": true
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
@@ -249,9 +249,9 @@ create file named config.json, paste this in, remove the comments after
         // Must be UUID. Easy way to get it is running this in debug mode and then play a movie
         "deviceUUIDFilter": "",
         "url": "http://xyz",
-        "port": "31245",
-        // unused for now, whitelist your server IP
-        "token": "PLACEHOLDER for future use",
+        "port": "32400",
+        // if you enable trailers before movies, it can process it like turn off lights. no BEQ 
+        "enableTrailerSupport": true || false
     },
     "ezbeq": {
         // note this will use slot1/config1. I don't see a good reason to support multiple slots since this is event driven
@@ -268,8 +268,16 @@ create file named config.json, paste this in, remove the comments after
         "notifyOnLoad": true,
         // name of the endpoint in HA to send notification to. Look at the notify service in HA to see endpoints
         "notifyEndpointName": "mobile_app_iphone",
-        // which author you want. None or blank will find the best match according to ezbeq application
-        "preferredAuthor": "aron7awol" || "mobe1969" || "none" || ""
+        // which author you want. none or blank will find the best match according to ezbeq application
+        "preferredAuthor": "aron7awol" || "mobe1969" || "other supported author" || "",
+        // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
+        "slots": [1],
+        // use an IP enabled Denon AVR to get the codec instead of querying plex. This might be more reliable
+        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug)
+        // this is in beta. 
+        "useAVRCodecSearch": false,
+        "DenonIP": "",
+        "DenonPort": "23",
     },
     "main": {
         "listenPort": "9999"

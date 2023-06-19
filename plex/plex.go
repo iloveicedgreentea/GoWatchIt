@@ -66,6 +66,16 @@ func parseMediaContainer(payload []byte) (models.MediaContainer, error) {
 	return data, nil
 }
 
+func parseSessionMediaContainer(payload []byte) (models.SessionMediaContainer, error) {
+	var data models.SessionMediaContainer
+	err := xml.Unmarshal(payload, &data)
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
+}
+
 // pass the path (/library/123) to the plex server
 func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
 	res, err := c.HTTPClient.Get(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
@@ -80,6 +90,41 @@ func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
 	defer res.Body.Close()
 
 	return data, err
+}
+
+func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
+	// Get session object
+
+	res, err := c.getPlexReq("/status/sessions")
+	if err != nil {
+		return models.SessionMediaContainer{}, err
+	}
+	data, err := parseSessionMediaContainer(res)
+	if err != nil {
+		return models.SessionMediaContainer{}, err
+	}
+
+	return data, err
+}
+
+// GetCodecFromSession gets the codec from a running session
+func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
+	sess, err := c.getRunningSession()
+	if err != nil {
+		return "", err
+	}
+	// filter by uuid
+	for _, video := range sess.Video {
+		if video.Player.MachineIdentifier == uuid {
+			for _, stream := range video.Media.Part.Stream {
+				if stream.StreamType == "2" {
+					return MapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("error getting codec. no session found with uuid %s", uuid)
 }
 
 // send a request to Plex to get data about something
@@ -101,10 +146,60 @@ func insensitiveContains(s string, sub string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
 }
 
-// map a plex to a beq catalog name
-func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
-	log.Debugf("Full codec from plex received: %v", codecExtendTitle)
+// check if its DD+ codec
+func containsDDP(s string) bool {
+	//English (EAC3 5.1) -> dd+ atmos?
+	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
+	// may not always be the case but easier to assume so
+	ddPlusNames := []string{"ddp", "eac3", "e-ac3", "dd+"}
+	for _, name := range ddPlusNames {
+		if insensitiveContains(strings.ToLower(s), name) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// mapPlexToBeqAudioCodec maps a plex codec metadata to a beq catalog codec name
+func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
+	log.Debugf("Codecs from plex received: %v, %v", codecTitle, codecExtendTitle)
+
+	// Titles are more likely to have atmos so check it first
+	// check if it contains atmos
+	atmosFlag := insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecTitle, "Atmos")
+
+	// check if contains DDP
+	ddpFlag := containsDDP(codecTitle) || containsDDP(codecExtendTitle)
+
+	log.Debugf("Atmos: %v - DD+: %v", atmosFlag, ddpFlag)
+	// if true and false, then Atmos
+	if atmosFlag && !ddpFlag {
+		return "Atmos"
+	}
+
+	// if true and true, DD+ Atmos
+	if atmosFlag && ddpFlag {
+		return "DD+ Atmos"
+	}
+
+	// Assume eac-3 5.1 is dd+ atmos since almost all metadata says so
+	if strings.Contains(codecExtendTitle, "5.1") && ddpFlag {
+		return "DD+ Atmos"
+	}
+
+	// if false and true, DD+
+	if !atmosFlag && ddpFlag {
+		return "DD+"
+	}
+
+	// if False and false, then check others
 	switch {
+	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata. This will get confirmed later
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
+		return "AtmosMaybe"
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
+		return "AtmosMaybe"
 	// DTS:X
 	case insensitiveContains(codecExtendTitle, "DTS:X") || insensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-X"
@@ -123,14 +218,6 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// TrueHD 6.1
 	case insensitiveContains(codecTitle, "TRUEHD 6.1"):
 		return "TrueHD 6.1"
-	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata
-	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
-		return "AtmosMaybe"
-	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
-		return "AtmosMaybe"
-	// some Atmos titles return True HD 7.1 annoyingly
-	case insensitiveContains(codecExtendTitle, "Atmos"):
-		return "Atmos"
 	// DTS HRA
 	case insensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
 		return "DTS-HD HR 7.1"
@@ -143,18 +230,10 @@ func mapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "LPCM 7.1"
 	case insensitiveContains(codecTitle, "LPCM 2.0"):
 		return "LPCM 2.0"
-	//DD+
-	//English (EAC3 5.1) -> dd+ atmos?
-	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
-	// may not always be the case but easier to assume so
-	case insensitiveContains(codecTitle, "EAC3 5.1"):
-		return "DD+ Atmos"
-	// probably not accurate, but what can you do
-	case insensitiveContains(codecTitle, "EAC3 Stereo"):
-		return "DD+"
-	// disabled because most movies report real atmos as tHD 7.1
-	// case strings.Contains(codecExtendTitle, "Surround 7.1") && strings.Contains(codecExtendTitle, "TRUEHD"):
-	// 	return "TrueHD 7.1"
+	case insensitiveContains(codecTitle, "AAC Stereo"):
+		return "AAC 2.0"
+	case insensitiveContains(codecTitle, "AC3 5.1") || insensitiveContains(codecTitle, "EAC3 5.1"):
+		return "AC3 5.1"
 	default:
 		return "Empty"
 	}
@@ -168,7 +247,7 @@ func (c *PlexClient) GetAudioCodec(data models.MediaContainer) (string, error) {
 	// loop instead of index because of edge case with two or more video streams
 	for _, val := range data.Video.Media.Part.Stream {
 		if val.StreamType == "2" {
-			return mapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
+			return MapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
 		}
 	}
 
@@ -241,46 +320,58 @@ func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
 	docs := soup.HTMLParse(resp)
 
 	// the page uses tr/td to display the info
-	techSoup := docs.Find("div", "id", "technical_content")
+	techSoup := docs.Find("ul", "class", "ipc-metadata-list--base")
 
 	// catch nil pointer dereference
 	if techSoup.Pointer == nil {
+		log.Error("error getting list of technical items from imdb")
 		return []soup.Root{}, techSoup.Error
 	}
-	res := techSoup.Find("table").FindAll("tr")
+	res := techSoup.FindAll("li", "class", "ipc-metadata-list__item")
 
 	return res, nil
 }
 
 // return the table name given a soup.Root schema
 func parseImdbTableSchema(input soup.Root) string {
-	//table schema:
-	// <tr class="odd">
-	// 	<td class="label"> Runtime </td>
-	// 	<td>
-	// 			2 hr 30 min (150 min)
-	// 	</td>
-	// </tr>
-	return strings.TrimSpace(input.Find("td", "class", "label").Text())
+	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item">
+	//  <button class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Runtime</button>
+	//     <div class="ipc-metadata-list-item__content-container">
+	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
+	//             role="presentation">
+	//             <li role="presentation" class="ipc-inline-list__item"><label
+	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
+	//                     for="_blank">2h 30m</label><span class="ipc-metadata-list-item__list-content-item--subText">(150
+	//                     min)</span></li>
+	//         </ul>
+	//     </div>
+	// 	</li>
+	res := input.Find("button", "class", "ipc-metadata-list-item__label")
+	if res.Pointer == nil {
+		return "nil"
+	}
+	return strings.TrimSpace(res.Text())
 }
 
 // return the ratios as float64 given a schema of ratios
-func parseImdbAspectSchema(input soup.Root) []float64 {
+func parseImdbAspectSchema(input []soup.Root) []float64 {
 	var aspects []float64
 	// get the items as text
-	text := input.FullText()
-	// split text by newline
-	htmlLines := strings.Split(text, " \n")
-	// get only the number
-	for _, s := range htmlLines {
-		// ignore empty strings
-		if len(s) > 8 {
-			aspects = append(aspects, imdbStoFloat64(s))
+	for _, aspect := range input {
+		text := aspect.FullText()
+		log.Debugf("parsed aspect text: %v", text)
+		// split text by newline
+		htmlLines := strings.Split(text, " \n")
+		// get only the number
+		for _, s := range htmlLines {
+			// ignore empty strings
+			if len(s) >= 8 {
+				aspects = append(aspects, imdbStoFloat64(s))
+			}
 		}
 	}
-	log.Debugf("discovered aspects: %v", aspects)
 	sort.Float64s(aspects)
-
+	log.Debugf("discovered aspects: %v", aspects)
 	return aspects
 }
 
@@ -300,47 +391,51 @@ func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error
 	}
 
 	// schema
-	// 	<td class="label"> Aspect Ratio </td>
-	//     <td>
-	//         1.43 : 1
-	//         (IMAX 70 mm and Laser: some scenes)
-	//          <br/>
-	//         1.78 : 1
-	//         (some scenes: IMAX Blu-ray)
-	//          <br/>
-	//         1.90 : 1
-	//         (Digital IMAX: some scenes)
-	//          <br/>
-	//         2.20 : 1
-	//         (70 mm and Digital)
-	//          <br/>
-	//         2.39 : 1
-	//         (35 mm)
-
-	//     </td>
-	//   </tr>
+	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item"><button
+	//         class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Aspect ratio</button>
+	//     <div class="ipc-metadata-list-item__content-container">
+	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
+	//             role="presentation">
+	//             <li role="presentation" class="ipc-inline-list__item"><label
+	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
+	//                     for="_blank">1.85 : 1</label></li>
+	//         </ul>
+	//     </div>
+	// </li>
 	for _, val := range res {
 		if val.Pointer == nil {
 			return 0, val.Error
 		}
 
 		tableName := parseImdbTableSchema(val)
+		log.Debugf("Table name: %s", tableName)
+		// imdb has intentional anti-scraping html
+		if tableName == "nil" {
+			continue
+		}
 		// loop through and search until we get to "camera", its after AR so we can exit faster
 		if tableName == "Camera" {
 			break
 		}
 		// if its not camera or AR, keep searching
-		if tableName != "Aspect Ratio" {
-			continue
-		}
-		if tableName == "Aspect Ratio" {
+		// if tableName != "Aspect Ratio" {
+		// 	continue
+		// }
+		if tableName == "Aspect ratio" {
 			// loop through and find all aspects
 			// the second element will be the data
 			// find the max ratio and return it - max because I would rather zoom to scope and have 16:9 shots cropped
-			aspects := parseImdbAspectSchema(val.FindAll("td")[1])
-			log.Debug("finished searching")
+			// log.Debug(val.HTML())
+			// break
+			vals := val.FindAll("li", "class", "ipc-inline-list__item")
+			aspects := parseImdbAspectSchema(vals)
 			// return the maximum value in slice
-			return aspects[len(aspects)-1], nil
+			if len(aspects) > 1 {
+				return aspects[len(aspects)-1], nil
+			} else {
+				return aspects[0], nil
+			}
+
 		}
 	}
 

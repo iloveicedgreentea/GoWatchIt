@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,13 +21,13 @@ var log = logger.GetLogger()
 type BeqClient struct {
 	ServerURL           string
 	Port                string
-	DeviceName          string
 	CurrentProfile      string
 	CurrentMasterVolume float64
 	CurrentMediaType    string
 	MuteStatus          bool
 	MasterVolume        float64
 	HTTPClient          http.Client
+	DeviceInfo          []models.BeqDevices
 }
 
 // return a new instance of a plex client
@@ -39,19 +40,20 @@ func NewClient(url, port string) (*BeqClient, error) {
 		},
 	}
 
-	// update client with latest metadata
+	// update client with latest metadata from minidsp
 	err := c.GetStatus()
 	if err != nil {
-		return c, errors.New("rrror initializing beq client")
+		return c, errors.New("error initializing beq client")
 	}
 	return c, nil
 }
 
 // GetStatus will get metadata from eqbeq and load into client
 func (c *BeqClient) GetStatus() error {
-	var beqPayload models.BeqDevices
+	beqPayload := make(map[string]models.BeqDevices)
 
-	res, err := c.makeReq("/api/1/devices", nil, "get")
+	// get all devices
+	res, err := c.makeReq("/api/2/devices", nil, http.MethodGet)
 	if err != nil {
 		return err
 	}
@@ -60,13 +62,12 @@ func (c *BeqClient) GetStatus() error {
 	if err != nil {
 		return err
 	}
-	if beqPayload.Name == "" {
-		return errors.New("could not get device name")
-	}
+	log.Debugf("BEQ payload: %#v", beqPayload)
 
-	c.DeviceName = beqPayload.Name
-	c.MuteStatus = beqPayload.Mute
-	c.MasterVolume = beqPayload.MasterVolume
+	// add devices to client, it returns as a map not list
+	for _, v := range beqPayload {
+		c.DeviceInfo = append(c.DeviceInfo, v)
+	}
 
 	return nil
 }
@@ -77,71 +78,72 @@ func urlEncode(s string) string {
 
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
-	endpoint := fmt.Sprintf("/api/1/devices/%s/mute", c.DeviceName)
-	log.Debugf("ezbeq: Using endpoint %s", endpoint)
-	var method string
-	switch status {
-	case true:
-		method = "put"
-	case false:
-		method = "delete"
-	}
-	log.Debugf("Running request with method: %s", method)
-	resp, err := c.makeReq(endpoint, nil, method)
-	if err != nil {
-		return err
-	}
+	for _, v := range c.DeviceInfo {
+		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
+		log.Debugf("ezbeq: Using endpoint %s", endpoint)
+		var method string
+		switch status {
+		case true:
+			method = http.MethodPut
+		case false:
+			method = http.MethodDelete
+		}
+		log.Debugf("Running request with method: %s", method)
+		resp, err := c.makeReq(endpoint, nil, method)
+		if err != nil {
+			return err
+		}
 
-	// ensure we changed the status
-	var out models.BeqDevices
-	err = json.Unmarshal(resp, &out)
-	if err != nil {
-		return err
+		// ensure we changed the status
+		var out models.BeqDevices
+		err = json.Unmarshal(resp, &out)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Current mute status is %v", out.Mute)
+		if out.Mute != status {
+			return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
+		}
 	}
-	log.Debugf("Current mute status is %v", out.Mute)
-	if out.Mute != status {
-		return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
+	return nil
+}
+
+// MakeCommand sends the command of payload
+func (c *BeqClient) MakeCommand(payload []byte) error {
+	for _, v := range c.DeviceInfo {
+		endpoint := fmt.Sprintf("/api/1/devices/%s", v.Name)
+		log.Debugf("ezbeq: Using endpoint %s", endpoint)
+		_, err := c.makeReq(endpoint, payload, http.MethodPatch)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (c *BeqClient) MakeCommand(payload []byte) error {
-	endpoint := fmt.Sprintf("/api/1/devices/%s", c.DeviceName)
-	log.Debugf("ezbeq: Using endpoint %s", endpoint)
-	_, err := c.makeReq(endpoint, payload, "patch")
-
-	return err
-}
-
 // generic func for beq requests. Payload should be nil
 func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) ([]byte, error) {
-	var method string
 	var setHeader bool
 	var req *http.Request
 	var err error
-
+	
+	log.Debugf("Using method %s", methodType)
 	switch methodType {
-	case "put":
-		method = http.MethodPut
+	case http.MethodPut:
 		setHeader = true
-	case "patch":
-		method = http.MethodPatch
+	case http.MethodPatch:
 		setHeader = true
-	case "delete":
-		method = http.MethodDelete
-	case "get":
-		method = http.MethodGet
 	}
+	log.Debugf("Header is set to %v", setHeader)
 
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
-
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
-		req, err = http.NewRequest(method, url, nil)
+		req, err = http.NewRequest(methodType, url, nil)
 	} else {
-		req, err = http.NewRequest(method, url, bytes.NewBuffer(payload))
+		req, err = http.NewRequest(methodType, url, bytes.NewBuffer(payload))
 	}
 	if err != nil {
 		return []byte{}, err
@@ -150,7 +152,8 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-
+	log.Debugf("Using url %s", req.URL)
+	log.Debugf("Headers from req %v", req.Header)
 	// simple retry
 	res, err := c.makeCallWithRetry(req, 5, endpoint)
 
@@ -182,7 +185,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		status = res.StatusCode
 
 		if status != http.StatusOK {
-			return nil, fmt.Errorf("got status: %d", status)
+			return nil, fmt.Errorf("got status: %d -- error from body is %v", status, string(resp))
 		}
 
 		// don't retry for 404
@@ -202,21 +205,21 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 }
 
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
-func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferredAuthor string, edition string) (models.BeqCatalog, error) {
+func (c *BeqClient) searchCatalog(m models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
-	code := urlEncode(codec)
+	code := urlEncode(m.Codec)
 	var endpoint string
 	// done this way to make it easier to add future authors
-	switch preferredAuthor {
+	switch m.PreferredAuthor {
 	case "None", "none", "":
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d", code, year)
+		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d", code, m.Year)
 	default:
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, year, urlEncode(preferredAuthor))
+		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, m.Year, urlEncode(m.PreferredAuthor))
 	}
 	log.Debugf("sending ezbeq search request to %s", endpoint)
 
 	var payload []models.BeqCatalog
-	res, err := c.makeReq(endpoint, nil, "get")
+	res, err := c.makeReq(endpoint, nil, http.MethodGet)
 	if err != nil {
 		return models.BeqCatalog{}, err
 	}
@@ -230,9 +233,9 @@ func (c *BeqClient) searchCatalog(tmdb string, year int, codec string, preferred
 	for _, val := range payload {
 		log.Debugf("Beq results: %v", val)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
-		if val.MovieDbID == tmdb && val.Year == year && val.AudioTypes[0] == codec {
+		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
 			// if it matches, check edition
-			if checkEdition(val, edition) {
+			if checkEdition(val, m.Edition) {
 				return val, nil
 			} else {
 				log.Error("Found a match but editions did not match entry. Not loading")
@@ -260,90 +263,117 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
-func (c *BeqClient) LoadBeqProfile(tmdb string, year int, codec string, skipSearch bool, entryID string, mvAdjust float64, dryrunMode bool, preferredAuthor string, edition string, mediaType string) error {
+func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
+	if m.TMDB == "" {
+		return errors.New("tmdb is empty. Can't find a match")
+	}
+
+	// if no devices provided, error
+	if len(m.Devices) == 0 {
+		return fmt.Errorf("no ezbeq devices provided. Can't load")
+	}
+
 	var err error
 	var catalog models.BeqCatalog
 
 	// if provided stuff is blank, we cant skip search
-	if entryID == "" || mvAdjust == 0 {
-		skipSearch = false
+	if m.EntryID == "" || m.MVAdjust == 0 {
+		m.SkipSearch = false
 	}
 
 	// skip searching when resuming for speed
-	if !skipSearch {
+	if !m.SkipSearch {
 		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
-		if codec == "AtmosMaybe" {
-			catalog, err = c.searchCatalog(tmdb, year, "TrueHD 7.1", preferredAuthor, edition)
+		if m.Codec == "AtmosMaybe" {
+			m.Codec = "TrueHD 7.1"
+			catalog, err = c.searchCatalog(m)
 			if err != nil {
-				catalog, err = c.searchCatalog(tmdb, year, "Atmos", preferredAuthor, edition)
+				m.Codec = "Atmos"
+				catalog, err = c.searchCatalog(m)
 				if err != nil {
 					return err
 				}
 			}
 		} else {
-			catalog, err = c.searchCatalog(tmdb, year, codec, preferredAuthor, edition)
+			catalog, err = c.searchCatalog(m)
 			if err != nil {
 				return err
 			}
 		}
 		// get the values from catalog search
-		entryID = catalog.ID
-		mvAdjust = catalog.MvAdjust
+		m.EntryID = catalog.ID
+		m.MVAdjust = catalog.MvAdjust
 	} else {
 		log.Debug("Skipping search for extra speed")
 	}
 
 	// save the current stuff for later, used in media.resume
-	c.CurrentMasterVolume = mvAdjust
-	c.CurrentProfile = entryID
-	c.CurrentMediaType = mediaType
+	c.CurrentMasterVolume = m.MVAdjust
+	c.CurrentProfile = m.EntryID
+	c.CurrentMediaType = m.MediaType
 
-	if entryID == "" {
+	if m.EntryID == "" {
 		return errors.New("could not find catalog entry for ezbeq")
 	}
 
-	if dryrunMode {
-		return fmt.Errorf("BEQ Dry run msg - Would load title %s -- codec %s -- edition: %s, ezbeq entry ID %s", catalog.SortTitle, codec, catalog.Edition, entryID)
+	if m.DryrunMode {
+		return fmt.Errorf("BEQ Dry run msg - Would load title %s -- codec %s -- edition: %s, ezbeq entry ID %s", catalog.SortTitle, m.Codec, catalog.Edition, m.EntryID)
 	}
 
 	// build payload
 	var payload models.BeqPatchV2
-	payload.Slots = append(payload.Slots, models.SlotsV2{
-		ID:     "1",
-		Gains:  []float64{mvAdjust, mvAdjust},
-		Active: true,
-		Mutes:  []bool{false, false},
-		Entry:  entryID,
-	})
+	// for len m.Slots, add that many slots
+	// if no slots, add one so it doesnt error
+	if len(m.Slots) == 0 {
+		m.Slots = []int{1}
+	}
+	for _, k := range m.Slots {
+		// append a slot to payload for each
+		payload.Slots = append(payload.Slots, models.SlotsV2{
+			ID:     strconv.Itoa(k),
+			Gains:  []float64{m.MVAdjust, m.MVAdjust},
+			Active: true,
+			Mutes:  []bool{false, false},
+			Entry:  m.EntryID,
+		})
+	}
 	log.Debugf("sending BEQ payload: %#v", payload)
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	endpoint := fmt.Sprintf("/api/2/devices/%s", c.DeviceName)
-	log.Debugf("json payload %v", string(jsonPayload))
-	log.Debugf("using endpoint %s", endpoint)
-	_, err = c.makeReq(endpoint, jsonPayload, "patch")
-	if err != nil {
+	
+	// write payload to each device
+	for _, v := range m.Devices {
+		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
 		log.Debugf("json payload %v", string(jsonPayload))
 		log.Debugf("using endpoint %s", endpoint)
-		return err
+		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
+		if err != nil {
+			log.Debugf("json payload %v", string(jsonPayload))
+			log.Debugf("using endpoint %s", endpoint)
+			return err
+		}
 	}
-
 	return nil
 }
 
-func (c *BeqClient) UnloadBeqProfile(dryrunMode bool) error {
-	if dryrunMode {
+// UnloadBeqProfile will unload all profiles from all devices
+func (c *BeqClient) UnloadBeqProfile(m models.SearchRequest) error {
+	if m.DryrunMode {
 		return nil
 	}
-	log.Debug("Unloading ezBEQ profile")
+	log.Debug("Unloading ezBEQ profiles")
 
-	// add our last entry id and stuff before deleting
-	endpoint := fmt.Sprintf("/api/1/devices/%s/filter/1", c.DeviceName)
-	_, err := c.makeReq(endpoint, nil, "delete")
-	if err != nil {
-		return err
+	for _, v := range m.Devices {
+		for _, k := range m.Slots {
+			endpoint := fmt.Sprintf("/api/1/devices/%s/filter/%v", v, k)
+			log.Debugf("using endpoint %s", endpoint)
+			_, err := c.makeReq(endpoint, nil, http.MethodDelete)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
