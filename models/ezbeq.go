@@ -1,14 +1,30 @@
 package models
 
+type SearchRequest struct {
+	TMDB            string
+	Year            int
+	Codec           string
+	PreferredAuthor string
+	Edition         string
+	SkipSearch      bool
+	EntryID         string
+	MVAdjust        float64
+	DryrunMode      bool
+	MediaType       string
+	Devices         []string
+	Slots           []int
+}
+
 type BeqCatalog struct {
 	ID         string   `json:"id"`
+	Title      string   `json:"title"`
 	SortTitle  string   `json:"sortTitle"`
 	Year       int      `json:"year"`
 	AudioTypes []string `json:"audioTypes"`
 	Digest     string   `json:"digest"`
 	MvAdjust   float64  `json:"mvAdjust"`
 	Edition    string   `json:"edition"`
-	MovieDbID string `json:"theMovieDB"`
+	MovieDbID  string   `json:"theMovieDB"`
 }
 
 type BeqDevices struct {

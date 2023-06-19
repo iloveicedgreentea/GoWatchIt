@@ -2,8 +2,10 @@ package ezbeq
 
 import (
 	// "strings"
+	"fmt"
 	"testing"
 
+	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,64 +46,161 @@ func TestSearchCatalog(t *testing.T) {
 	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
 	assert.NoError(err)
 
-	// fast five extended
-	res, err := c.searchCatalog("51497", 2011, "DTS-X", "none", "Extended")
-	assert.NoError(err)
-	assert.Equal("Extended", res.Edition)
-	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
+	// list of testing structs
+	type testStruct struct {
+		m                               models.SearchRequest
+		expectedEdition, expectedDigest string
+		expectedMvAdjust                float64
+	}
+	tt := []testStruct{
+		{
+			// fast five extended
+			m: models.SearchRequest{
+				TMDB:            "51497",
+				Year:            2011,
+				Codec:           "DTS-X",
+				PreferredAuthor: "none",
+				Edition:         "Extended",
+			},
+			expectedEdition:  "Extended",
+			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedMvAdjust: -1.5,
+		},
+		{
+			// Jung E
+			m: models.SearchRequest{
+				TMDB:            "843794",
+				Year:            2023,
+				Codec:           "DD+ Atmos",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition: "",
+			expectedDigest:  "1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0",
+		},
+		{
+			m: models.SearchRequest{
+				TMDB:            "51497",
+				Year:            2011,
+				Codec:           "DTS-X",
+				PreferredAuthor: "",
+				Edition:         "Extended",
+			},
+			expectedEdition:  "Extended",
+			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedMvAdjust: -1.5,
+		},
+		{
+			m: models.SearchRequest{
+				TMDB:            "51497",
+				Year:            2011,
+				Codec:           "DTS-X",
+				PreferredAuthor: "None",
+				Edition:         "Extended",
+			},
+			expectedEdition:  "Extended",
+			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
+			expectedMvAdjust: -1.5,
+		},
+		{
+			// 12 strong has multiple codecs AND authors, so good for testing
+			// return 7.1 version of aron7awol
+			m: models.SearchRequest{
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedMvAdjust: -3.5,
+		},
+		{
+			// return 7.1 version of mobe1969
+			m: models.SearchRequest{
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "mobe1969",
+				Edition:         "",
+			},
+			expectedEdition: "",
+			expectedDigest:  "d4ffd507ac9a6597c5039a67f587141ca866013787ed2c06fe9ef6a86f3e5534",
+		},
+		{
+			// 12 strong has multiple codecs AND authors, so good for testing
+			// return 7.1 version of aron7awol
+			m: models.SearchRequest{
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "aron7awol",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedMvAdjust: -3.5,
+		},
+		{
+			// return 5.1 version of aron7awol
+			m: models.SearchRequest{
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 5.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
+			expectedMvAdjust: -1.5,
+		},
+		{
+			// return 5.1 version of aron7awol
+			m: models.SearchRequest{
+				TMDB:            "547016",
+				Year:            2020,
+				Codec:           "DD+ Atmos",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d",
+			expectedMvAdjust: 0.0,
+		},
+		{
+			// should be TrueHD 7.1
+			m: models.SearchRequest{
+				TMDB:            "56292",
+				Year:            2011,
+				Codec:           "TrueHD 7.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
+			expectedMvAdjust: 0.0,
+		},
+	}
 
-	res, err = c.searchCatalog("51497", 2011, "DTS-X", "", "Extended")
-	assert.NoError(err)
-	assert.Equal("Extended", res.Edition)
-	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
+	for _, tc := range tt {
+		tc := tc
+		// should be TrueHD 7.1
+		res, err := c.searchCatalog(tc.m)
+		assert.NoError(err)
+		assert.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
+		assert.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
+		assert.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
+	}
 
-	res, err = c.searchCatalog("51497", 2011, "DTS-X", "None", "Extended")
-	assert.NoError(err)
-	assert.Equal("Extended", res.Edition)
-	assert.Equal("cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c", res.Digest)
-
-	// 12 strong has multiple codecs AND authors, so good for testing
-	// return 7.1 version of aron7awol
-	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "none", "")
-	assert.NoError(err)
-	assert.Equal("c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d", res.Digest, "12 strong does not match entry ID. Should match aron7awol version")
-	assert.Equal(-3.5, res.MvAdjust, "12 strong does not match MV. Should match aron7awol version")
-
-	// return 7.1 version of mobe1969
-	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "mobe1969", "")
-	assert.NoError(err)
-	assert.Equal("d4ffd507ac9a6597c5039a67f587141ca866013787ed2c06fe9ef6a86f3e5534", res.Digest, "12 strong does not match entry ID. Should match mobe1969 version")
-	assert.Equal(0.0, res.MvAdjust, "12 strong does not match MV. Should match mobe1969 version")
-
-	// return 7.1 version of aron7awol
-	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 7.1", "aron7awol", "")
-	assert.NoError(err)
-	assert.Equal("c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d", res.Digest, "12 strong does not match entry ID. Should match aron7awol version")
-	assert.Equal(-3.5, res.MvAdjust, "12 strong does not match MV. Should match aron7awol version")
-
-	// return 5.1 version of aron7awol
-	res, err = c.searchCatalog("429351", 2018, "DTS-HD MA 5.1", "none", "")
-	assert.NoError(err)
-	assert.Equal("8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5", res.Digest, "12 strong does not match entry ID. Should match aron7awol version")
-	assert.Equal(-1.5, res.MvAdjust, "12 strong does not match MV. Should match aron7awol version")
-
-	// return DD+ Atmos of the old guard
-	res, err = c.searchCatalog("547016", 2020, "DD+ Atmos", "none", "")
-	assert.NoError(err)
-	assert.Equal("f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d", res.Digest, "The old guard does not match entry ID. Should match aron7awol version")
-	assert.Equal(0.0, res.MvAdjust, "Old guard does not match MV. Should match aron7awol version")
-
-	// should be blank
-	res, err = c.searchCatalog("some random movie", 2018, "DTS-HD MA 5.1", "none", "")
+	_, err = c.searchCatalog(models.SearchRequest{
+		TMDB:            "ojdsfojnekfw",
+		Year:            2018,
+		Codec:           "DTS-HD MA 5.1",
+		PreferredAuthor: "none",
+		Edition:         "",
+	})
 	assert.Error(err)
-	assert.Equal("", res.Digest)
-	assert.Equal(0.0, res.MvAdjust)
-
-	// should be TrueHD 7.1
-	res, err = c.searchCatalog("56292", 2011, "TrueHD 7.1", "none", "")
-	assert.NoError(err)
-	assert.Equal("f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7", res.Digest)
-	assert.Equal(0.0, res.MvAdjust)
 }
 
 // load and unload a profile. Watch ezbeq UI to confirm, but if it doesnt error it probably loaded fine
@@ -119,25 +218,58 @@ func TestLoadProfile(t *testing.T) {
 	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
 	assert.NoError(err)
 
-	// fast five dts-x extended edition
-	err = c.LoadBeqProfile("51497", 2011, "DTS-X", false, "bd4577c143e73851d6db0697e0940a8f34633eec\n_416", -1.5, false, "none", "Extended", "movie")
-	assert.NoError(err)
+	tt := []models.SearchRequest{
+		{
+			TMDB:            "51497",
+			Year:            2011,
+			Codec:           "DTS-X",
+			SkipSearch:      false,
+			EntryID:         "bd4577c143e73851d6db0697e0940a8f34633eec\n_416",
+			MVAdjust:        -1.5,
+			DryrunMode:      false,
+			PreferredAuthor: "none",
+			Edition:         "Extended",
+			MediaType:       "movie",
+			Devices:         []string{"master", "master2"},
+			Slots:           []int{1},
+		},
+		{
+			TMDB:            "56292",
+			Year:            2011,
+			Codec:           "AtmosMaybe",
+			SkipSearch:      false,
+			EntryID:         "",
+			MVAdjust:        0.0,
+			DryrunMode:      false,
+			PreferredAuthor: "none",
+			Edition:         "",
+			MediaType:       "movie",
+			Devices:         []string{"master", "master2"},
+			Slots:           []int{1},
+		},
+		{
+			TMDB:            "399579",
+			Year:            2019,
+			Codec:           "AtmosMaybe",
+			SkipSearch:      false,
+			EntryID:         "",
+			MVAdjust:        0.0,
+			DryrunMode:      false,
+			PreferredAuthor: "none",
+			Edition:         "",
+			MediaType:       "movie",
+			Devices:         []string{"master", "master2"},
+			Slots:           []int{1},
+		},
+	}
 
-	err = c.UnloadBeqProfile(false)
-	assert.NoError(err)
+	for _, tc := range tt {
+		tc := tc
+		err = c.LoadBeqProfile(tc)
+		assert.NoError(err)
 
-	// MI: ghost proto truehd 7.1
-	err = c.LoadBeqProfile("56292", 2011, "AtmosMaybe", false, "", 0.0, false, "none", "", "movie")
-	assert.NoError(err)
-
-	err = c.UnloadBeqProfile(false)
-	assert.NoError(err)
-
-	// Alita is atmos but metadata says THD 7.1
-	err = c.LoadBeqProfile("399579", 2019, "AtmosMaybe", false, "", 0.0, false, "none", "", "movie")
-	assert.NoError(err)
-
-	err = c.UnloadBeqProfile(false)
-	assert.NoError(err)
+		err = c.UnloadBeqProfile(tc)
+		assert.NoError(err)
+	}
 
 }
