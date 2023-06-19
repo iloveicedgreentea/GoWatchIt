@@ -43,9 +43,9 @@ func Publish(vip *viper.Viper, payload []byte, topic string) error {
 		log.Debugf("Sending payload %v to topic %v", string(payload), topic)
 		token := c.Publish(topic, 1, false, payload)
 		err = token.Error()
-		log.Debugf("Error with sending MQTT: %v. Attemps: %v", err, i)
 		// sleep for 1 sec and try again
 		if err != nil {
+			log.Debugf("Error with sending MQTT: %v. Attemps: %v", err, i)
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -55,6 +55,8 @@ func Publish(vip *viper.Viper, payload []byte, topic string) error {
 			log.Debug("Timeout when waiting for mqtt token")
 			continue
 		}
+
+		break
 	}
 
 	return nil
