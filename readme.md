@@ -271,12 +271,13 @@ create file named config.json, paste this in, remove the comments after
         // name of the endpoint in HA to send notification to. Look at the notify service in HA to see endpoints
         "notifyEndpointName": "mobile_app_iphone",
         // which author you want. none or blank will find the best match according to ezbeq application
-        "preferredAuthor": "aron7awol" || "mobe1969" || "none" || "",
+        "preferredAuthor": "aron7awol" || "mobe1969" || "other supported author" || "",
         // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
         "slots": [1],
-        // use an IP enabled Denon AVR to get the codec instead of querying plex. This is faster and more reliable
-        // will also compare denon and plex to ensure correct codec is playing
-        "useAVRCodecSearch": true,
+        // use an IP enabled Denon AVR to get the codec instead of querying plex. This might be more reliable
+        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug)
+        // this is in beta. 
+        "useAVRCodecSearch": false,
         "DenonIP": "",
         "DenonPort": "23",
     },
