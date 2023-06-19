@@ -113,21 +113,26 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// log.Debugf("Session data: %#v", sess.Video)
 	// filter by uuid
 	// try up to 15 times until session is active. webhook sends before session is ready
 	for i := 0; i < 15; i++ {
 		for _, video := range sess.Video {
+			log.Debugf("Machine identifier: %s", video.Player.MachineIdentifier)
 			if video.Player.MachineIdentifier == uuid {
+				log.Debug("Found session matching uuid")
 				for _, stream := range video.Media.Part.Stream {
+					log.Debugf("Stream: %#v", stream)
 					if stream.StreamType == "2" {
 						return MapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
 					}
 				}
 			}
 		}
-
+		log.Debug("Session not found, waiting 2 seconds")
 		time.Sleep(time.Second * 2)
 	}
+	// TODO: fallback, use webhook data?
 
 	return "", fmt.Errorf("error getting codec. no session found with uuid %s", uuid)
 }
@@ -339,19 +344,20 @@ func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
 
 // return the table name given a soup.Root schema
 func parseImdbTableSchema(input soup.Root) string {
-	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item">
-	//  <button class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Runtime</button>
-	//     <div class="ipc-metadata-list-item__content-container">
-	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
-	//             role="presentation">
-	//             <li role="presentation" class="ipc-inline-list__item"><label
-	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
-	//                     for="_blank">2h 30m</label><span class="ipc-metadata-list-item__list-content-item--subText">(150
-	//                     min)</span></li>
-	//         </ul>
-	//     </div>
-	// 	</li>
-	res := input.Find("button", "class", "ipc-metadata-list-item__label")
+	// 	<li role=\"presentation\" class=\"ipc-metadata-list__item\" data-testid=\"list-item\"><span
+	// 	class=\"ipc-metadata-list-item__label\" aria-disabled=\"false\">Color</span>
+	// <div class=\"ipc-metadata-list-item__content-container\">
+	// 	<ul class=\"ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline
+	// 		ipc-metadata-list-item__list-content base\" role=\"presentation\">
+	// 		<li role=\"presentation\" class=\"ipc-inline-list__item\"><a
+	// 				class=\"ipc-metadata-list-item__list-content-item
+	// 				ipc-metadata-list-item__list-content-item--link\" role=\"button\" tabindex=\"0\"
+	// 				aria-disabled=\"false\" href=\"/search/title/?colors=color&amp;ref_=ttspec_spec_3\">Color</a>
+	// 		</li>
+	// 	</ul>
+	// </div>
+	// </li>
+	res := input.Find("span", "class", "ipc-metadata-list-item__label")
 	if res.Pointer == nil {
 		return "nil"
 	}

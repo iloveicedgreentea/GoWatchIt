@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/iloveicedgreentea/go-plex/denon"
 	"github.com/iloveicedgreentea/go-plex/ezbeq"
@@ -123,7 +124,7 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 }
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m models.SearchRequest) {
+func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m models.SearchRequest, useDenonCodec bool, data models.MediaContainer) {
 	go changeLight(vip, "off")
 	go changeAspect(client, payload, vip)
 	go changeMasterVolume(vip, m.MediaType)
@@ -146,6 +147,25 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		if err != nil {
 			log.Errorf("Error unloading beq on startup!! : %v", err)
 		}
+
+		if useDenonCodec {
+			// TODO: detect hdmi sync?
+			// atmos detection usually takes 5 seconds
+			time.Sleep(7 * time.Second)
+			m.Codec, err = denonClient.GetCodec()
+			if err != nil {
+				log.Errorf("error getting codec from denon, can't continue: %s", err)
+				return
+			}
+		} else {
+			m.Codec, err = client.GetAudioCodec(data)
+			if err != nil {
+				log.Errorf("error getting codec from plex, can't continue: %s", err)
+				return
+			}
+		}
+
+		log.Debugf("Found codec: %s", m.Codec)
 
 		// if its a show and you dont want beq enabled, exit
 		if payload.Metadata.Type == showItemTitle {
@@ -264,7 +284,6 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 
 	log.Infof("Processing media type: %s", payload.Metadata.Type)
 
-	var codec string
 	var err error
 	var data models.MediaContainer
 	var editionName string
@@ -279,31 +298,13 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 			// get the edition name
 			editionName = getEditionName(data)
 			log.Debugf("Event Router: Found edition: %s", editionName)
-
-			if useDenonCodec {
-				// TODO: wait for HDMI sync or something
-				codec, err = denonClient.GetCodec()
-				if err != nil {
-					log.Errorf("Event Router: error getting codec from denon, can't continue: %s", err)
-					return
-				}
-			} else {
-				codec, err = plexClient.GetCodecFromSession(clientUUID)
-				if err != nil {
-					log.Errorf("Event Router: error getting codec from plex, can't continue: %s", err)
-					return
-				}
-			}
-
-			log.Debugf("Event Router: Found codec: %s", codec)
 		}
 	}
 
-	log.Debugf("Event Router: Received codec: %s", codec)
 	log.Debugf("Event Router: Got media type of: %s ", payload.Metadata.Type)
 
 	model.Year = payload.Metadata.Year
-	model.Codec = codec
+	model.Edition = editionName
 	// this should be updated with every event
 	model.EntryID = beqClient.CurrentProfile
 	model.MVAdjust = beqClient.MasterVolume
@@ -314,7 +315,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		mediaPlay(plexClient, vip, beqClient, haClient, denonClient, payload, model)
+		mediaPlay(plexClient, vip, beqClient, haClient, denonClient, payload, model, useDenonCodec, data)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
 		mediaStop(vip, beqClient, haClient, payload, model)

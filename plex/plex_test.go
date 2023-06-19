@@ -47,15 +47,16 @@ func TestGetMediaData(t *testing.T) {
 
 	code, err := c.GetAudioCodec(med)
 	assert.NoError(t, err)
-	t.Log(code)
+	assert.Equal(t, "Atmos", code)
 
 }
 func TestGetCodecFromSession(t *testing.T) {
+	t.SkipNow()
 	serverUrl := "http://192.168.88.56"
 	serverPrt := "32400"
 	c := NewClient(serverUrl, serverPrt)
 
-	codec, err := c.GetCodecFromSession("7263B056-FE3F-4E23-BC4F-1F7D9A4230DF")
+	codec, err := c.GetCodecFromSession("976607a88023661f-com-plexapp-android")
 	assert.NoError(t, err)
 
 	t.Log(codec)

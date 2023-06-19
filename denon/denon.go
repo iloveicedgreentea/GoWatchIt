@@ -78,7 +78,7 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 	return string(result), nil
 }
 
-// GetAudioMode returns the current audio mode like atmos, stereo, etc
+// GetAudioMode returns the current audio mode like dolby atmos, stereo, etc
 func (c *DenonClient) GetCodec() (string, error) {
 	mode, err := c.makeReq("MS?")
 	return strings.ToLower(mode[2:]), err
