@@ -48,7 +48,7 @@ func NewClient(url, port string) (*BeqClient, error) {
 	return c, nil
 }
 
-// GetStatus will get metadata from eqbeq and load into client
+// GetStatus will get metadata from ezbeq and load into client
 func (c *BeqClient) GetStatus() error {
 	beqPayload := make(map[string]models.BeqDevices)
 
