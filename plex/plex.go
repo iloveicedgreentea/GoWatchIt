@@ -114,14 +114,19 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 		return "", err
 	}
 	// filter by uuid
-	for _, video := range sess.Video {
-		if video.Player.MachineIdentifier == uuid {
-			for _, stream := range video.Media.Part.Stream {
-				if stream.StreamType == "2" {
-					return MapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
+	// try up to 15 times until session is active. webhook sends before session is ready
+	for i := 0; i < 15; i++ {
+		for _, video := range sess.Video {
+			if video.Player.MachineIdentifier == uuid {
+				for _, stream := range video.Media.Part.Stream {
+					if stream.StreamType == "2" {
+						return MapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
+					}
 				}
 			}
 		}
+
+		time.Sleep(time.Second * 2)
 	}
 
 	return "", fmt.Errorf("error getting codec. no session found with uuid %s", uuid)
