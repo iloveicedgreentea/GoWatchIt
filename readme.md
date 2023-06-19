@@ -106,10 +106,11 @@ In your Automations, you can action based on these payloads.
 
 ### Masking System Support
 
-You can use the default (IMDB) or a MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail, but I tried to add retries for that. 
+There are two ways to do masking. One is using this tool. The other is using my MadVR Envy Home Assistant integration and using the Envy's aspect ratio (Aspect dec or Aspect int) attribute in an automation. The second way is most useful if you have a curtain like masking system, not a drop down one.
 
+If using this tool, you can use the default source (IMDB) or MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail, but I tried to add retries for that. The Envy method requires my HA plugin. 
 
-*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic is topicAspectratioMadVrOnly. Run you actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 12 seconds or so until the envy scales the display correctly and the attribute changes*
+*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic needs to be named topicAspectratioMadVrOnly. Run your actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 12 seconds or so until the envy scales the display correctly and the attribute changes*
 
 Here is an automation which uses MQTT and Envy attributes ([via my Envy integration](https://github.com/iloveicedgreentea/madvr-envy-homeassistant)). Modify to your needs. My masking system is set up for CIH so I mask off beyond 17:9. 
 
