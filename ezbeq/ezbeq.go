@@ -206,7 +206,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 }
 
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
-func (c *BeqClient) searchCatalog(m models.SearchRequest) (models.BeqCatalog, error) {
+func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
 	code := urlEncode(m.Codec)
 	var endpoint string
@@ -232,7 +232,7 @@ func (c *BeqClient) searchCatalog(m models.SearchRequest) (models.BeqCatalog, er
 
 	// search through results and find match
 	for _, val := range payload {
-		log.Debugf("Beq results: %v", val)
+		log.Debugf("Beq results: Title: %v -- Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
 			// if it matches, check edition
@@ -264,10 +264,11 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
-func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
+func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 	if m.TMDB == "" {
 		return errors.New("tmdb is empty. Can't find a match")
 	}
+	log.Debugf("beq payload is %#v", m)
 
 	// if no devices provided, error
 	if len(m.Devices) == 0 {
@@ -360,7 +361,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
-func (c *BeqClient) UnloadBeqProfile(m models.SearchRequest) error {
+func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
 	if m.DryrunMode {
 		return nil
 	}

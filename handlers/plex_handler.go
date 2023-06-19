@@ -51,14 +51,15 @@ func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 // Sends the payload to the channel for background processing
 func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		// fyi, sometimes media.play is not *SENT* by plex, I am investigating
 		if err := r.ParseMultipartForm(0); err != nil {
 			log.Error(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
+		log.Debug("ProcessWebhook: Received valid multipart form")
 		payload, hasPayload := r.MultipartForm.Value["payload"]
 		if hasPayload {
+			log.Debug("decoding payload")
 			decodedPayload, statusCode, err := decodeWebhook(payload)
 			if err != nil {
 				log.Error(err)
@@ -81,6 +82,10 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			} else {
 				log.Debugf("userID '%s' does not match filter", userID)
 			}
+		} else {
+			log.Error("No payload found in request")
+			http.Error(w, "No payload found in request", http.StatusBadRequest)
+			return
 		}
 	}
 
@@ -88,7 +93,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 }
 
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
-func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m models.SearchRequest) {
+func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
 	go changeLight(vip, "on")
 
 	if vip.GetBool("ezbeq.enabled") {
@@ -106,7 +111,7 @@ func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassis
 }
 
 // pause only happens with literally pausing
-func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m models.SearchRequest) {
+func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
 	go changeLight(vip, "on")
 
 	if vip.GetBool("ezbeq.enabled") {
@@ -124,7 +129,7 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 }
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m models.SearchRequest, useDenonCodec bool, data models.MediaContainer) {
+func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useDenonCodec bool, data models.MediaContainer) {
 	go changeLight(vip, "off")
 	go changeAspect(client, payload, vip)
 	go changeMasterVolume(vip, m.MediaType)
@@ -191,7 +196,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 }
 
 // resume is only after pausing as long as the media item is still active
-func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m models.SearchRequest) {
+func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
 	// mediaType string, codec string, edition string
 	// trigger lights
 	go changeLight(vip, "off")
@@ -263,7 +268,7 @@ func getEditionName(data models.MediaContainer) string {
 }
 
 // based on event type, determine what to do
-func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, vip *viper.Viper, model models.SearchRequest) {
+func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, vip *viper.Viper, model *models.SearchRequest) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -309,7 +314,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	model.EntryID = beqClient.CurrentProfile
 	model.MVAdjust = beqClient.MasterVolume
 
-	log.Debugf("Event Router: Using search model: %v", model)
+	log.Debugf("Event Router: Using search model: %#v", model)
 	switch payload.Event {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
 	// play means a new file was started
@@ -433,7 +438,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	var haClient *homeassistant.HomeAssistantClient
 	var err error
 	var deviceNames []string
-	var model models.SearchRequest
+	var model *models.SearchRequest
 	var denonClient *denon.DenonClient
 	var useDenonCodec bool
 
@@ -459,7 +464,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		}
 
 		log.Debugf("Device names: %v", deviceNames)
-		model := models.SearchRequest{
+		model = &models.SearchRequest{
 			DryrunMode: vip.GetBool("ezbeq.dryRun"),
 			Devices:    deviceNames,
 			Slots:      vip.GetIntSlice("ezbeq.slots"),

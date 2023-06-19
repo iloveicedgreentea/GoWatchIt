@@ -186,14 +186,14 @@ func TestSearchCatalog(t *testing.T) {
 	for _, tc := range tt {
 		tc := tc
 		// should be TrueHD 7.1
-		res, err := c.searchCatalog(tc.m)
+		res, err := c.searchCatalog(&tc.m)
 		assert.NoError(err)
 		assert.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
 		assert.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
 		assert.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
 	}
 
-	_, err = c.searchCatalog(models.SearchRequest{
+	_, err = c.searchCatalog(&models.SearchRequest{
 		TMDB:            "ojdsfojnekfw",
 		Year:            2018,
 		Codec:           "DTS-HD MA 5.1",
@@ -265,10 +265,10 @@ func TestLoadProfile(t *testing.T) {
 
 	for _, tc := range tt {
 		tc := tc
-		err = c.LoadBeqProfile(tc)
+		err = c.LoadBeqProfile(&tc)
 		assert.NoError(err)
 
-		err = c.UnloadBeqProfile(tc)
+		err = c.UnloadBeqProfile(&tc)
 		assert.NoError(err)
 	}
 
