@@ -13,6 +13,7 @@ import (
 
 func readConfig() (*viper.Viper, error) {
 	v := viper.New()
+	v.AddConfigPath(".")
 	v.SetConfigFile("config.json")
 	err := v.ReadInConfig()
 

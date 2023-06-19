@@ -446,11 +446,19 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		if err != nil {
 			log.Error(err)
 		}
+		log.Debugf("Discovered devices: %v", beqClient.DeviceInfo)
+		if len(beqClient.DeviceInfo) == 0 {
+			log.Error("No devices found. Please check your ezbeq settings!")
+			return
+		}
 
 		// get the device names from the API call
 		for _, k := range beqClient.DeviceInfo {
+			log.Debugf("adding device %s", k.Name)
 			deviceNames = append(deviceNames, k.Name)
 		}
+
+		log.Debugf("Device names: %v", deviceNames)
 		model := models.SearchRequest{
 			DryrunMode: vip.GetBool("ezbeq.dryRun"),
 			Devices:    deviceNames,

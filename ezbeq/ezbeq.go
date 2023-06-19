@@ -66,6 +66,7 @@ func (c *BeqClient) GetStatus() error {
 
 	// add devices to client, it returns as a map not list
 	for _, v := range beqPayload {
+		log.Debugf("BEQ device: %#v", v.Name)
 		c.DeviceInfo = append(c.DeviceInfo, v)
 	}
 
