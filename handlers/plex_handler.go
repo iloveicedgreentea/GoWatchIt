@@ -134,18 +134,6 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	go changeAspect(client, payload, vip)
 	go changeMasterVolume(vip, m.MediaType)
 
-	// call function to check expected codec on play
-	// if vip.GetBool("ezbeq.useAVRCodecSearch") {
-	// 	if !isExpectedCodecPlaying(denonClient, client, payload.Player.UUID) {
-	// 		log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
-	// 		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-	// 			err := haClient.SendNotification("Expected codec is not playing! Please check your AVR and Plex settings!", vip.GetString("ezbeq.notifyEndpointName"))
-	// 			if err != nil {
-	// 				log.Error()
-	// 			}
-	// 		}
-	// 	}
-	// }
 	if vip.GetBool("ezbeq.enabled") {
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(m)
@@ -161,6 +149,17 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			if err != nil {
 				log.Errorf("error getting codec from denon, can't continue: %s", err)
 				return
+			}
+			// check if the expected codec is playing
+			expectedCodec, isExpectedPlaying := isExpectedCodecPlaying(denonClient, client, payload.Player.UUID, m.Codec)
+			if !isExpectedPlaying {
+				log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
+				if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
+					err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %s", m.Codec, expectedCodec), vip.GetString("ezbeq.notifyEndpointName"))
+					if err != nil {
+						log.Error()
+					}
+				}
 			}
 		} else {
 			m.Codec, err = client.GetAudioCodec(data)
