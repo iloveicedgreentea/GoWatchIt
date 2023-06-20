@@ -278,7 +278,7 @@ create file named config.json, paste this in, remove the comments after
         // this is in beta. 
         "useAVRCodecSearch": false,
         "DenonIP": "",
-        "DenonPort": "23",
+        "DenonPort": "23"
     },
     "main": {
         "listenPort": "9999"
