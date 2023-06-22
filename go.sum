@@ -42,6 +42,8 @@ github.com/StalkR/httpcache v1.0.0 h1:Px+QK86m7FEEvCfpfC+C0sNiUnRrLQyMVVJ6LKiXNv
 github.com/StalkR/httpcache v1.0.0/go.mod h1:yvbaYwH6w1USHPqgspMSwumbLwWE+B7jIZgfLYkTw1M=
 github.com/StalkR/imdb v1.0.13 h1:tbmEOnXR9f56FURTuK/UeZdxQ3PnZ8KWKbKmulvySW8=
 github.com/StalkR/imdb v1.0.13/go.mod h1:nxQmP4/nGtTVICl2+UmwhCnosVwVClmksdyptjE5Lj8=
+github.com/StalkR/imdb v1.0.14 h1:asOLtfC2u7Nv3oT+mdQH5n7AEWBwWdwI3eD6gKh/IqU=
+github.com/StalkR/imdb v1.0.14/go.mod h1:nxQmP4/nGtTVICl2+UmwhCnosVwVClmksdyptjE5Lj8=
 github.com/anaskhan96/soup v1.2.5 h1:V/FHiusdTrPrdF4iA1YkVxsOpdNcgvqT1hG+YtcZ5hM=
 github.com/anaskhan96/soup v1.2.5/go.mod h1:6YnEp9A2yywlYdM4EgDz9NEHclocMepEtku7wg6Cq3s=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

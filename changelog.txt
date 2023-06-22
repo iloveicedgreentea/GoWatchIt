@@ -6,3 +6,9 @@ Support specifying slot(s) to use
 other speedups and improvements 
 use Denon avr to get codec for BEQ profile matching (more accurate than plex)
 use both denon and plex to compare codecs, make sure they are playing whats expected. Randomly plex will just decide to transcode atmos because why not
+
+
+6-21-23
+Add support for detecting HDMI sync using madvr Envy. It will detect when media is synced and continue playing. 
+This prevents a black screen but stuff is playing which is annoying
+It also makes the denon codec detection more accurate
