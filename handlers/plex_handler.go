@@ -22,9 +22,6 @@ import (
 const showItemTitle = "episode"
 const movieItemTitle = "movie"
 
-// for trailers
-const clipTitle = "clip"
-
 var log = logger.GetLogger()
 
 func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
@@ -77,7 +74,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			userID := vip.GetString("plex.ownerNameFilter")
 			// only respond to events on a particular account if you share servers and only for movies and shows
 			if userID == "" || decodedPayload.Account.Title == userID {
-				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle || decodedPayload.Metadata.Type == clipTitle {
+				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
 					plexChan <- decodedPayload
 				}
 			} else {
@@ -189,17 +186,18 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	// stop processing webhooks
 	*skipActions = true
 
-	
 	wg.Add(3)
 	go changeLight(vip, "off", wg)
 	go changeAspect(client, payload, vip, wg)
 	go changeMasterVolume(vip, m.MediaType, wg)
+
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
 		wg.Add(1)
 		// sets skipActions to false on completion
 		go waitForHDMISync(wg, skipActions, haClient, client)
 	}
+
 	if vip.GetBool("ezbeq.enabled") {
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(m)
@@ -207,8 +205,9 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			log.Errorf("Error unloading beq on startup!! : %v", err)
 		}
 
+		// slower but more accurate
 		if useDenonCodec {
-			// TODO: wait for sync
+			// wait for sync
 			wg.Add(1)
 			waitForHDMISync(wg, skipActions, haClient, client)
 			// denon needs to process mutli ch in as atmos first
@@ -221,7 +220,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 				log.Errorf("error getting codec from denon, can't continue: %s", err)
 				return
 			}
-			
+
 			// check if the expected codec is playing
 			expectedCodec, isExpectedPlaying := isExpectedCodecPlaying(denonClient, client, payload.Player.UUID, m.Codec)
 			if !isExpectedPlaying {
@@ -356,14 +355,6 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") == "" {
 		log.Debug("Client UUID does not match enabled filter")
 		return
-	}
-
-	// if its a clip and you didnt enable support for it, return
-	if payload.Metadata.Type == clipTitle {
-		if !vip.GetBool("plex.enableTrailerSupport") {
-			log.Debug("Clip received but support not enabled")
-			return
-		}
 	}
 
 	log.Infof("Processing media type: %s", payload.Metadata.Type)

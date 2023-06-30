@@ -229,7 +229,8 @@ create file named config.json, paste this in, remove the comments after
         // Trigger functions to change the following
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
-        "triggerAvrMasterVolumeChangeOnEvent": true
+        "triggerAvrMasterVolumeChangeOnEvent": true,
+        "envyName": "envy"
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
@@ -272,9 +273,10 @@ create file named config.json, paste this in, remove the comments after
         "preferredAuthor": "aron7awol" || "mobe1969" || "other supported author" || "",
         // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
         "slots": [1],
-        // use an IP enabled Denon AVR to get the codec instead of querying plex. This might be more reliable
+        // use an IP enabled Denon AVR to get the codec instead of querying plex
+        // requires a madvr envy for now
+        // much slower but more accurate as it will get the actual codec playing
         // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug)
-        // this is in beta. 
         "useAVRCodecSearch": false,
         "DenonIP": "",
         "DenonPort": "23",

@@ -18,5 +18,5 @@ type HAEnvyResponse struct {
 	Attributes  Attributes `json:"attributes"`
 }
 type Attributes struct {
-	NoSignal bool `json:"no_signal"`
+	NoSignal bool `json:"is_signal"`
 }
