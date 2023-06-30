@@ -280,6 +280,8 @@ create file named config.json, paste this in, remove the comments after
         "useAVRCodecSearch": false,
         "DenonIP": "",
         "DenonPort": "23",
+        // tell plex to STOP if the playing codec does not match expected
+        "stopPlexIfMismatch": true
     },
     "main": {
         "listenPort": "9999"

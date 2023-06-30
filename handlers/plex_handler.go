@@ -224,14 +224,24 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			// check if the expected codec is playing
 			expectedCodec, isExpectedPlaying := isExpectedCodecPlaying(denonClient, client, payload.Player.UUID, m.Codec)
 			if !isExpectedPlaying {
+				// if enabled, stop playing
+				if vip.GetBool("ezbeq.stopPlexIfMismatch") {
+					log.Debug("Stopping plex because codec is not playing")
+					err := client.StopPlex()
+					if err != nil {
+						log.Errorf("Error stopping plex: %v", err)
+					}
+				}
+
 				log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
 				if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
 					err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %s", m.Codec, expectedCodec), vip.GetString("ezbeq.notifyEndpointName"))
 					if err != nil {
-						log.Error()
+						log.Error(err)
 					}
 				}
 			}
+
 		} else {
 			m.Codec, err = client.GetAudioCodec(data)
 			if err != nil {
@@ -255,6 +265,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			log.Error(err)
 			return
 		}
+
 		// send notification of it loaded
 		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
 			err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), vip.GetString("ezbeq.notifyEndpointName"))
@@ -357,6 +368,8 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 		return
 	}
 
+	plexClient.MachineID = clientUUID
+
 	log.Infof("Processing media type: %s", payload.Metadata.Type)
 
 	var err error
@@ -381,7 +394,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	}
 
 	log.Debugf("Event Router: Got media type of: %s ", payload.Metadata.Type)
-
+	plexClient.MediaType = payload.Metadata.Type
 	model.Year = payload.Metadata.Year
 	model.Edition = editionName
 	// this should be updated with every event

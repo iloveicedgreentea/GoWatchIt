@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ type PlexClient struct {
 	Port       string
 	HTTPClient http.Client
 	ImdbClient *http.Client
+	MachineID  string
+	MediaType  string
 }
 
 // return a new instance of a plex client
@@ -508,11 +511,55 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 
 }
 
-// TODO
-func (c *PlexClient) PausePlex() error {
-	return nil
+func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
+	// 	&machineIdentifier=<SERVER MACHINE IDENTIFIER>
+	// &commandID=1
+	// &type=video
+	params := url.Values{}
+	params.Add("machineIdentifier", c.MachineID)
+	// TODO: might have to keep track of this and increment
+	params.Add("commandID", "0")
+	params.Add("type", c.MediaType)
+
+	log.Debugf("using params: %s", params.Encode())
+
+	u, err := url.Parse(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
+	if err != nil {
+		return nil, err
+	}
+	u.RawQuery = params.Encode()
+
+	res, err := c.HTTPClient.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	log.Debugf("Plex response: %s", string(data))
+
+	return data, err
 }
-// TODO: 
+
+// TODO:test
+func (c *PlexClient) PausePlex() error {
+	// playback/pause
+	_, err := c.makePlexReq("/player/playback/pause")
+
+	return err
+}
+
 func (c *PlexClient) PlayPlex() error {
-	return nil
+	_, err := c.makePlexReq("/player/playback/play")
+
+	return err
+}
+
+func (c *PlexClient) StopPlex() error {
+	_, err := c.makePlexReq("/player/playback/stop")
+
+	return err
 }
