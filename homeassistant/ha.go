@@ -106,3 +106,7 @@ func (c *HomeAssistantClient) SendNotification(msg string, endpointName string) 
 	endpoint := fmt.Sprintf("/api/services/notify/%s", endpointName)
 	return c.doRequest(endpoint, jsonPayload)
 }
+
+func (c *HomeAssistantClient) ReadEnvyAttributes() (bool, error) {
+	return true, nil
+}

@@ -507,3 +507,12 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
 
 }
+
+// TODO
+func (c *PlexClient) PausePlex() error {
+	return nil
+}
+// TODO: 
+func (c *PlexClient) PlayPlex() error {
+	return nil
+}

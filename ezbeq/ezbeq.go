@@ -79,6 +79,7 @@ func urlEncode(s string) string {
 
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
+	log.Debug("Running mute command")
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
 		log.Debugf("ezbeq: Using endpoint %s", endpoint)
@@ -101,7 +102,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Current mute status is %v", out.Mute)
+		log.Infof("Mute status set to %v", out.Mute)
 		if out.Mute != status {
 			return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
 		}

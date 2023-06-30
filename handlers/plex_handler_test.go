@@ -17,7 +17,7 @@ import (
 	"context"
 	"time"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 )
@@ -57,7 +57,7 @@ func generateMultipartPayload(filePath string) (*bytes.Buffer, string, error) {
 	defer file.Close()
 
 	// Read JSON data
-	jsonData, err := ioutil.ReadAll(file)
+	jsonData, err := io.ReadAll(file)
 	if err != nil {
 		return nil, "", err
 	}
@@ -117,7 +117,7 @@ func sendMulitpart(filePath string, t *testing.T) error {
 	defer response.Body.Close()
 
 	// Read the response body
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return fmt.Errorf("Error reading response body: %v", err)
 	}
