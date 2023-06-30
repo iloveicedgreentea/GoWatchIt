@@ -19,7 +19,7 @@ func TestScriptTrigger(t *testing.T) {
 	}
 
 	// trigger an empty script to verify client
-	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"))
+	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"), v.GetString("homeAssistant.envyName"))
 	err = haClient.TriggerScript("test")
 	assert.NoError(t, err)
 
@@ -36,7 +36,7 @@ func TestLightTrigger(t *testing.T) {
 	}
 
 	// trigger light and switch
-	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"))
+	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"), v.GetString("homeAssistant.envyName"))
 
 	err = haClient.SwitchLight("light", "caseta_r_wireless_in_wall_dimmer", "off")
 	assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestNotification(t *testing.T) {
 	}
 
 	// trigger light and switch
-	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"))
+	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"), v.GetString("homeAssistant.envyName"))
 
 	err = haClient.SendNotification("test from go-plex", v.GetString("ezbeq.notifyEndpointName"))
 	assert.NoError(t, err)

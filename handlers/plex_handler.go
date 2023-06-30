@@ -189,13 +189,17 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	// stop processing webhooks
 	*skipActions = true
 
-	wg.Add(4)
+	
+	wg.Add(3)
 	go changeLight(vip, "off", wg)
 	go changeAspect(client, payload, vip, wg)
 	go changeMasterVolume(vip, m.MediaType, wg)
-	// sets skipActions to false on completion
-	go waitForHDMISync(wg, skipActions, haClient, client)
-
+	// if not using denoncodec, do this in background
+	if !useDenonCodec {
+		wg.Add(1)
+		// sets skipActions to false on completion
+		go waitForHDMISync(wg, skipActions, haClient, client)
+	}
 	if vip.GetBool("ezbeq.enabled") {
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(m)
@@ -204,14 +208,20 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		}
 
 		if useDenonCodec {
-			// TODO: detect hdmi sync?
-			// atmos detection usually takes 5 seconds
-			time.Sleep(7 * time.Second)
+			// TODO: wait for sync
+			wg.Add(1)
+			waitForHDMISync(wg, skipActions, haClient, client)
+			// denon needs to process mutli ch in as atmos first
+			// TODO: test this
+			time.Sleep(5 * time.Second)
+
+			// get the codec from avr
 			m.Codec, err = denonClient.GetCodec()
 			if err != nil {
 				log.Errorf("error getting codec from denon, can't continue: %s", err)
 				return
 			}
+			
 			// check if the expected codec is playing
 			expectedCodec, isExpectedPlaying := isExpectedCodecPlaying(denonClient, client, payload.Player.UUID, m.Codec)
 			if !isExpectedPlaying {
@@ -558,7 +568,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 
 	if vip.GetBool("homeAssistant.enabled") {
 		log.Info("Started with HA enabled")
-		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"))
+		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"), vip.GetString("homeAssistant.envyName"))
 	}
 	if vip.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")
