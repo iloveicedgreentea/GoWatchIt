@@ -179,9 +179,8 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 }
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useDenonCodec bool, data models.MediaContainer) {
+func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useDenonCodec bool, data models.MediaContainer, skipActions *bool) {
 	wg := &sync.WaitGroup{}
-	skipActions := new(bool)
 
 	// stop processing webhooks
 	*skipActions = true
@@ -358,7 +357,7 @@ func getEditionName(data models.MediaContainer) string {
 }
 
 // based on event type, determine what to do
-func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, vip *viper.Viper, model *models.SearchRequest) {
+func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, vip *viper.Viper, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -402,16 +401,13 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	model.EntryID = beqClient.CurrentProfile
 	model.MVAdjust = beqClient.MasterVolume
 
-	// pointer so it can be modified by mediaPlay at will and be shared
-	skipActions := new(bool)
-
 	log.Debugf("Event Router: Using search model: %#v", model)
 	switch payload.Event {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		mediaPlay(plexClient, vip, beqClient, haClient, denonClient, payload, model, useDenonCodec, data)
+		mediaPlay(plexClient, vip, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
 		mediaStop(vip, beqClient, haClient, payload, model)
@@ -580,9 +576,13 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		denonClient = denon.NewClient(vip.GetString("ezbeq.DenonIP"), vip.GetString("ezbeq.DenonPort"))
 		useDenonCodec = true
 	}
+
+	// pointer so it can be modified by mediaPlay at will and be shared
+	skipActions := new(bool)
+	
 	// block forever until closed so it will wait in background for work
 	for i := range plexChan {
 		// determine what to do
-		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, vip, model)
+		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, vip, model, skipActions)
 	}
 }
