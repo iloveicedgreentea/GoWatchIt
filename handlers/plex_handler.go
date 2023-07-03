@@ -203,6 +203,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		err := beqClient.UnloadBeqProfile(m)
 		if err != nil {
 			log.Errorf("Error unloading beq on startup!! : %v", err)
+			return
 		}
 
 		// slower but more accurate
@@ -210,7 +211,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			// wait for sync
 			wg.Add(1)
 			waitForHDMISync(wg, skipActions, haClient, client)
-			// denon needs to process mutli ch in as atmos first
+			// denon needs time to process mutli ch in as atmos first
 			// TODO: test this
 			time.Sleep(5 * time.Second)
 
@@ -369,7 +370,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	}
 
 	plexClient.MachineID = clientUUID
-
+	plexClient.MediaType = payload.Metadata.Type
 	log.Infof("Processing media type: %s", payload.Metadata.Type)
 
 	var err error
@@ -394,7 +395,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	}
 
 	log.Debugf("Event Router: Got media type of: %s ", payload.Metadata.Type)
-	plexClient.MediaType = payload.Metadata.Type
+
 	model.Year = payload.Metadata.Year
 	model.Edition = editionName
 	// this should be updated with every event
