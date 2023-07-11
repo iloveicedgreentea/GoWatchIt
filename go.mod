@@ -3,7 +3,7 @@ module github.com/iloveicedgreentea/go-plex
 go 1.19
 
 require (
-	github.com/StalkR/imdb v1.0.14
+	github.com/StalkR/imdb v1.0.15
 	github.com/anaskhan96/soup v1.2.5
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/fsnotify/fsnotify v1.6.0
