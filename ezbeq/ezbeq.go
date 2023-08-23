@@ -50,27 +50,34 @@ func NewClient(url, port string) (*BeqClient, error) {
 
 // GetStatus will get metadata from ezbeq and load into client
 func (c *BeqClient) GetStatus() error {
-	beqPayload := make(map[string]models.BeqDevices)
-
 	// get all devices
 	res, err := c.makeReq("/api/2/devices", nil, http.MethodGet)
 	if err != nil {
 		return err
 	}
-
-	err = json.Unmarshal(res, &beqPayload)
+	payload, err := mapToBeqDevice(res)
 	if err != nil {
 		return err
 	}
-	log.Debugf("BEQ payload: %#v", beqPayload)
+	log.Debugf("BEQ payload: %#v", payload)
 
 	// add devices to client, it returns as a map not list
-	for _, v := range beqPayload {
+	for _, v := range payload {
 		log.Debugf("BEQ device: %#v", v.Name)
 		c.DeviceInfo = append(c.DeviceInfo, v)
 	}
 
+	if c.DeviceInfo == nil {
+		return errors.New("no devices found")
+	}
+
 	return nil
+}
+
+func mapToBeqDevice(jsonData []byte) (beqPayload map[string]models.BeqDevices, err error) {
+	err = json.Unmarshal(jsonData, &beqPayload)
+
+	return beqPayload, err
 }
 
 func urlEncode(s string) string {
@@ -129,7 +136,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	var setHeader bool
 	var req *http.Request
 	var err error
-	
+
 	log.Debugf("Using method %s", methodType)
 	switch methodType {
 	case http.MethodPut:
@@ -345,7 +352,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// write payload to each device
 	for _, v := range m.Devices {
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)

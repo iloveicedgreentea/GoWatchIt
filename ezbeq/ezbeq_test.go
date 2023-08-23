@@ -28,6 +28,358 @@ func TestMuteCmds(t *testing.T) {
 	assert.NoError(c.MuteCommand(true))
 	assert.NoError(c.MuteCommand(false))
 }
+func TestGetStatus(t *testing.T) {
+	v := viper.New()
+	v.SetConfigFile("../config.json")
+
+	err := v.ReadInConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := &BeqClient{
+		ServerURL: v.GetString("ezbeq.url"),
+		Port:      v.GetString("ezbeq.port"),
+	}
+
+	// send mute commands
+	assert.NotEmpty(t, c.Port)
+	assert.NotEmpty(t, c.ServerURL)
+
+	err = c.GetStatus()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, c.DeviceInfo)
+
+}
+
+func TestSingleDevice(t *testing.T) {
+	rawJson := `{
+		"master": {
+		  "type": "minidsp",
+		  "name": "master",
+		  "masterVolume": 0,
+		  "mute": false,
+		  "slots": [
+			{
+			  "id": "1",
+			  "last": "10 Minutes Gone",
+			  "active": true,
+			  "gains": [
+				{
+				  "id": "1",
+				  "value": 5
+				},
+				{
+				  "id": "2",
+				  "value": 5
+				}
+			  ],
+			  "mutes": [
+				{
+				  "id": "1",
+				  "value": false
+				},
+				{
+				  "id": "2",
+				  "value": false
+				}
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "2",
+			  "last": "Empty",
+			  "active": false,
+			  "gains": [
+				{
+				  "id": "1",
+				  "value": 1.5
+				},
+				{
+				  "id": "2",
+				  "value": 1.5
+				}
+			  ],
+			  "mutes": [
+				{
+				  "id": "1",
+				  "value": false
+				},
+				{
+				  "id": "2",
+				  "value": false
+				}
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "3",
+			  "last": "10 Minutes Gone",
+			  "active": false,
+			  "gains": [
+				{
+				  "id": "1",
+				  "value": 0
+				},
+				{
+				  "id": "2",
+				  "value": 0
+				}
+			  ],
+			  "mutes": [
+				{
+				  "id": "1",
+				  "value": false
+				},
+				{
+				  "id": "2",
+				  "value": false
+				}
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "4",
+			  "last": "Ready Player One",
+			  "active": false,
+			  "gains": [
+				{
+				  "id": "1",
+				  "value": 2
+				},
+				{
+				  "id": "2",
+				  "value": 2
+				}
+			  ],
+			  "mutes": [
+				{
+				  "id": "1",
+				  "value": false
+				},
+				{
+				  "id": "2",
+				  "value": false
+				}
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			}
+		  ]
+		}
+	  }`
+
+	payload, err := mapToBeqDevice([]byte(rawJson))
+	assert.NoError(t, err)
+	var deviceInfo []models.BeqDevices
+	for _, v := range payload {
+		deviceInfo = append(deviceInfo, v)
+	}
+
+	assert.NotEmpty(t, deviceInfo)
+	assert.Len(t, deviceInfo, 1)
+
+	for _, v := range deviceInfo {
+		t.Log(v.Name)
+	}
+}
+func TestDualDevice(t *testing.T) {
+	rawJson := `{
+		"master": {
+		  "name": "master",
+		  "masterVolume": 0,
+		  "mute": true,
+		  "slots": [
+			{
+			  "id": "1",
+			  "last": "Empty",
+			  "active": true,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "2",
+			  "last": "Empty",
+			  "active": false,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "3",
+			  "last": "Empty",
+			  "active": false,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "4",
+			  "last": "Empty",
+			  "active": false,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			}
+		  ]
+		},
+		"master2": {
+		  "name": "master2",
+		  "masterVolume": 0,
+		  "mute": true,
+		  "slots": [
+			{
+			  "id": "1",
+			  "last": "Empty",
+			  "active": true,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "2",
+			  "last": "Empty",
+			  "active": false,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "3",
+			  "last": "Empty",
+			  "active": false,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			},
+			{
+			  "id": "4",
+			  "last": "Empty",
+			  "active": false,
+			  "gain1": 0,
+			  "gain2": 0,
+			  "mute1": false,
+			  "mute2": false,
+			  "gains": [
+				0,
+				0
+			  ],
+			  "mutes": [
+				false,
+				false
+			  ],
+			  "canActivate": true,
+			  "inputs": 2,
+			  "outputs": 4
+			}
+		  ]
+		}
+	  }`
+
+	payload, err := mapToBeqDevice([]byte(rawJson))
+	assert.NoError(t, err)
+	var deviceInfo []models.BeqDevices
+	for _, v := range payload {
+		deviceInfo = append(deviceInfo, v)
+	}
+
+	assert.NotEmpty(t, deviceInfo)
+	assert.Len(t, deviceInfo, 2)
+	for _, v := range deviceInfo {
+		t.Log(v.Name)
+	}
+}
 func TestUrlEncode(t *testing.T) {
 	s := urlEncode("DTS-HD MA 7.1")
 	assert.Equal(t, "DTS-HD+MA+7.1", s)
