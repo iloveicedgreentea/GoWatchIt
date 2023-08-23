@@ -478,7 +478,7 @@ func TestSearchCatalog(t *testing.T) {
 				Edition:         "",
 			},
 			expectedEdition: "",
-			expectedDigest:  "d4ffd507ac9a6597c5039a67f587141ca866013787ed2c06fe9ef6a86f3e5534",
+			expectedDigest:  "73a1eef9ce33abba7df0a9d2b4cec41254f6a521d521e104fa3cd2e7297c26d9",
 		},
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing
