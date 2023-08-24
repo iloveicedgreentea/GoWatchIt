@@ -276,12 +276,14 @@ create file named config.json, paste this in, remove the comments after
         // use an IP enabled Denon AVR to get the codec instead of querying plex
         // requires a madvr envy for now
         // much slower but more accurate as it will get the actual codec playing
-        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug)
+        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug) (not ready)
         "useAVRCodecSearch": false,
         "DenonIP": "",
         "DenonPort": "23",
-        // tell plex to STOP if the playing codec does not match expected
-        "stopPlexIfMismatch": true
+        // tell plex to STOP if the playing codec does not match expected like when it transcodes atmos for no reason
+        "stopPlexIfMismatch": true,
+        // pause until HDMI sync is finished so you dont get audio with black screen. (not ready yet)
+        "waitforHDMIsync": false
     },
     "main": {
         "listenPort": "9999"
