@@ -422,6 +422,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	log.Debugf("Event Router: Got media type of: %s ", payload.Metadata.Type)
 
 	model.Year = payload.Metadata.Year
+	model.MediaType = payload.Metadata.Type
 	model.Edition = editionName
 	// this should be updated with every event
 	model.EntryID = beqClient.CurrentProfile
