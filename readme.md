@@ -9,7 +9,7 @@
   * Also supports using my MadVR Envy Home Assistant integration 
 * Set Master Volume based on media type (movie, TV, etc)
 * Trigger lights when playing or stopping automatically
-* Mute/Unmute minidsp for night mode/WAF
+* Mute/Unmute Minidsp for night mode/WAF
 * Mobile notifications (via HA) to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * All options are highly configurable with hot reload 
@@ -73,7 +73,7 @@ You should deploy this as a container, systemd unit, etc.
 ### MQTT
 For flexibility, this uses MQTT to send commands. This is so you can decide what to do with that info. You will need to set MQTT up. Detailed instructions here https://www.home-assistant.io/integrations/mqtt/
   
-1) Install mosquitto mqtt add on
+1) Install mosquito mqtt add on
 2) Install mqtt integration
 3) Set up your topics in HA and the tool's config
 4) Set up Automations in HA based on the payloads of MQTT
@@ -229,11 +229,12 @@ create file named config.json, paste this in, remove the comments after
         // Trigger functions to change the following
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
-        "triggerAvrMasterVolumeChangeOnEvent": true
+        "triggerAvrMasterVolumeChangeOnEvent": true,
+        "envyName": "envy"
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
-        // url to broker and user/pass to use. Set up mosquitto via HA add on then add an HA user
+        // url to broker and user/pass to use. Set up mosquito via HA add on then add an HA user
         "url": "tcp://123.123.123.123:1883",
         "username": "sdf",
         "password": "123",
@@ -243,11 +244,11 @@ create file named config.json, paste this in, remove the comments after
         "topicAspectratio": "theater/jvc/aspectratio"
     },
     "plex": {
-        // your main owner account, will filter webhooks so others dont trigger
-        // leave blank if you dont want to filter on accounts
+        // your main owner account, will filter webhooks so others don't trigger
+        // leave blank if you don't want to filter on accounts
         "ownerNameFilter": "PLEX_OWNER_NAME to filter events on",
         // filter based on device UUID so only the client you want triggers things, or leave blank
-        // Must be UUID. Easy way to get it is running this in debug mode and then play a movie
+        // Must be UUID. Easy way to get it is playing anything and searching logs for 'Got a request from UUID:'
         "deviceUUIDFilter": "",
         "url": "http://xyz",
         "port": "32400",
@@ -255,7 +256,6 @@ create file named config.json, paste this in, remove the comments after
         "enableTrailerSupport": true || false
     },
     "ezbeq": {
-        // note this will use slot1/config1. I don't see a good reason to support multiple slots since this is event driven
         "url": "http://xyz",
         "port": "8080",
         "enabled": true,
@@ -273,12 +273,17 @@ create file named config.json, paste this in, remove the comments after
         "preferredAuthor": "aron7awol" || "mobe1969" || "other supported author" || "",
         // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
         "slots": [1],
-        // use an IP enabled Denon AVR to get the codec instead of querying plex. This might be more reliable
-        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug)
-        // this is in beta. 
+        // use an IP enabled Denon AVR to get the codec instead of querying plex
+        // requires a madvr envy for now
+        // much slower but more accurate as it will get the actual codec playing
+        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug) (not ready)
         "useAVRCodecSearch": false,
         "DenonIP": "",
-        "DenonPort": "23"
+        "DenonPort": "23",
+        // tell plex to STOP if the playing codec does not match expected like when it transcodes atmos for no reason
+        "stopPlexIfMismatch": true,
+        // pause until HDMI sync is finished so you dont get audio with black screen. (not ready yet)
+        "waitforHDMIsync": false
     },
     "main": {
         "listenPort": "9999"
@@ -330,7 +335,7 @@ GOOS=xxxx make build
 This uses a modular architecture via handlers. The main action points are `func ProcessWebhook` which processes and sends the payload to a 
 channel processed by `func PlexWorker` which runs in the background. 
 
-`func eventRouter` uses flags and switches to determine what to do. Additional actions can easily be added here. The actionable functions run as coroutines for maximum speed. Going from play to lights off is instantanous and aspect ratio detection takes about 1.5 seconds.
+`func eventRouter` uses flags and switches to determine what to do. Additional actions can easily be added here. The actionable functions run as coroutines for maximum speed. Going from play to lights off is instantaneous and aspect ratio detection takes about 1.5 seconds.
 
 `ezbeq`, `plex`, amd `homeassistant` packages have reusable clients so their functions can easily be used by other handlers.
 

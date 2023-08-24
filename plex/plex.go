@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ type PlexClient struct {
 	Port       string
 	HTTPClient http.Client
 	ImdbClient *http.Client
+	MachineID  string
+	MediaType  string
 }
 
 // return a new instance of a plex client
@@ -113,21 +116,26 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// log.Debugf("Session data: %#v", sess.Video)
 	// filter by uuid
 	// try up to 15 times until session is active. webhook sends before session is ready
 	for i := 0; i < 15; i++ {
 		for _, video := range sess.Video {
+			log.Debugf("Machine identifier: %s", video.Player.MachineIdentifier)
 			if video.Player.MachineIdentifier == uuid {
+				log.Debug("Found session matching uuid")
 				for _, stream := range video.Media.Part.Stream {
+					log.Debugf("Stream: %#v", stream)
 					if stream.StreamType == "2" {
 						return MapPlexToBeqAudioCodec(stream.DisplayTitle, stream.ExtendedDisplayTitle), nil
 					}
 				}
 			}
 		}
-
+		log.Debug("Session not found, waiting 2 seconds")
 		time.Sleep(time.Second * 2)
 	}
+	// TODO: fallback, use webhook data?
 
 	return "", fmt.Errorf("error getting codec. no session found with uuid %s", uuid)
 }
@@ -339,19 +347,20 @@ func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
 
 // return the table name given a soup.Root schema
 func parseImdbTableSchema(input soup.Root) string {
-	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item">
-	//  <button class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Runtime</button>
-	//     <div class="ipc-metadata-list-item__content-container">
-	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
-	//             role="presentation">
-	//             <li role="presentation" class="ipc-inline-list__item"><label
-	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
-	//                     for="_blank">2h 30m</label><span class="ipc-metadata-list-item__list-content-item--subText">(150
-	//                     min)</span></li>
-	//         </ul>
-	//     </div>
-	// 	</li>
-	res := input.Find("button", "class", "ipc-metadata-list-item__label")
+	// 	<li role=\"presentation\" class=\"ipc-metadata-list__item\" data-testid=\"list-item\"><span
+	// 	class=\"ipc-metadata-list-item__label\" aria-disabled=\"false\">Color</span>
+	// <div class=\"ipc-metadata-list-item__content-container\">
+	// 	<ul class=\"ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline
+	// 		ipc-metadata-list-item__list-content base\" role=\"presentation\">
+	// 		<li role=\"presentation\" class=\"ipc-inline-list__item\"><a
+	// 				class=\"ipc-metadata-list-item__list-content-item
+	// 				ipc-metadata-list-item__list-content-item--link\" role=\"button\" tabindex=\"0\"
+	// 				aria-disabled=\"false\" href=\"/search/title/?colors=color&amp;ref_=ttspec_spec_3\">Color</a>
+	// 		</li>
+	// 	</ul>
+	// </div>
+	// </li>
+	res := input.Find("span", "class", "ipc-metadata-list-item__label")
 	if res.Pointer == nil {
 		return "nil"
 	}
@@ -500,4 +509,57 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 	// return aspect ratio
 	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
 
+}
+
+func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
+	// 	&machineIdentifier=<SERVER MACHINE IDENTIFIER>
+	// &commandID=1
+	// &type=video
+	params := url.Values{}
+	params.Add("machineIdentifier", c.MachineID)
+	// TODO: might have to keep track of this and increment
+	params.Add("commandID", "0")
+	params.Add("type", c.MediaType)
+
+	log.Debugf("using params: %s", params.Encode())
+
+	u, err := url.Parse(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
+	if err != nil {
+		return nil, err
+	}
+	u.RawQuery = params.Encode()
+
+	res, err := c.HTTPClient.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	log.Debugf("Plex response: %s", string(data))
+
+	return data, err
+}
+
+// TODO:test
+func (c *PlexClient) PausePlex() error {
+	// playback/pause
+	_, err := c.makePlexReq("/player/playback/pause")
+
+	return err
+}
+
+func (c *PlexClient) PlayPlex() error {
+	_, err := c.makePlexReq("/player/playback/play")
+
+	return err
+}
+
+func (c *PlexClient) StopPlex() error {
+	_, err := c.makePlexReq("/player/playback/stop")
+
+	return err
 }

@@ -13,21 +13,15 @@ import (
 
 // TODO: add optional thing for it to tell plex to stop playing and start the stream again
 // TODO: make test
-func isExpectedCodecPlaying(c *denon.DenonClient, p *plex.PlexClient, uuid string) bool {
-	denonPlaying, err := c.GetCodec()
-	if err != nil {
-		log.Errorf("Error getting denon audio codec: %s", err)
-		return false
-	}
-
+func isExpectedCodecPlaying(c *denon.DenonClient, p *plex.PlexClient, uuid string, denonCodec string) (string, bool) {
 	plexPlaying, err := p.GetCodecFromSession(uuid)
 	if err != nil {
 		log.Errorf("Error getting plex audio stream: %s", err)
-		return false
+		return "", false
 	}
 
 	// compare the two
-	return mapDenonToBeq(denonPlaying) != plex.MapPlexToBeqAudioCodec(plexPlaying, "")
+	return plexPlaying, mapDenonToBeq(denonCodec) != plex.MapPlexToBeqAudioCodec(plexPlaying, "")
 }
 
 // TODO: map denon to beq

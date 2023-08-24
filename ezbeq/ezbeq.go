@@ -50,26 +50,36 @@ func NewClient(url, port string) (*BeqClient, error) {
 
 // GetStatus will get metadata from ezbeq and load into client
 func (c *BeqClient) GetStatus() error {
-	beqPayload := make(map[string]models.BeqDevices)
-
 	// get all devices
 	res, err := c.makeReq("/api/2/devices", nil, http.MethodGet)
 	if err != nil {
 		return err
 	}
-
-	err = json.Unmarshal(res, &beqPayload)
+	payload, err := mapToBeqDevice(res)
 	if err != nil {
 		return err
 	}
-	log.Debugf("BEQ payload: %#v", beqPayload)
+	log.Debugf("BEQ payload: %#v", payload)
 
+	log.Debugf("Len of payload is: %v", len(payload))
 	// add devices to client, it returns as a map not list
-	for _, v := range beqPayload {
+	for _, v := range payload {
+		log.Debugf("BEQ device: %#v", v.Name)
 		c.DeviceInfo = append(c.DeviceInfo, v)
 	}
 
+	if len(c.DeviceInfo) == 0 || c.DeviceInfo == nil {
+		return errors.New("no devices found")
+	}
+	log.Debug("c.DeviceInfo is not 0")
+
 	return nil
+}
+
+func mapToBeqDevice(jsonData []byte) (beqPayload map[string]models.BeqDevices, err error) {
+	err = json.Unmarshal(jsonData, &beqPayload)
+
+	return beqPayload, err
 }
 
 func urlEncode(s string) string {
@@ -78,6 +88,7 @@ func urlEncode(s string) string {
 
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
+	log.Debug("Running mute command")
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
 		log.Debugf("ezbeq: Using endpoint %s", endpoint)
@@ -100,7 +111,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Current mute status is %v", out.Mute)
+		log.Infof("Mute status set to %v", out.Mute)
 		if out.Mute != status {
 			return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
 		}
@@ -127,7 +138,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	var setHeader bool
 	var req *http.Request
 	var err error
-	
+
 	log.Debugf("Using method %s", methodType)
 	switch methodType {
 	case http.MethodPut:
@@ -205,7 +216,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 }
 
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
-func (c *BeqClient) searchCatalog(m models.SearchRequest) (models.BeqCatalog, error) {
+func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
 	code := urlEncode(m.Codec)
 	var endpoint string
@@ -231,7 +242,7 @@ func (c *BeqClient) searchCatalog(m models.SearchRequest) (models.BeqCatalog, er
 
 	// search through results and find match
 	for _, val := range payload {
-		log.Debugf("Beq results: %v", val)
+		log.Debugf("Beq results: Title: %v -- Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
 			// if it matches, check edition
@@ -263,10 +274,11 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
-func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
+func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 	if m.TMDB == "" {
 		return errors.New("tmdb is empty. Can't find a match")
 	}
+	log.Debugf("beq payload is %#v", m)
 
 	// if no devices provided, error
 	if len(m.Devices) == 0 {
@@ -342,7 +354,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// write payload to each device
 	for _, v := range m.Devices {
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
@@ -359,7 +371,7 @@ func (c *BeqClient) LoadBeqProfile(m models.SearchRequest) error {
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
-func (c *BeqClient) UnloadBeqProfile(m models.SearchRequest) error {
+func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
 	if m.DryrunMode {
 		return nil
 	}
