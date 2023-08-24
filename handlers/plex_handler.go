@@ -116,6 +116,7 @@ func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassis
 				}
 			}
 		}
+		log.Info("BEQ profile unloaded")
 	}
 }
 
@@ -138,13 +139,14 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 					}
 				}
 			}
+			log.Info("BEQ profile unloaded")
 		}
 	}
 }
 
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
 func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, PlexClient *plex.PlexClient, vip *viper.Viper) {
-	if vip.GetBool("ezbeq.waitforHDMIsync") {
+	if !vip.GetBool("ezbeq.waitforHDMIsync") {
 		wg.Done()
 		return
 	}
@@ -286,6 +288,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			log.Error(err)
 			return
 		}
+		log.Info("BEQ profile loaded")
 
 		// send notification of it loaded
 		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
@@ -331,6 +334,8 @@ func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeass
 				log.Error(err)
 				return
 			}
+			log.Info("BEQ profile loaded")
+
 			// send notification of it loaded
 			if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
 				err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), vip.GetString("ezbeq.notifyEndpointName"))
@@ -603,7 +608,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 
 	// pointer so it can be modified by mediaPlay at will and be shared
 	skipActions := new(bool)
-	
+
 	// block forever until closed so it will wait in background for work
 	for i := range plexChan {
 		log.Debugf("Current length of plexChan in PlexWorker: %d", len(plexChan))
