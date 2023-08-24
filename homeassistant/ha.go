@@ -137,6 +137,9 @@ func (c *HomeAssistantClient) ReadEnvyAttributes() (bool, error) {
 	// unmarshal
 	var envyResp models.HAEnvyResponse
 	err = json.Unmarshal(resp, &envyResp)
+	if envyResp.State == "off" {
+		return false, fmt.Errorf("envy state is %s", envyResp.State)
+	}
 
 	return envyResp.Attributes.NoSignal, err
 }

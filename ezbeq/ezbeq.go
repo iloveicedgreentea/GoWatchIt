@@ -61,15 +61,17 @@ func (c *BeqClient) GetStatus() error {
 	}
 	log.Debugf("BEQ payload: %#v", payload)
 
+	log.Debugf("Len of payload is: %v", len(payload))
 	// add devices to client, it returns as a map not list
 	for _, v := range payload {
 		log.Debugf("BEQ device: %#v", v.Name)
 		c.DeviceInfo = append(c.DeviceInfo, v)
 	}
 
-	if c.DeviceInfo == nil {
+	if len(c.DeviceInfo) == 0 || c.DeviceInfo == nil {
 		return errors.New("no devices found")
 	}
+	log.Debug("c.DeviceInfo is not 0")
 
 	return nil
 }

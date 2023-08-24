@@ -248,7 +248,7 @@ create file named config.json, paste this in, remove the comments after
         // leave blank if you don't want to filter on accounts
         "ownerNameFilter": "PLEX_OWNER_NAME to filter events on",
         // filter based on device UUID so only the client you want triggers things, or leave blank
-        // Must be UUID. Easy way to get it is running this in debug mode and then play a movie
+        // Must be UUID. Easy way to get it is playing anything and searching logs for 'Got a request from UUID:'
         "deviceUUIDFilter": "",
         "url": "http://xyz",
         "port": "32400",

@@ -65,7 +65,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 				return
 			}
 			clientUUID := decodedPayload.Player.UUID
-			log.Debugf("!!! Your Player UUID is %s !!!!!", clientUUID)
+			log.Infof("Got a request from UUID: %s", clientUUID)
 
 			log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
 			log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
@@ -75,7 +75,16 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			// only respond to events on a particular account if you share servers and only for movies and shows
 			if userID == "" || decodedPayload.Account.Title == userID {
 				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
-					plexChan <- decodedPayload
+					log.Debugf("Current length of plexChan: %d", len(plexChan))
+					select {
+					case plexChan <- decodedPayload:
+						// send succeeded
+					case <-time.After(time.Second * 3):
+						log.Error("Send on plexChan timed out")
+						http.Error(w, err.Error(), http.StatusTooManyRequests)
+						return
+					}
+					log.Debugf("Added length of plexChan: %d", len(plexChan))
 				}
 			} else {
 				log.Debugf("userID '%s' does not match filter", userID)
@@ -134,7 +143,13 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 }
 
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
-func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, PlexClient *plex.PlexClient) {
+func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, PlexClient *plex.PlexClient, vip *viper.Viper) {
+	if vip.GetBool("ezbeq.waitforHDMIsync") {
+		wg.Done()
+		return
+	}
+
+	log.Debug("Running HDMI sync wait")
 	defer func() {
 		// play item no matter what
 		err := PlexClient.PlayPlex()
@@ -169,6 +184,11 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 			log.Debug("HDMI sync complete")
 			return
 		}
+		if err != nil {
+			log.Errorf("Error reading envy attributes: %v", err)
+			return
+		}
+		// otherwise continue
 		time.Sleep(1 * time.Second)
 	}
 	if err != nil {
@@ -193,8 +213,9 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
 		wg.Add(1)
+		// TODO: get this working
 		// sets skipActions to false on completion
-		go waitForHDMISync(wg, skipActions, haClient, client)
+		go waitForHDMISync(wg, skipActions, haClient, client, vip)
 	}
 
 	if vip.GetBool("ezbeq.enabled") {
@@ -209,8 +230,8 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		if useDenonCodec {
 			// wait for sync
 			wg.Add(1)
-			waitForHDMISync(wg, skipActions, haClient, client)
-			// denon needs time to process mutli ch in as atmos first
+			waitForHDMISync(wg, skipActions, haClient, client, vip)
+			// denon needs time to show mutli ch in as atmos
 			// TODO: test this
 			time.Sleep(5 * time.Second)
 
@@ -454,6 +475,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 
 // will change aspect ratio
 func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper, wg *sync.WaitGroup) {
+	defer wg.Done()
 	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
 
 		// if madvr enabled, only send a trigger via mqtt
@@ -497,6 +519,7 @@ func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vi
 
 // trigger HA for MV change per type
 func changeMasterVolume(vip *viper.Viper, mediaType string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	if vip.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
 		log.Debug("changeMasterVolume: Changing volume")
 		err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), vip.GetString("mqtt.topicVolume"))
@@ -508,6 +531,7 @@ func changeMasterVolume(vip *viper.Viper, mediaType string, wg *sync.WaitGroup) 
 
 // trigger HA for light change given entity and desired state
 func changeLight(vip *viper.Viper, state string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	if vip.GetBool("homeAssistant.triggerLightsOnEvent") && vip.GetBool("homeAssistant.enabled") {
 		log.Debug("changeLight: Changing light")
 		err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), vip.GetString("mqtt.topicLights"))
@@ -582,7 +606,12 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	
 	// block forever until closed so it will wait in background for work
 	for i := range plexChan {
+		log.Debugf("Current length of plexChan in PlexWorker: %d", len(plexChan))
 		// determine what to do
+		log.Debug("Sending new payload to eventRouter")
 		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, vip, model, skipActions)
+		log.Debug("eventRouter done processing payload")
 	}
+
+	log.Debug("Plex worker stopped")
 }

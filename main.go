@@ -47,21 +47,18 @@ func main() {
 	// pass the chan to the handlers
 	plexWh := handlers.ProcessWebhook(plexChan, vip)
 	dspWh := handlers.ProcessMinidspWebhook(minidspChan, vip)
-	// jellyfin might one day be supported
-	// jfWh := handlers.ProcessJellyfinWebhook(plexChan, vip)
+
 	// healthcheck
 	health := handlers.ProcessHealthcheckWebhook()
 
 	// Add plex webhook handler
 	mux.Handle("/plexwebhook", plexWh)
+
 	// minidsp
 	mux.Handle("/minidspwebhook", dspWh)
-	// jellyfin
-	// mux.Handle("/jellyfinwebhook", jfWh)
 
 	// healthcheck
 	mux.Handle("/health", health)
-
 
 	log.Info("Starting server")
 	err = http.ListenAndServe(fmt.Sprintf(":%s", vip.GetString("main.listenPort")), mux)
