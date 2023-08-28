@@ -16,20 +16,24 @@ import (
 var log = logger.GetLogger()
 
 type HomeAssistantClient struct {
-	ServerURL  string
-	Port       string
-	Token      string
-	HTTPClient http.Client
+	ServerURL      string
+	Port           string
+	Token          string
+	HTTPClient     http.Client
 	EnvyEntityName string
+	JVCEntityName  string
+	BinaryName string
 }
 
 // // A client to interface with home assistant
-func NewClient(url, port string, token string, envyName string) *HomeAssistantClient {
+func NewClient(url, port string, token string, envyName string, jvcName string, binaryName string) *HomeAssistantClient {
 	return &HomeAssistantClient{
-		ServerURL: url,
-		Port:      port,
-		Token:     token,
+		ServerURL:      url,
+		Port:           port,
+		Token:          token,
 		EnvyEntityName: envyName,
+		JVCEntityName:  jvcName,
+		BinaryName: binaryName,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -123,11 +127,15 @@ func (c *HomeAssistantClient) SendNotification(msg string, endpointName string) 
 	return err
 }
 
+// HAAttributeResponse is an interface for anything that implements these functions
+type HAAttributeResponse interface {
+	GetState() string
+	GetSignalStatus() bool
+}
 
-
-// ReadEnvyAttributes returns true if there is a signal
-func (c *HomeAssistantClient) ReadEnvyAttributes() (bool, error) {
-	endpoint := fmt.Sprintf("/api/states/remote.%s", c.EnvyEntityName)
+// ReadAttributes generic function to read attribute. entType remote || binary_sensor
+func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttributeResponse, entType string) (bool, error) {
+	endpoint := fmt.Sprintf("/api/states/%s.%s", entType, entityName)
 	resp, err := c.doRequest(endpoint, nil, http.MethodGet)
 	if err != nil {
 		return false, err
@@ -135,11 +143,18 @@ func (c *HomeAssistantClient) ReadEnvyAttributes() (bool, error) {
 	log.Debugf("Response: %s", resp)
 
 	// unmarshal
-	var envyResp models.HAEnvyResponse
-	err = json.Unmarshal(resp, &envyResp)
-	if envyResp.State == "off" {
-		return false, fmt.Errorf("envy state is %s", envyResp.State)
-	}
+	err = json.Unmarshal(resp, respObj)
 
-	return envyResp.Attributes.NoSignal, err
+	switch entType {
+	case "remote":
+		if respObj.GetState() == "off" {
+			return false, fmt.Errorf("envy state is %s", respObj.GetState())
+		}
+
+		return respObj.GetSignalStatus(), err
+	case "binary_sensor":
+		return respObj.GetState() == "on", err
+	default:
+		return false, err
+	}
 }

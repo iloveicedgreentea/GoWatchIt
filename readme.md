@@ -230,7 +230,10 @@ create file named config.json, paste this in, remove the comments after
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
         "triggerAvrMasterVolumeChangeOnEvent": true,
-        "envyName": "envy"
+        // optional if using HDMI sync. The name of the remote entities
+        "envyRemoteName": "envy",
+        "jvcRemoteName": "nz7",
+        "binarySensorName": "none"
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
@@ -281,8 +284,13 @@ create file named config.json, paste this in, remove the comments after
         "DenonIP": "",
         "DenonPort": "23",
         // tell plex to STOP if the playing codec does not match expected like when it transcodes atmos for no reason
-        "stopPlexIfMismatch": true,
-        // pause until HDMI sync is finished so you dont get audio with black screen. (not ready yet)
+        "stopPlexIfMismatch": true
+    },
+    // what to use for signal source
+    "signal": {
+        // jvc, envy, or name of the binary sensor (see readme)
+        "source": "jvc",
+        // true if you want to pause plex until hdmi sync is done
         "waitforHDMIsync": false
     },
     "main": {
@@ -326,6 +334,15 @@ This tool will do its best to match editions. It will look for one of the follow
 There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety. If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
 
 If you find repeated match failures because of editions, open a github issue with debug logs of you triggering `media.play`
+
+### HDMI Sync Automation
+This tool supports automatically waiting until HDMI sync is done. Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? This tool will prevent that. 
+
+It supports three ways to get this info: my JVC integration, my Envy integration, or a generic binary_sensor
+
+If using a binary_sensor, you need to create an automation which will set the state to `off` when there is NO SIGNAL and `on` when there is. Getting that data is up to you. Set the `signal` config to the name of the binary sensor (e.g signal, if the entity is binary_sensor.signal)
+
+If using the first two, you just need to install it, nothing else.
 
 ## Building Binary
 GOOS=xxxx make build

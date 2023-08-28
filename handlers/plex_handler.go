@@ -144,9 +144,36 @@ func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassi
 	}
 }
 
+// readAttrAndWait is a generic func to read attr from HA
+func readAttrAndWait(waitTime int, entName string, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+	var err error
+	var isSignal bool
+
+	for i := 0; i < waitTime; i++ {
+		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
+		if isSignal {
+			log.Debug("HDMI sync complete")
+			return isSignal, nil
+		}
+		if err != nil {
+			log.Errorf("Error reading envy attributes: %v", err)
+			return false, err
+		}
+		// otherwise continue
+		time.Sleep(1 * time.Second)
+	}
+	if err != nil {
+		log.Errorf("Error reading envy attributes: %v", err)
+		return false, err
+	}
+
+	return false, err
+
+}
+
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
 func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, PlexClient *plex.PlexClient, vip *viper.Viper) {
-	if !vip.GetBool("ezbeq.waitforHDMIsync") {
+	if !vip.GetBool("signal.waitforHDMIsync") {
 		wg.Done()
 		return
 	}
@@ -154,6 +181,7 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	log.Debug("Running HDMI sync wait")
 	defer func() {
 		// play item no matter what
+		// TODO: fix plex api 
 		err := PlexClient.PlayPlex()
 		if err != nil {
 			log.Errorf("Error playing plex: %v", err)
@@ -165,10 +193,9 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		wg.Done()
 	}()
 
-	// TODO: Explore Denon SD? -> SDNO, SDHMDI
-
+	signalSource := vip.GetString("signal.source")
 	var err error
-	var isSignal bool
+	var signal bool
 
 	// pause plex
 	log.Debug("pausing plex")
@@ -178,24 +205,22 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		return
 	}
 
-	// read envy attributes until its not nosignal
-	// wait up to 30s to readEnvyAttributes
-	for i := 0; i < 30; i++ {
-		isSignal, err = haClient.ReadEnvyAttributes()
-		if isSignal {
-			log.Debug("HDMI sync complete")
-			return
-		}
-		if err != nil {
-			log.Errorf("Error reading envy attributes: %v", err)
-			return
-		}
-		// otherwise continue
-		time.Sleep(1 * time.Second)
+	switch signalSource {
+	case "envy":
+		// read envy attributes until its not nosignal
+		signal, err = readAttrAndWait(30, haClient.EnvyEntityName, "remote", &models.HAEnvyResponse{}, haClient)
+	case "jvc":
+		// read jvc attributes until its not nosignal
+		signal, err = readAttrAndWait(30, haClient.JVCEntityName, "remote", &models.HAjvcResponse{}, haClient)
+	case "sensor":
+		signal, err = readAttrAndWait(30, haClient.BinaryName, "binary_sensor", &models.HABinaryResponse{}, haClient)
+	default:
+		log.Errorf("waitforHDMIsync enabled but no valid source provided: %v", signalSource)
 	}
+
+	log.Debugf("HDMI Signal value is %v", signal)
 	if err != nil {
-		log.Errorf("Error reading envy attributes: %v", err)
-		return
+		log.Errorf("error getting HDMI signal: %v", err)
 	}
 
 }
@@ -215,7 +240,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
 		wg.Add(1)
-		// TODO: get this working
+		// TODO: test this 
 		// sets skipActions to false on completion
 		go waitForHDMISync(wg, skipActions, haClient, client, vip)
 	}
@@ -599,7 +624,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 
 	if vip.GetBool("homeAssistant.enabled") {
 		log.Info("Started with HA enabled")
-		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"), vip.GetString("homeAssistant.envyName"))
+		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"), vip.GetString("homeAssistant.envyRemoteName"), vip.GetString("homeAssistant.jvcRemoteName"), vip.GetString("homeAssistant.binarySensorName"))
 	}
 	if vip.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")

@@ -533,6 +533,19 @@ func TestSearchCatalog(t *testing.T) {
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
 			expectedMvAdjust: 0.0,
 		},
+		{
+			//  spiderman universe
+			m: models.SearchRequest{
+				TMDB:            "56292",
+				Year:            2011,
+				Codec:           "TrueHD 7.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
+			expectedMvAdjust: 0.0,
+		},
 	}
 
 	for _, tc := range tt {

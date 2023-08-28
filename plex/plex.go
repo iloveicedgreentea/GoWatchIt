@@ -28,8 +28,9 @@ type PlexClient struct {
 	Port       string
 	HTTPClient http.Client
 	ImdbClient *http.Client
-	MachineID  string
-	MediaType  string
+	// TODO: set this as input in config? d90a13e4567bf9eaa3999225997a32d65ee38d6f
+	MachineID string
+	MediaType string
 }
 
 // return a new instance of a plex client
@@ -260,8 +261,16 @@ func (c *PlexClient) GetAudioCodec(data models.MediaContainer) (string, error) {
 	// loop instead of index because of edge case with two or more video streams
 	for _, val := range data.Video.Media.Part.Stream {
 		if val.StreamType == "2" {
+			log.Debugf("Found codecs: %s, %s", val.DisplayTitle, val.ExtendedDisplayTitle)
 			return MapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
 		}
+	}
+
+	if plexAudioCodec == "" {
+		log.Error("did not find codec from plex metadata")
+		log.Error("Dumping stream data")
+		log.Error(data.Video.Media.Part.Stream)
+		return "", errors.New("no codec found")
 	}
 
 	return plexAudioCodec, nil
