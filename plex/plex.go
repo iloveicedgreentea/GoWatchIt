@@ -28,13 +28,13 @@ type PlexClient struct {
 	Port       string
 	HTTPClient http.Client
 	ImdbClient *http.Client
-	// TODO: set this as input in config? d90a13e4567bf9eaa3999225997a32d65ee38d6f
-	MachineID string
-	MediaType string
+	MachineID  string
+	ClientIP   string
+	MediaType  string
 }
 
 // return a new instance of a plex client
-func NewClient(url, port string) *PlexClient {
+func NewClient(url, port string, machineID string, clientIP string) *PlexClient {
 	return &PlexClient{
 		ServerURL: url,
 		Port:      port,
@@ -45,6 +45,8 @@ func NewClient(url, port string) *PlexClient {
 			Timeout:   10 * time.Second,
 			Transport: &customTransport{http.DefaultTransport},
 		},
+		MachineID: machineID,
+		ClientIP:  clientIP,
 	}
 }
 
@@ -520,17 +522,11 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 
 }
 
+// makePlexReq makes a request to a client player for playback control
 func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
-	// 	&machineIdentifier=<SERVER MACHINE IDENTIFIER>
-	// &commandID=1
-	// &type=video
 	params := url.Values{}
-	params.Add("machineIdentifier", c.MachineID)
-	// TODO: might have to keep track of this and increment
-	params.Add("commandID", "0")
-	params.Add("type", c.MediaType)
-
-	log.Debugf("using params: %s", params.Encode())
+	// add plex client id
+	params.Add("X-Plex-Client-Identifier", c.MachineID)
 
 	u, err := url.Parse(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
 	if err != nil {
@@ -538,37 +534,34 @@ func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	}
 	u.RawQuery = params.Encode()
 
-	res, err := c.HTTPClient.Get(u.String())
+	log.Debugf("using params: %s", u.RawQuery)
+
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
+	// add plex client id also needed as header
+	req.Header.Add("X-Plex-Client-Identifier", c.MachineID)
+
+	res, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error when calling plex API: %v", err)
+	}
+	defer res.Body.Close()
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+
 	log.Debugf("Plex response: %s", string(data))
 
 	return data, err
 }
 
-// TODO:test
-func (c *PlexClient) PausePlex() error {
-	// playback/pause
-	_, err := c.makePlexReq("/player/playback/pause")
-
-	return err
-}
-
-func (c *PlexClient) PlayPlex() error {
-	_, err := c.makePlexReq("/player/playback/play")
-
-	return err
-}
-
-func (c *PlexClient) StopPlex() error {
-	_, err := c.makePlexReq("/player/playback/stop")
+// DoPlaybackAction generic func to do playback - play, pause, stop
+func (c *PlexClient) DoPlaybackAction(action string) error {
+	_, err := c.makePlexReq(fmt.Sprintf("/player/playback/%s", action))
 
 	return err
 }

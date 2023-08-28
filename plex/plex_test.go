@@ -28,7 +28,7 @@ type testData struct {
 func TestGetPlexReq(t *testing.T) {
 	serverUrl := "http://192.168.88.56"
 	serverPrt := "32400"
-	c := NewClient(serverUrl, serverPrt)
+	c := NewClient(serverUrl, serverPrt, "", "")
 	d, err := c.getPlexReq("/library/metadata/6262")
 	assert.NoError(t, err)
 	res := string(d)
@@ -39,7 +39,7 @@ func TestGetPlexReq(t *testing.T) {
 func TestGetMediaData(t *testing.T) {
 	serverUrl := "http://192.168.88.56"
 	serverPrt := "32400"
-	c := NewClient(serverUrl, serverPrt)
+	c := NewClient(serverUrl, serverPrt, "", "")
 
 	// no time to die
 	med, err := c.GetMediaData("/library/metadata/7278")
@@ -54,7 +54,7 @@ func TestGetCodecFromSession(t *testing.T) {
 	t.SkipNow()
 	serverUrl := "http://192.168.88.56"
 	serverPrt := "32400"
-	c := NewClient(serverUrl, serverPrt)
+	c := NewClient(serverUrl, serverPrt, "", "")
 
 	codec, err := c.GetCodecFromSession("976607a88023661f-com-plexapp-android")
 	assert.NoError(t, err)
@@ -193,7 +193,7 @@ func TestImdbTechInfo(t *testing.T) {
 func TestGetImdbInfoAspect(t *testing.T) {
 	serverUrl := os.Getenv("PLEX_URL")
 	serverPrt := os.Getenv("PLEX_PORT")
-	c := NewClient(serverUrl, serverPrt)
+	c := NewClient(serverUrl, serverPrt, "", "")
 	assert := assert.New(t)
 
 	tests := []aspectTest{
@@ -249,7 +249,7 @@ func TestGetPlexMovies(t *testing.T) {
 
 	serverUrl := os.Getenv("PLEX_URL")
 	serverPrt := os.Getenv("PLEX_PORT")
-	c := NewClient(serverUrl, serverPrt)
+	c := NewClient(serverUrl, serverPrt, "", "")
 
 	data, err := c.getPlexReq(fmt.Sprintf("/library/sections/%s/all", librarySectionID))
 	if err != nil {

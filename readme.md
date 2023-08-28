@@ -1,28 +1,48 @@
-# Plex Webhook Automation
+# Home Theater Automation Server
 
 *Please read the readme start to finish*
 
 ## Features
 
-* Load/unload profiles automatically, no user action needed, correct codec detected
+This has become more of a general purpose home theater automation server. It is centered around Plex, but I am adding support for generic sources of info as well.
+
+* Load/unload BEQ profiles automatically, no user action needed, correct codec detected
 * Detect aspect ratio and send command to HA to adjust accordingly
   * Also supports using my MadVR Envy Home Assistant integration 
 * Set Master Volume based on media type (movie, TV, etc)
 * Trigger lights when playing or stopping automatically
-* Mute/Unmute Minidsp for night mode/WAF
+* HDMI Sync detection and automation (pause while it is syncing)
+* Mute/Unmute Minidsp for things like night mode/WAF (turning off subs)
 * Mobile notifications (via HA) to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * All options are highly configurable with hot reload 
 * Built in support for Home Assistant and Minidsp webhooks (e.x mute on)
 
-*note: all communication to HA is done via MQTT so you will need to set this up*
-
-I wrote this to be modular and extensible so adding additional listeners is simple. 
-
-Feel free to make PRs or feature requests
+*note: most communication to HA is done via MQTT so you will need to set this up*
 
 ## Usage
 This tool is web API based. It is extensible by adding "handlers" which are listener endpoints for any function. 
+
+## Setup
+Note: this assumes you have ezBEQ, Plex, and HomeAssistant working. Refer to their respective guides for installation help.
+
+You don't strictly need HA and you can use your own systems but I recommend HA.
+
+0) Create `config.json` and set the values appropriately. See below.
+1) Either pull `ghcr.io/iloveicedgreentea/plex-webhook-automation:$version` or build the binary directly
+    * if you deploy a container, mount config.json to a volume called exactly `/config.json`
+2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
+    * `locahost:9999/plexwebhook`
+3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth with an API, so I don't want to implement their locked-in auth method that has historically had outages.
+4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
+5) Add your UUID to the config.json so it filters by device
+    * can get UUID from `https://plex.tv/devices.xml` or run the tool and play something
+6) The app should detect the change and reload itself. This sometimes doesn't work with Docker, so might need a manual restart.
+
+You should deploy this as a container, systemd unit, etc. 
+
+*side note: you should really set a compressor on your minidsp for safety as outlined in the BEQ forum post*
+
 
 ### Handlers
 `/plexwebhook`
@@ -43,31 +63,13 @@ rest_command:
 
 And then inside an automation, you make an action
 ```yaml
-  # unmute
+  # unmute subs
   - service: rest_command.minidsp
     data:
       command: "off"
 ```
 
-Using the above you can automate the mute and unmute of your minidsp with anything. I personally use Harmony and trigger this via Emulated Roku. Hold button to mute all subs and lower volume, press same button to unmute and reset volume.
-
-## Setup
-Note: this assumes you have ezBEQ, Plex, and HomeAssistant working. Refer to their respective guides for installation help.
-
-You don't strictly need HA and you can use your own systems but I recommend HA.
-
-0) Create `config.json` and set the values appropriately. See below.
-1) Either pull `ghcr.io/iloveicedgreentea/plex-webhook-automation:master` or build the binary directly
-    * if you deploy a container, mount config.json to a volume called exactly `/config.json`
-2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint
-3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth, so I don't want to implement their locked-in auth method that has historically had outages.
-4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
-5) Add your UUID to the config.json so it filters by device
-6) The app should detect the change and reload itself. If not, restart it.
-
-You should deploy this as a container, systemd unit, etc. 
-
-*side note: you should really set a compressor on your minidsp for safety as outlined in the BEQ forum post*
+Using the above you can automate the mute and unmute of your minidsp with any automation source.
 
 
 ### MQTT
@@ -98,7 +100,7 @@ In your Automations, you can action based on these payloads.
 #### Aspect Ratio
 ```json
 {
-    "aspect": "2.4" || "2.2" || "1.85" || "1.78"
+    "aspect": "2.4" || "2.2" || "1.85" || "1.78" || etc
 }
 ```
 
@@ -106,7 +108,7 @@ In your Automations, you can action based on these payloads.
 
 There are two ways to do masking. One is using this tool. The other is using my MadVR Envy Home Assistant integration and using the Envy's aspect ratio (Aspect dec or Aspect int) attribute in an automation. The second way is most useful if you have a curtain like masking system, not a drop down one.
 
-If using this tool, you can use the default source (IMDB) or MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail, but I tried to add retries for that. The Envy method requires my HA plugin. 
+If using this tool, you can use the default source (IMDB) or MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail because they intentionally change their HTML to break scrapers, but I tried to add retries for that. The Envy method requires my HA plugin. 
 
 *Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic needs to be named topicAspectratioMadVrOnly. Run your actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 12 seconds or so until the envy scales the display correctly and the attribute changes*
 
@@ -230,10 +232,14 @@ create file named config.json, paste this in, remove the comments after
         "triggerAspectRatioChangeOnEvent": true,
         "triggerLightsOnEvent": true,
         "triggerAvrMasterVolumeChangeOnEvent": true,
-        // optional if using HDMI sync. The name of the remote entities
+        // optional if using HDMI sync. The name of the remote entities. You only need ONE
         "envyRemoteName": "envy",
         "jvcRemoteName": "nz7",
-        "binarySensorName": "none"
+        "binarySensorName": "some_sensor",
+        // names of scripts which call remote.xyz or play/pause/stop your player of choice if not using Plex
+        "playScriptName": "",
+        "pauseScriptName": "",
+        "stopScriptName": ""
     },
     // all communication to HA is done via MQTT. Set up automations to run scripts
     "mqtt": {
@@ -247,6 +253,8 @@ create file named config.json, paste this in, remove the comments after
         "topicAspectratio": "theater/jvc/aspectratio"
     },
     "plex": {
+        // if you don't use plex
+        "enabled": true,
         // your main owner account, will filter webhooks so others don't trigger
         // leave blank if you don't want to filter on accounts
         "ownerNameFilter": "PLEX_OWNER_NAME to filter events on",
@@ -256,7 +264,10 @@ create file named config.json, paste this in, remove the comments after
         "url": "http://xyz",
         "port": "32400",
         // if you enable trailers before movies, it can process it like turn off lights. no BEQ 
-        "enableTrailerSupport": true || false
+        "enableTrailerSupport": true || false,
+        // get this from "http://(player IP):32500/resources". Check readme
+        "playerMachineIdentifier": "uuid",
+        "playerIP": "xxx.xxx.xxx.xxx"
     },
     "ezbeq": {
         "url": "http://xyz",
@@ -288,7 +299,7 @@ create file named config.json, paste this in, remove the comments after
     },
     // what to use for signal source
     "signal": {
-        // jvc, envy, or name of the binary sensor (see readme)
+        // jvc, envy, or name of the binary sensor (see readme), or you can specify seconds to wait like "13"
         "source": "jvc",
         // true if you want to pause plex until hdmi sync is done
         "waitforHDMIsync": false
@@ -338,11 +349,20 @@ If you find repeated match failures because of editions, open a github issue wit
 ### HDMI Sync Automation
 This tool supports automatically waiting until HDMI sync is done. Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? This tool will prevent that. 
 
-It supports three ways to get this info: my JVC integration, my Envy integration, or a generic binary_sensor
+It supports three ways to get this info: my JVC integration, my Envy integration, a generic binary_sensor, or seconds to wait.
 
 If using a binary_sensor, you need to create an automation which will set the state to `off` when there is NO SIGNAL and `on` when there is. Getting that data is up to you. Set the `signal` config to the name of the binary sensor (e.g signal, if the entity is binary_sensor.signal)
 
 If using the first two, you just need to install it, nothing else.
+
+If using seconds, provide the number of seconds to wait as a string such as "13" for 13 seconds. You can time how long your sync time is and add it here.
+
+You also must set `plex.playerMachineIdentifier` and `plex.playerIP`. To get this:
+1) Play something on your desired player (like a shield)
+2) `curl "http://(player IP):32500/resources"`
+    * Note this is *NOT THE SERVER IP!*
+3) Copy the `machineIdentifier` value
+4) Add this to that config field exacly
 
 ## Building Binary
 GOOS=xxxx make build

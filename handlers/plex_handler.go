@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -171,8 +172,33 @@ func readAttrAndWait(waitTime int, entName string, entType string, attrResp home
 
 }
 
+// interfaceRemote sends the cmd to your desired script to stop or play
+func interfaceRemote(cmd string, vip *viper.Viper, c *homeassistant.HomeAssistantClient) error {
+	switch cmd {
+	case "play":
+		return c.TriggerScript(vip.GetString("homeAssistant.playScriptName"))
+	case "pause":
+		return c.TriggerScript(vip.GetString("homeAssistant.pauseScriptName"))
+	case "stop":
+		return c.TriggerScript(vip.GetString("homeAssistant.stopScriptName"))
+	default:
+		return errors.New("unknown cmd given")
+	}
+	
+}
+
+// playbackInteface is an interface to support various forms of playback
+func playbackInteface(action string, v *viper.Viper, h *homeassistant.HomeAssistantClient, p *plex.PlexClient) error {
+	if v.GetBool("plex.enabled") {
+		return p.DoPlaybackAction(action)
+	} else {
+		return interfaceRemote(action, v, h)
+	}
+}
+
+// TODO: test this
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
-func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, PlexClient *plex.PlexClient, vip *viper.Viper) {
+func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, plexClient *plex.PlexClient, vip *viper.Viper) {
 	if !vip.GetBool("signal.waitforHDMIsync") {
 		wg.Done()
 		return
@@ -181,8 +207,7 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	log.Debug("Running HDMI sync wait")
 	defer func() {
 		// play item no matter what
-		// TODO: fix plex api 
-		err := PlexClient.PlayPlex()
+		err := playbackInteface("play", vip, haClient, plexClient)
 		if err != nil {
 			log.Errorf("Error playing plex: %v", err)
 			return
@@ -199,7 +224,7 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 
 	// pause plex
 	log.Debug("pausing plex")
-	err = PlexClient.PausePlex()
+	err = playbackInteface("pause", vip, haClient, plexClient)
 	if err != nil {
 		log.Errorf("Error pausing plex: %v", err)
 		return
@@ -215,7 +240,15 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	case "sensor":
 		signal, err = readAttrAndWait(30, haClient.BinaryName, "binary_sensor", &models.HABinaryResponse{}, haClient)
 	default:
-		log.Errorf("waitforHDMIsync enabled but no valid source provided: %v", signalSource)
+		// TODO: maybe use a 15 sec delay?
+		log.Debug("using seconds for hdmi sync")
+		sec, err := strconv.Atoi(signalSource)
+		if err != nil {
+			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
+			return
+		}
+		time.Sleep(time.Duration(sec)*time.Second)
+		
 	}
 
 	log.Debugf("HDMI Signal value is %v", signal)
@@ -240,7 +273,6 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
 		wg.Add(1)
-		// TODO: test this 
 		// sets skipActions to false on completion
 		go waitForHDMISync(wg, skipActions, haClient, client, vip)
 	}
@@ -275,7 +307,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 				// if enabled, stop playing
 				if vip.GetBool("ezbeq.stopPlexIfMismatch") {
 					log.Debug("Stopping plex because codec is not playing")
-					err := client.StopPlex()
+					err := playbackInteface("stop", vip, haClient, client)
 					if err != nil {
 						log.Errorf("Error stopping plex: %v", err)
 					}
@@ -585,7 +617,8 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	var useDenonCodec bool
 
 	// Server Info
-	plexClient := plex.NewClient(vip.GetString("plex.url"), vip.GetString("plex.port"))
+	// TODO: "enabled": true, if not, use something else?
+	plexClient := plex.NewClient(vip.GetString("plex.url"), vip.GetString("plex.port"), vip.GetString("plex.playerMachineIdentifier"), vip.GetString("plex.playerIP"))
 
 	if vip.GetBool("ezbeq.enabled") {
 		log.Info("Started with ezbeq enabled")
