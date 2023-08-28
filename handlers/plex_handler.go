@@ -181,6 +181,7 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	log.Debug("Running HDMI sync wait")
 	defer func() {
 		// play item no matter what
+		// TODO: fix plex api 
 		err := PlexClient.PlayPlex()
 		if err != nil {
 			log.Errorf("Error playing plex: %v", err)
@@ -239,7 +240,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
 		wg.Add(1)
-		// TODO: get this working
+		// TODO: test this 
 		// sets skipActions to false on completion
 		go waitForHDMISync(wg, skipActions, haClient, client, vip)
 	}
