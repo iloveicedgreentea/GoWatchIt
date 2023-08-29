@@ -24,7 +24,7 @@ func main() {
 	// ready signals
 	plexReady := make(chan bool)
 	minidspReady := make(chan bool)
-	
+
 	// run worker forever in background
 	go handlers.PlexWorker(plexChan, plexReady)
 	go handlers.MiniDspWorker(minidspChan, minidspReady)
@@ -39,6 +39,10 @@ func main() {
 	r.POST("/minidspwebhook", func(c *gin.Context) {
 		handlers.ProcessMinidspWebhook(minidspChan, c)
 	})
+	r.Static("/assets", "./assets")
+    r.GET("/config-exists", api.ConfigExists)
+    r.GET("/get-config", api.GetConfig)
+    r.POST("/save-config", api.SaveConfig)
 	// TODO: add generic webhook endpoint, maybe mqtt?
 
 	// wait for workers to get ready
@@ -47,6 +51,7 @@ func main() {
 	<-minidspReady
 	log.Info("All workers are ready.")
 
+	r.Static("/web", "./web")
 	r.NoRoute(func(c *gin.Context) {
 		c.File("./web/index.html") 
 	})

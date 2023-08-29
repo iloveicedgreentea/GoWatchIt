@@ -222,94 +222,95 @@ create file named config.json, paste this in, remove the comments after
 
 ```json
 {
-    "homeAssistant": {
+    // note the case is lowercase now
+    "homeassistant": {
         "url": "http://123.123.123.123",
         "port": "8123",
         "enabled": true,
         // get a token from your user profile
         "token": "ey.xyzjwt",
-        // Trigger functions to change the following
-        "triggerAspectRatioChangeOnEvent": true,
-        "triggerLightsOnEvent": true,
-        "triggerAvrMasterVolumeChangeOnEvent": true,
-        // optional if using HDMI sync. The name of the remote entities. You only need ONE
-        "envyRemoteName": "envy",
-        "jvcRemoteName": "nz7",
-        "binarySensorName": "some_sensor",
-        // names of scripts which call remote.xyz or play/pause/stop your player of choice if not using Plex
-        "playScriptName": "",
-        "pauseScriptName": "",
-        "stopScriptName": ""
+        // trigger functions to change the following
+        "triggeraspectratiochangeonevent": true,
+        "triggerlightsonevent": true,
+        "triggeravrmastervolumechangeonevent": true,
+        // optional if using hdmi sync. the name of the remote entities. you only need one
+        "envyremotename": "envy",
+        "jvcremotename": "nz7",
+        "binarysensorname": "some_sensor",
+        // names of scripts which call remote.xyz or play/pause/stop your player of choice if not using plex
+        "playscriptname": "",
+        "pausescriptname": "",
+        "stopscriptname": ""
     },
-    // all communication to HA is done via MQTT. Set up automations to run scripts
+    // all communication to ha is done via mqtt. set up automations to run scripts
     "mqtt": {
-        // url to broker and user/pass to use. Set up mosquito via HA add on then add an HA user
+        // url to broker and user/pass to use. set up mosquito via ha add on then add an ha user
         "url": "tcp://123.123.123.123:1883",
         "username": "sdf",
         "password": "123",
         // these are arbitrary strings
-        "topicLights": "theater/lights/front",
-        "topicVolume": "theater/denon/volume",
-        "topicAspectratio": "theater/jvc/aspectratio",
+        "topiclights": "theater/lights/front",
+        "topicvolume": "theater/denon/volume",
+        "topicaspectratio": "theater/jvc/aspectratio",
         // will publish the current profile here
-        "topicBeqCurrentProfile": "theater/beq/currentprofile",
+        "topicbeqcurrentprofile": "theater/beq/currentprofile",
         // write mute status
-        "topicMinidspMuteStatus": "theater/minidsp/mutestatus"
+        "topicminidspmutestatus": "theater/minidsp/mutestatus"
     },
     "plex": {
         // if you don't use plex
         "enabled": true,
         // your main owner account, will filter webhooks so others don't trigger
         // leave blank if you don't want to filter on accounts
-        "ownerNameFilter": "PLEX_OWNER_NAME to filter events on",
-        // filter based on device UUID so only the client you want triggers things, or leave blank
-        // Must be UUID. Easy way to get it is playing anything and searching logs for 'Got a request from UUID:'
-        "deviceUUIDFilter": "",
+        "ownernamefilter": "plex_owner_name to filter events on",
+        // filter based on device uuid so only the client you want triggers things, or leave blank
+        // must be uuid. easy way to get it is playing anything and searching logs for 'got a request from uuid:'
+        "deviceuuidfilter": "",
         "url": "http://xyz",
         "port": "32400",
-        // if you enable trailers before movies, it can process it like turn off lights. no BEQ 
-        "enableTrailerSupport": true || false,
-        // get this from "http://(player IP):32500/resources". Check readme
-        "playerMachineIdentifier": "uuid",
-        "playerIP": "xxx.xxx.xxx.xxx"
+        // if you enable trailers before movies, it can process it like turn off lights. no beq 
+        "enabletrailersupport": true || false,
+        // get this from "http://(player ip):32500/resources". check readme
+        "playermachineidentifier": "uuid",
+        "playerip": "xxx.xxx.xxx.xxx"
     },
     "ezbeq": {
         "url": "http://xyz",
         "port": "8080",
         "enabled": true,
-        // support BEQ for TV shows also, some exist
-        "enableTvBeq": true,
-        // will log what it will do, but will not load BEQ profiles
-        "dryRun": false,
-        // some BEQ catalogs have negative MV adjustment. Recommend to true unless you really like bass, can cause damage
-        "adjustMasterVolumeWithProfile": true,
-        // Trigger HA to notify you when it loads so you can double check stuff. Will also trigger with dryrun enabled
-        "notifyOnLoad": true,
-        // name of the endpoint in HA to send notification to. Look at the notify service in HA to see endpoints
-        "notifyEndpointName": "mobile_app_iphone",
+        // support beq for tv shows also, some exist
+        "enabletvbeq": true,
+        // will log what it will do, but will not load beq profiles
+        "dryrun": false,
+        // some beq catalogs have negative mv adjustment. recommend to true unless you really like bass, can cause damage
+        "adjustmastervolumewithprofile": true,
+        // trigger ha to notify you when it loads so you can double check stuff. will also trigger with dryrun enabled
+        "notifyonload": true,
+        // name of the endpoint in ha to send notification to. look at the notify service in ha to see endpoints
+        "notifyendpointname": "mobile_app_iphone",
         // which author you want. none or blank will find the best match according to ezbeq application
-        "preferredAuthor": "aron7awol" || "mobe1969" || "other supported author" || "",
-        // slots you want to apply beq configs. minidsp 2x4hd has four PRESET slots. Not tested on anything but 2x4hd
+        "preferredauthor": "aron7awol" || "mobe1969" || "other supported author" || "",
+        // slots you want to apply beq configs. minidsp 2x4hd has four preset slots. not tested on anything but 2x4hd
         "slots": [1],
-        // use an IP enabled Denon AVR to get the codec instead of querying plex
+        // use an ip enabled denon avr to get the codec instead of querying plex
         // requires a madvr envy for now
         // much slower but more accurate as it will get the actual codec playing
-        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. Might be a shield bug) (not ready)
-        "useAVRCodecSearch": false,
-        "DenonIP": "",
-        "DenonPort": "23",
-        // tell plex to STOP if the playing codec does not match expected like when it transcodes atmos for no reason
-        "stopPlexIfMismatch": true
+        // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. might be a shield bug) (not ready)
+        "useavrcodecsearch": false,
+        "denonip": "",
+        "denonport": "23",
+        // tell plex to stop if the playing codec does not match expected like when it transcodes atmos for no reason
+        "stopplexifmismatch": true
     },
     // what to use for signal source
     "signal": {
         // jvc, envy, or name of the binary sensor (see readme), or you can specify seconds to wait like "13"
         "source": "jvc",
         // true if you want to pause plex until hdmi sync is done
-        "waitforHDMIsync": false
+        "waitforhdmisync": false
     },
     "main": {
-        "listenPort": "9999"
+        "listenport": "9999"
     }
 }
 ```

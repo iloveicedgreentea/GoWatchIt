@@ -1,18 +1,25 @@
-<!-- web/index.html -->
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Config Generator</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <form id="configForm">
-        <input type="text" id="username" placeholder="Username">
-        <input type="checkbox" id="enableFeatureX"> Enable Feature X
-        <!-- Add more fields here -->
-        <button type="submit">Save</button>
-    </form>
 
-    <script src="app.js"></script>
+<head>
+    <title>Configuration</title>
+</head>
+
+<body>
+    <div id="configForm">
+        <h2>Home Assistant</h2>
+        <div>
+            <label for="url">URL: </label>
+            <input type="text" id="url" name="homeAssistant.url">
+        </div>
+        <div>
+            <label for="port">Port: </label>
+            <input type="text" id="port" name="homeAssistant.port">
+        </div>
+        <!-- More Fields... -->
+        <button onclick="submitConfig()">Submit</button>
+    </div>
+    <script src="/web/app.js"></script>
 </body>
+
 </html>

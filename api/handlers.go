@@ -1,9 +1,12 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/gin-gonic/gin"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 )
 
 func GetConfigPath() (string, error) {
@@ -24,6 +27,15 @@ func GetConfigPath() (string, error) {
 	return "", os.ErrNotExist
 }
 
+func ConfigExists(c *gin.Context) {
+	configPath, err := GetConfigPath()
+	if err != nil {
+		c.JSON(500, gin.H{"exists": false})
+		return
+	}
+	_, err = os.Stat(configPath)
+	c.JSON(200, gin.H{"exists": err == nil})
+}
 
 func GetConfig(c *gin.Context) {
 	path, err := GetConfigPath()
@@ -46,6 +58,29 @@ func SaveConfig(c *gin.Context) {
 		return
 	}
 
-	// TODO: save config to viper or something
+	path, err := GetConfigPath()
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Unable to find config"})
+		return
+	}
+
+	// Loop through the incoming JSON map to set keys in Viper
+	for key, value := range jsonData {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			for subKey, subValue := range v {
+				config.Set(fmt.Sprintf("%s.%s", key, subKey), subValue)
+			}
+		default:
+			config.Set(key, value)
+		}
+	}
+
+	// Use your SaveConfigFile function to save the updated configuration
+	if err := config.SaveConfigFile(path); err != nil {
+		c.JSON(500, gin.H{"error": "Unable to save config"})
+		return
+	}
+
 	c.JSON(200, gin.H{"message": "Config saved successfully"})
 }

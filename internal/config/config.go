@@ -57,6 +57,14 @@ func init() {
 	v.WatchConfig()
 }
 
+func Set(key string, value interface{}) {
+	v.Set(key, value)
+}
+
+func SaveConfigFile(configPath string) error {
+	return v.WriteConfigAs(configPath)
+}
+
 func GetString(key string) string {
 	return v.GetString(key)
 }
