@@ -4,18 +4,18 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/iloveicedgreentea/go-plex/logger"
-	"github.com/spf13/viper"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 )
 
 var log = logger.GetLogger()
 
-func connect(vip *viper.Viper, clientID string) (mqtt.Client, error) {
-	broker := vip.GetString("mqtt.url")
+func connect(clientID string) (mqtt.Client, error) {
+	broker := config.GetString("mqtt.url")
 	opts := mqtt.NewClientOptions().AddBroker(broker)
 	opts.SetClientID(clientID)
-	opts.SetUsername(vip.GetString("mqtt.username"))
-	opts.SetPassword(vip.GetString("mqtt.password"))
+	opts.SetUsername(config.GetString("mqtt.username"))
+	opts.SetPassword(config.GetString("mqtt.password"))
 
 	c := mqtt.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
@@ -26,10 +26,10 @@ func connect(vip *viper.Viper, clientID string) (mqtt.Client, error) {
 }
 
 // creates a connection to broker and sends the payload
-func Publish(vip *viper.Viper, payload []byte, topic string) error {
+func Publish(payload []byte, topic string) error {
 	// use the topic as clientID so each invocation
 	// of Publish does not trip over each other
-	c, err := connect(vip, topic)
+	c, err := connect(topic)
 	if err != nil {
 		return err
 	}

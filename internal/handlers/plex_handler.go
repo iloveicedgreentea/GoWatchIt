@@ -10,14 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/denon"
-	"github.com/iloveicedgreentea/go-plex/ezbeq"
-	"github.com/iloveicedgreentea/go-plex/homeassistant"
-	"github.com/iloveicedgreentea/go-plex/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/denon"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
+	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
-	"github.com/iloveicedgreentea/go-plex/mqtt"
-	"github.com/iloveicedgreentea/go-plex/plex"
-	"github.com/spf13/viper"
+	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
+	"github.com/iloveicedgreentea/go-plex/internal/plex"
 )
 
 const showItemTitle = "episode"
@@ -48,7 +48,7 @@ func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 }
 
 // Sends the payload to the channel for background processing
-func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper) http.Handler {
+func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseMultipartForm(0); err != nil {
 			log.Error(err)
@@ -72,7 +72,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 			log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
 
 			// check filter for user if not blank
-			userID := vip.GetString("plex.ownerNameFilter")
+			userID := config.GetString("plex.ownerNameFilter")
 			// only respond to events on a particular account if you share servers and only for movies and shows
 			if userID == "" || decodedPayload.Account.Title == userID {
 				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
@@ -101,17 +101,17 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, vip *viper.Viper)
 }
 
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
-func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
+func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	go changeLight(vip, "on", wg)
+	go changeLight("on", wg)
 
-	if vip.GetBool("ezbeq.enabled") {
+	if config.GetBool("ezbeq.enabled") {
 		err := beqClient.UnloadBeqProfile(m)
 		if err != nil {
 			log.Error(err)
-			if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-				err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err), vip.GetString("ezbeq.notifyEndpointName"))
+			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+				err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err), config.GetString("ezbeq.notifyEndpointName"))
 				if err != nil {
 					log.Error()
 				}
@@ -122,19 +122,19 @@ func mediaStop(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassis
 }
 
 // pause only happens with literally pausing
-func mediaPause(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
+func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
 	if !*skipActions {
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 
-		go changeLight(vip, "on", wg)
+		go changeLight("on", wg)
 
-		if vip.GetBool("ezbeq.enabled") {
+		if config.GetBool("ezbeq.enabled") {
 			err := beqClient.UnloadBeqProfile(m)
 			if err != nil {
 				log.Error(err)
-				if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-					err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err), vip.GetString("ezbeq.notifyEndpointName"))
+				if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+					err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err), config.GetString("ezbeq.notifyEndpointName"))
 					if err != nil {
 						log.Error()
 					}
@@ -173,14 +173,14 @@ func readAttrAndWait(waitTime int, entName string, entType string, attrResp home
 }
 
 // interfaceRemote sends the cmd to your desired script to stop or play
-func interfaceRemote(cmd string, vip *viper.Viper, c *homeassistant.HomeAssistantClient) error {
+func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 	switch cmd {
 	case "play":
-		return c.TriggerScript(vip.GetString("homeAssistant.playScriptName"))
+		return c.TriggerScript(config.GetString("homeAssistant.playScriptName"))
 	case "pause":
-		return c.TriggerScript(vip.GetString("homeAssistant.pauseScriptName"))
+		return c.TriggerScript(config.GetString("homeAssistant.pauseScriptName"))
 	case "stop":
-		return c.TriggerScript(vip.GetString("homeAssistant.stopScriptName"))
+		return c.TriggerScript(config.GetString("homeAssistant.stopScriptName"))
 	default:
 		return errors.New("unknown cmd given")
 	}
@@ -188,18 +188,18 @@ func interfaceRemote(cmd string, vip *viper.Viper, c *homeassistant.HomeAssistan
 }
 
 // playbackInteface is an interface to support various forms of playback
-func playbackInteface(action string, v *viper.Viper, h *homeassistant.HomeAssistantClient, p *plex.PlexClient) error {
-	if v.GetBool("plex.enabled") {
+func playbackInteface(action string, h *homeassistant.HomeAssistantClient, p *plex.PlexClient) error {
+	if config.GetBool("plex.enabled") {
 		return p.DoPlaybackAction(action)
 	} else {
-		return interfaceRemote(action, v, h)
+		return interfaceRemote(action, h)
 	}
 }
 
 // TODO: test this
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
-func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, plexClient *plex.PlexClient, vip *viper.Viper) {
-	if !vip.GetBool("signal.waitforHDMIsync") {
+func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, plexClient *plex.PlexClient) {
+	if !config.GetBool("signal.waitforHDMIsync") {
 		wg.Done()
 		return
 	}
@@ -207,7 +207,7 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	log.Debug("Running HDMI sync wait")
 	defer func() {
 		// play item no matter what
-		err := playbackInteface("play", vip, haClient, plexClient)
+		err := playbackInteface("play", haClient, plexClient)
 		if err != nil {
 			log.Errorf("Error playing plex: %v", err)
 			return
@@ -218,13 +218,13 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		wg.Done()
 	}()
 
-	signalSource := vip.GetString("signal.source")
+	signalSource := config.GetString("signal.source")
 	var err error
 	var signal bool
 
 	// pause plex
 	log.Debug("pausing plex")
-	err = playbackInteface("pause", vip, haClient, plexClient)
+	err = playbackInteface("pause", haClient, plexClient)
 	if err != nil {
 		log.Errorf("Error pausing plex: %v", err)
 		return
@@ -259,25 +259,25 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 }
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useDenonCodec bool, data models.MediaContainer, skipActions *bool) {
+func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useDenonCodec bool, data models.MediaContainer, skipActions *bool) {
 	wg := &sync.WaitGroup{}
 
 	// stop processing webhooks
 	*skipActions = true
 
 	wg.Add(3)
-	go changeLight(vip, "off", wg)
-	go changeAspect(client, payload, vip, wg)
-	go changeMasterVolume(vip, m.MediaType, wg)
+	go changeLight("off", wg)
+	go changeAspect(client, payload, wg)
+	go changeMasterVolume(m.MediaType, wg)
 
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
 		wg.Add(1)
 		// sets skipActions to false on completion
-		go waitForHDMISync(wg, skipActions, haClient, client, vip)
+		go waitForHDMISync(wg, skipActions, haClient, client)
 	}
 
-	if vip.GetBool("ezbeq.enabled") {
+	if config.GetBool("ezbeq.enabled") {
 		// always unload in case something is loaded from movie for tv
 		err := beqClient.UnloadBeqProfile(m)
 		if err != nil {
@@ -289,7 +289,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		if useDenonCodec {
 			// wait for sync
 			wg.Add(1)
-			waitForHDMISync(wg, skipActions, haClient, client, vip)
+			waitForHDMISync(wg, skipActions, haClient, client)
 			// denon needs time to show mutli ch in as atmos
 			// TODO: test this
 			time.Sleep(5 * time.Second)
@@ -305,17 +305,17 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 			expectedCodec, isExpectedPlaying := isExpectedCodecPlaying(denonClient, client, payload.Player.UUID, m.Codec)
 			if !isExpectedPlaying {
 				// if enabled, stop playing
-				if vip.GetBool("ezbeq.stopPlexIfMismatch") {
+				if config.GetBool("ezbeq.stopPlexIfMismatch") {
 					log.Debug("Stopping plex because codec is not playing")
-					err := playbackInteface("stop", vip, haClient, client)
+					err := playbackInteface("stop", haClient, client)
 					if err != nil {
 						log.Errorf("Error stopping plex: %v", err)
 					}
 				}
 
 				log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
-				if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-					err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %s", m.Codec, expectedCodec), vip.GetString("ezbeq.notifyEndpointName"))
+				if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+					err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %s", m.Codec, expectedCodec), config.GetString("ezbeq.notifyEndpointName"))
 					if err != nil {
 						log.Error(err)
 					}
@@ -334,7 +334,7 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 
 		// if its a show and you dont want beq enabled, exit
 		if payload.Metadata.Type == showItemTitle {
-			if !vip.GetBool("ezbeq.enableTvBeq") {
+			if !config.GetBool("ezbeq.enableTvBeq") {
 				return
 			}
 		}
@@ -348,8 +348,8 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 		log.Info("BEQ profile loaded")
 
 		// send notification of it loaded
-		if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-			err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), vip.GetString("ezbeq.notifyEndpointName"))
+		if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+			err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), config.GetString("ezbeq.notifyEndpointName"))
 			if err != nil {
 				log.Error()
 			}
@@ -361,25 +361,25 @@ func mediaPlay(client *plex.PlexClient, vip *viper.Viper, beqClient *ezbeq.BeqCl
 }
 
 // resume is only after pausing as long as the media item is still active
-func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
+func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
 	if !*skipActions {
 		wg := &sync.WaitGroup{}
 		// mediaType string, codec string, edition string
 		// trigger lights
 		wg.Add(1)
-		go changeLight(vip, "off", wg)
+		go changeLight("off", wg)
 		// Changing on resume is disabled because its annoying if you changed it since playing
 		// go changeMasterVolume(vip, mediaType)
 
 		// allow skipping search to save time
-		if vip.GetBool("ezbeq.enabled") {
+		if config.GetBool("ezbeq.enabled") {
 			// always unload in case something is loaded from movie for tv
 			err := beqClient.UnloadBeqProfile(m)
 			if err != nil {
 				log.Errorf("Error on startup - unloading beq %v", err)
 			}
 			if payload.Metadata.Type == showItemTitle {
-				if !vip.GetBool("ezbeq.enableTvBeq") {
+				if !config.GetBool("ezbeq.enableTvBeq") {
 					return
 				}
 			}
@@ -394,8 +394,8 @@ func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeass
 			log.Info("BEQ profile loaded")
 
 			// send notification of it loaded
-			if vip.GetBool("ezbeq.notifyOnLoad") && vip.GetBool("homeAssistant.enabled") {
-				err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), vip.GetString("ezbeq.notifyEndpointName"))
+			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+				err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), config.GetString("ezbeq.notifyEndpointName"))
 				if err != nil {
 					log.Error()
 				}
@@ -404,7 +404,7 @@ func mediaResume(vip *viper.Viper, beqClient *ezbeq.BeqClient, haClient *homeass
 	}
 }
 
-func mediaScrobble(vip *viper.Viper) {
+func mediaScrobble() {
 	// trigger lights
 	log.Debug("Scrobble received. Not doing anything")
 	// go changeLight(vip, "on")
@@ -440,13 +440,13 @@ func getEditionName(data models.MediaContainer) string {
 }
 
 // based on event type, determine what to do
-func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, vip *viper.Viper, model *models.SearchRequest, skipActions *bool) {
+func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
 	// ensure the client matches so it doesnt trigger from unwanted clients
 
-	if vip.GetString("plex.deviceUUIDFilter") != clientUUID || vip.GetString("plex.deviceUUIDFilter") == "" {
+	if config.GetString("plex.deviceUUIDFilter") != clientUUID || config.GetString("plex.deviceUUIDFilter") == "" {
 		log.Debug("Client UUID does not match enabled filter")
 		return
 	}
@@ -459,7 +459,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	var data models.MediaContainer
 	var editionName string
 
-	if vip.GetBool("ezbeq.enabled") {
+	if config.GetBool("ezbeq.enabled") {
 		// make a call to plex to get the data based on key
 		data, err = plexClient.GetMediaData(payload.Metadata.Key)
 		if err != nil {
@@ -491,20 +491,20 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		mediaPlay(plexClient, vip, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
+		mediaPlay(plexClient, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
-		mediaStop(vip, beqClient, haClient, payload, model)
+		mediaStop(beqClient, haClient, payload, model)
 	case "media.pause":
 		log.Debug("Event Router: media.pause received")
-		mediaPause(vip, beqClient, haClient, payload, model, skipActions)
+		mediaPause(beqClient, haClient, payload, model, skipActions)
 	// Pressing the 'resume' button in plex is media.play
 	case "media.resume":
 		log.Debug("Event Router: media.resume received")
-		mediaResume(vip, beqClient, haClient, payload, model, skipActions)
+		mediaResume(beqClient, haClient, payload, model, skipActions)
 	case "media.scrobble":
 		log.Debug("Scrobble received")
-		mediaScrobble(vip)
+		mediaScrobble()
 	default:
 		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
@@ -537,18 +537,18 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 }
 
 // will change aspect ratio
-func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vip *viper.Viper, wg *sync.WaitGroup) {
+func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, wg *sync.WaitGroup) {
 	defer wg.Done()
-	if vip.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
+	if config.GetBool("homeAssistant.triggerAspectRatioChangeOnEvent") && config.GetBool("homeAssistant.enabled") {
 
 		// if madvr enabled, only send a trigger via mqtt
 		// This needs to be triggered by MQTT in automation. This sends a pulse. The automation reads envy aspect ratio 5 sec later
-		if vip.GetBool("madvr.enabled") {
+		if config.GetBool("madvr.enabled") {
 			log.Debug("Using madvr for aspect")
-			topic := vip.GetString("mqtt.topicAspectratioMadVrOnly")
+			topic := config.GetString("mqtt.topicAspectratioMadVrOnly")
 
 			// trigger automation
-			err := mqtt.Publish(vip, []byte(""), topic)
+			err := mqtt.Publish([]byte(""), topic)
 			if err != nil {
 				log.Error()
 			}
@@ -568,10 +568,10 @@ func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vi
 			}
 
 			// handle logic for aspect ratios
-			topic := vip.GetString("mqtt.topicAspectratio")
+			topic := config.GetString("mqtt.topicAspectratio")
 
 			// better to have you just decide what to do in HA, I'm not your mom
-			err = mqtt.Publish(vip, []byte(fmt.Sprintf("{\"aspect\":%f}", aspect)), topic)
+			err = mqtt.Publish([]byte(fmt.Sprintf("{\"aspect\":%f}", aspect)), topic)
 			if err != nil {
 				log.Error()
 			}
@@ -581,11 +581,11 @@ func changeAspect(client *plex.PlexClient, payload models.PlexWebhookPayload, vi
 }
 
 // trigger HA for MV change per type
-func changeMasterVolume(vip *viper.Viper, mediaType string, wg *sync.WaitGroup) {
+func changeMasterVolume(mediaType string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	if vip.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && vip.GetBool("homeAssistant.enabled") {
+	if config.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && config.GetBool("homeAssistant.enabled") {
 		log.Debug("changeMasterVolume: Changing volume")
-		err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), vip.GetString("mqtt.topicVolume"))
+		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicVolume"))
 		if err != nil {
 			log.Error()
 		}
@@ -593,11 +593,11 @@ func changeMasterVolume(vip *viper.Viper, mediaType string, wg *sync.WaitGroup) 
 }
 
 // trigger HA for light change given entity and desired state
-func changeLight(vip *viper.Viper, state string, wg *sync.WaitGroup) {
+func changeLight(state string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	if vip.GetBool("homeAssistant.triggerLightsOnEvent") && vip.GetBool("homeAssistant.enabled") {
+	if config.GetBool("homeAssistant.triggerLightsOnEvent") && config.GetBool("homeAssistant.enabled") {
 		log.Debug("changeLight: Changing light")
-		err := mqtt.Publish(vip, []byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), vip.GetString("mqtt.topicLights"))
+		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topicLights"))
 		if err != nil {
 			log.Error()
 		}
@@ -605,7 +605,7 @@ func changeLight(vip *viper.Viper, state string, wg *sync.WaitGroup) {
 }
 
 // entry point for background tasks
-func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
+func PlexWorker(plexChan <-chan models.PlexWebhookPayload) {
 	log.Info("PlexWorker started")
 
 	var beqClient *ezbeq.BeqClient
@@ -617,12 +617,11 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 	var useDenonCodec bool
 
 	// Server Info
-	// TODO: "enabled": true, if not, use something else?
-	plexClient := plex.NewClient(vip.GetString("plex.url"), vip.GetString("plex.port"), vip.GetString("plex.playerMachineIdentifier"), vip.GetString("plex.playerIP"))
+	plexClient := plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"), config.GetString("plex.playerMachineIdentifier"), config.GetString("plex.playerIP"))
 
-	if vip.GetBool("ezbeq.enabled") {
+	if config.GetBool("ezbeq.enabled") {
 		log.Info("Started with ezbeq enabled")
-		beqClient, err = ezbeq.NewClient(vip.GetString("ezbeq.url"), vip.GetString("ezbeq.port"))
+		beqClient, err = ezbeq.NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
 		if err != nil {
 			log.Error(err)
 		}
@@ -640,12 +639,12 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 
 		log.Debugf("Device names: %v", deviceNames)
 		model = &models.SearchRequest{
-			DryrunMode: vip.GetBool("ezbeq.dryRun"),
+			DryrunMode: config.GetBool("ezbeq.dryRun"),
 			Devices:    deviceNames,
-			Slots:      vip.GetIntSlice("ezbeq.slots"),
+			Slots:      config.GetIntSlice("ezbeq.slots"),
 			// try to skip by default
 			SkipSearch:      true,
-			PreferredAuthor: vip.GetString("ezbeq.preferredAuthor"),
+			PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 		}
 
 		// unload existing profile for safety
@@ -655,13 +654,13 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		}
 	}
 
-	if vip.GetBool("homeAssistant.enabled") {
+	if config.GetBool("homeAssistant.enabled") {
 		log.Info("Started with HA enabled")
-		haClient = homeassistant.NewClient(vip.GetString("homeAssistant.url"), vip.GetString("homeAssistant.port"), vip.GetString("homeAssistant.token"), vip.GetString("homeAssistant.envyRemoteName"), vip.GetString("homeAssistant.jvcRemoteName"), vip.GetString("homeAssistant.binarySensorName"))
+		haClient = homeassistant.NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.envyRemoteName"), config.GetString("homeAssistant.jvcRemoteName"), config.GetString("homeAssistant.binarySensorName"))
 	}
-	if vip.GetBool("ezbeq.useAVRCodecSearch") {
+	if config.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")
-		denonClient = denon.NewClient(vip.GetString("ezbeq.DenonIP"), vip.GetString("ezbeq.DenonPort"))
+		denonClient = denon.NewClient(config.GetString("ezbeq.DenonIP"), config.GetString("ezbeq.DenonPort"))
 		useDenonCodec = true
 	}
 
@@ -673,7 +672,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, vip *viper.Viper) {
 		log.Debugf("Current length of plexChan in PlexWorker: %d", len(plexChan))
 		// determine what to do
 		log.Debug("Sending new payload to eventRouter")
-		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, vip, model, skipActions)
+		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, model, skipActions)
 		log.Debug("eventRouter done processing payload")
 	}
 

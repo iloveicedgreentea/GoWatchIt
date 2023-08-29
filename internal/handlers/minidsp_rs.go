@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iloveicedgreentea/go-plex/ezbeq"
+	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/models"
-	"github.com/spf13/viper"
 )
 
 // https://minidsp-rs.pages.dev/cli/master/mute
 
 // based on event type, determine what to do
-func minidspRouter(payload models.MinidspRequest, vip *viper.Viper, beqClient *ezbeq.BeqClient) {
+func minidspRouter(payload models.MinidspRequest, beqClient *ezbeq.BeqClient) {
 	switch {
 	case strings.Contains(payload.Command, "off"):
 		muteOff(beqClient)
@@ -60,7 +60,7 @@ func muteOff(beqClient *ezbeq.BeqClient) {
 }
 
 // process webhook 
-func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, vip *viper.Viper) http.Handler {
+func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var payload models.MinidspRequest
 
@@ -78,15 +78,15 @@ func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, vip *viper.Vipe
 }
 
 // entry point for background tasks
-func MiniDspWorker(minidspChan <-chan models.MinidspRequest, vip *viper.Viper) {
+func MiniDspWorker(minidspChan <-chan models.MinidspRequest) {
 	log.Info("Minidsp worker started")
 
 	var beqClient *ezbeq.BeqClient
 	var err error
 
-	if vip.GetBool("ezbeq.enabled") {
+	if config.GetBool("ezbeq.enabled") {
 		log.Debug("Started minidsp worker with ezbeq")
-		beqClient, err = ezbeq.NewClient(vip.GetString("ezbeq.url"), vip.GetString("ezbeq.port"))
+		beqClient, err = ezbeq.NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
 		if err != nil {
 			log.Error(err)
 		}
@@ -95,6 +95,6 @@ func MiniDspWorker(minidspChan <-chan models.MinidspRequest, vip *viper.Viper) {
 	// block forever until closed so it will wait in background for work
 	for i := range minidspChan {
 		// determine what to do
-		minidspRouter(i, vip, beqClient)
+		minidspRouter(i, beqClient)
 	}
 }

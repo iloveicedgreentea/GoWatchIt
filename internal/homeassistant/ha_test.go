@@ -6,27 +6,24 @@ import (
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/models"
-	"github.com/spf13/viper"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
-func testSetup() (*viper.Viper, *HomeAssistantClient, error) {
-	v := viper.New()
-	v.SetConfigFile("../config.json")
-	err := v.ReadInConfig()
-	haClient := NewClient(v.GetString("homeAssistant.url"), v.GetString("homeAssistant.port"), v.GetString("homeAssistant.token"), v.GetString("homeAssistant.envyRemoteName"), v.GetString("homeAssistant.jvcRemoteName"), v.GetString("homeAssistant.binarySensorName"))
+func testSetup() (*HomeAssistantClient) {
 
-	return v, haClient, err
+	haClient := NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.envyRemoteName"), config.GetString("homeAssistant.jvcRemoteName"), config.GetString("homeAssistant.binarySensorName"))
+
+	return haClient
 }
 
 // make sure script can trigger
 func TestScriptTrigger(t *testing.T) {
 
-	_, haClient, err := testSetup()
-	assert.NoError(t, err)
+	haClient := testSetup()
 
 	// trigger an empty script to verify client
-	err = haClient.TriggerScript("test")
+	err := haClient.TriggerScript("test")
 	assert.NoError(t, err)
 
 }
@@ -34,12 +31,11 @@ func TestScriptTrigger(t *testing.T) {
 // this tests an actual light
 func TestLightTrigger(t *testing.T) {
 	t.Skip()
-	_, haClient, err := testSetup()
-	assert.NoError(t, err)
+	haClient := testSetup()
 
 	// trigger light and switch
 
-	err = haClient.SwitchLight("light", "caseta_r_wireless_in_wall_dimmer", "off")
+	err := haClient.SwitchLight("light", "caseta_r_wireless_in_wall_dimmer", "off")
 	assert.NoError(t, err)
 
 	err = haClient.SwitchLight("switch", "caseta_r_wireless_in_wall_neutral_switch", "off")
@@ -50,16 +46,14 @@ func TestLightTrigger(t *testing.T) {
 // test sending a real notification
 func TestNotification(t *testing.T) {
 
-	v, haClient, err := testSetup()
-	assert.NoError(t, err)
+	haClient := testSetup()
 
 	// trigger light and switch
-	err = haClient.SendNotification("test from go-plex", v.GetString("ezbeq.notifyEndpointName"))
+	err := haClient.SendNotification("test from go-plex", config.GetString("ezbeq.notifyEndpointName"))
 	assert.NoError(t, err)
 }
 func TestReadAttributes(t *testing.T) {
-	_, haClient, err := testSetup()
-	assert.NoError(t, err)
+	haClient := testSetup()
 
 	type testStruct struct {
 		entName string

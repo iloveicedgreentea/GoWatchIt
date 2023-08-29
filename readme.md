@@ -250,7 +250,11 @@ create file named config.json, paste this in, remove the comments after
         // these are arbitrary strings
         "topicLights": "theater/lights/front",
         "topicVolume": "theater/denon/volume",
-        "topicAspectratio": "theater/jvc/aspectratio"
+        "topicAspectratio": "theater/jvc/aspectratio",
+        // will publish the current profile here
+        "topicBeqCurrentProfile": "theater/beq/currentprofile",
+        // write mute status
+        "topicMinidspMuteStatus": "theater/minidsp/mutestatus"
     },
     "plex": {
         // if you don't use plex

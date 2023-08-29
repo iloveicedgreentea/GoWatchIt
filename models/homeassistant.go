@@ -1,5 +1,12 @@
 package models
 
+import (
+	"strconv"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
+)
+
+var log = logger.GetLogger()
+
 type HomeAssistantScriptReq struct {
 	EntityID string `json:"entity_id"`
 }
@@ -26,7 +33,7 @@ type HAjvcResponse struct {
 	Attributes  JVCAttributes `json:"attributes"`
 }
 type JVCAttributes struct {
-	SignalStatus bool `json:"signal_status"`
+	SignalStatus string `json:"signal_status"`
 }
 
 type HABinaryResponse struct {
@@ -50,5 +57,10 @@ func (r *HAjvcResponse) GetState() string {
 	return r.State
 }
 func (r *HAjvcResponse) GetSignalStatus() bool {
-	return r.Attributes.SignalStatus
+	s, err := strconv.ParseBool(r.Attributes.SignalStatus)
+	if err != nil {
+		log.Errorf("error parsing JVC signal attribute: %v", err)
+		return false
+	}
+	return s
 }

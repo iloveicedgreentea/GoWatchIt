@@ -14,7 +14,7 @@ import (
 
 	"github.com/StalkR/imdb"
 	"github.com/anaskhan96/soup"
-	"github.com/iloveicedgreentea/go-plex/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -519,7 +519,6 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 
 	// return aspect ratio
 	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
-
 }
 
 // makePlexReq makes a request to a client player for playback control

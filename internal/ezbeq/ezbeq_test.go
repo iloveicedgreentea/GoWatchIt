@@ -386,7 +386,7 @@ func TestUrlEncode(t *testing.T) {
 }
 
 func TestSearchCatalog(t *testing.T) {
-
+	// TODO: remove all viper references
 	v := viper.New()
 	v.SetConfigFile("../config.json")
 	err := v.ReadInConfig()

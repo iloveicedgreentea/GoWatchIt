@@ -12,8 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/models"
+	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 )
 
 var log = logger.GetLogger()
@@ -86,6 +88,11 @@ func urlEncode(s string) string {
 	return url.QueryEscape(s)
 }
 
+func publishWrapper(topic string, msg string) error {
+	// trigger automation
+	return mqtt.Publish([]byte(msg), config.GetString(fmt.Sprintf("mqtt.%s", topic)))
+}
+
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
 	log.Debug("Running mute command")
@@ -112,11 +119,15 @@ func (c *BeqClient) MuteCommand(status bool) error {
 			return err
 		}
 		log.Infof("Mute status set to %v", out.Mute)
+
 		if out.Mute != status {
 			return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
 		}
+
+		
 	}
-	return nil
+
+	return publishWrapper("topicMinidspMuteStatus", fmt.Sprintf("%v", status))
 }
 
 // MakeCommand sends the command of payload
@@ -367,7 +378,8 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 			return err
 		}
 	}
-	return nil
+
+	return publishWrapper("topicBeqCurrentProfile", catalog.SortTitle)
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
@@ -388,5 +400,5 @@ func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return nil
+	return publishWrapper("topicBeqCurrentProfile", "")
 }

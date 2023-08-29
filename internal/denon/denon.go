@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/reiver/go-telnet"
 )
 

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 

@@ -12,8 +12,8 @@ func TestPublish(t *testing.T) {
 	v.Set("mqtt.url", "tcp://192.168.88.57:1883")
 	v.Set("mqtt.username", "mqtt")
 	v.Set("mqtt.password", "mqtt")
-	err := Publish(v, []byte(fmt.Sprintf("{\"aspect\":%f}", 2.4)), "theater/jvc/aspectratio")
+	err := Publish([]byte(fmt.Sprintf("{\"aspect\":%f}", 2.4)), "theater/jvc/aspectratio")
 	assert.NoError(t, err)
-	err = Publish(v, []byte(fmt.Sprintf("{\"type\":\"%s\"}", "episode")), "theater/denon/volume")
+	err = Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", "episode")), "theater/denon/volume")
 	assert.NoError(t, err)
 }

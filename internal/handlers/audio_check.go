@@ -3,8 +3,8 @@ package handlers
 import (
 	"strings"
 
-	"github.com/iloveicedgreentea/go-plex/denon"
-	"github.com/iloveicedgreentea/go-plex/plex"
+	"github.com/iloveicedgreentea/go-plex/internal/denon"
+	"github.com/iloveicedgreentea/go-plex/internal/plex"
 )
 
 // functions to ensure plex is not being stupid and transcoding atmos for no reason
