@@ -24,12 +24,12 @@ func main() {
 	// ready signals
 	plexReady := make(chan bool)
 	minidspReady := make(chan bool)
+	
 	// run worker forever in background
 	go handlers.PlexWorker(plexChan, plexReady)
 	go handlers.MiniDspWorker(minidspChan, minidspReady)
 
 	// healthcheck
-	// health := handlers.ProcessHealthcheckWebhook()
 	r.GET("/health", handlers.ProcessHealthcheckWebhookGin)
 	// Add plex webhook handler
 	// TODO: split out non plex specific stuff into a library
@@ -48,7 +48,7 @@ func main() {
 	log.Info("All workers are ready.")
 
 	r.NoRoute(func(c *gin.Context) {
-		c.File("./web/index.html") // Or use `c.FileFromFS` if you want to serve from a http.FileSystem
+		c.File("./web/index.html") 
 	})
     // Register routes
     api.RegisterRoutes(r)
