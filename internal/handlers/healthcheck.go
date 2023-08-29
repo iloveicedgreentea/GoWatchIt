@@ -2,12 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"github.com/gin-gonic/gin"
 )
-
-func ProcessHealthcheckWebhook() http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
-	}
-
-	return http.HandlerFunc(fn)
+func ProcessHealthcheckWebhookGin(c *gin.Context) {
+	c.String(http.StatusOK, "ok")
 }

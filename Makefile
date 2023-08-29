@@ -1,7 +1,7 @@
 .PHONY: build test run
 
 build: 
-	cd cmd && go build -o ./build/server
+	cd cmd && go build -o ../build/server
 
 test:
 	# @go vet

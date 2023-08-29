@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
+	"github.com/gin-gonic/gin"
 	"strings"
 
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
@@ -60,25 +60,21 @@ func muteOff(beqClient *ezbeq.BeqClient) {
 }
 
 // process webhook 
-func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		var payload models.MinidspRequest
+func ProcessMinidspWebhook(miniDsp chan<- models.MinidspRequest, c *gin.Context)  {
+	var payload models.MinidspRequest
 
-		err := json.NewDecoder(r.Body).Decode(&payload)
-		if err != nil {
-			log.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		
-		miniDsp <- payload
+	err := json.NewDecoder(c.Request.Body).Decode(&payload)
+	if err != nil {
+		log.Error(err)
+		c.JSON(500, gin.H{"error": "error parsing body"})
+		return
 	}
-
-	return http.HandlerFunc(fn)
+	
+	miniDsp <- payload
 }
 
 // entry point for background tasks
-func MiniDspWorker(minidspChan <-chan models.MinidspRequest) {
+func MiniDspWorker(minidspChan <-chan models.MinidspRequest, readyChan chan<- bool) {
 	log.Info("Minidsp worker started")
 
 	var beqClient *ezbeq.BeqClient
@@ -91,6 +87,9 @@ func MiniDspWorker(minidspChan <-chan models.MinidspRequest) {
 			log.Error(err)
 		}
 	}
+
+	log.Info("minidsp worker is ready")
+	readyChan <- true
 
 	// block forever until closed so it will wait in background for work
 	for i := range minidspChan {

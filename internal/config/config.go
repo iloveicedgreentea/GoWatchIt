@@ -5,20 +5,55 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/fsnotify/fsnotify"
-	"fmt"
+
+	"os"
+	"path/filepath"
 )
 
 var v *viper.Viper
 
 func init() {
 	v = viper.New()
-	v.SetConfigFile("../../config.json")
-	if err := v.ReadInConfig(); err != nil {
-		log.Fatalf("error reading in config file: %v", err)
+	// Try the directory of the executable first
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Could not find executable path: %v", err)
 	}
+
+	exPath := filepath.Dir(ex)
+	configPath1 := filepath.Join(exPath, "../config.json")
+
+	// Fallback path (for Docker)
+	configPath2 := "/config.json"
+
+	var found bool
+
+	// Try the first path
+	v.SetConfigFile(configPath1)
+	err = v.ReadInConfig()
+	if err == nil {
+		found = true
+	}
+
+	// If not found, try the fallback path
+	if !found {
+		v.SetConfigFile(configPath2)
+		err = v.ReadInConfig()
+		if err == nil {
+			found = true
+		}
+	}
+
+	// If still not found, log an error
+	if !found {
+		log.Fatalf("Error: No suitable config file found.")
+		return
+	}
+
 	v.OnConfigChange(func(e fsnotify.Event) {
-		fmt.Println("Config file changed:", e.Name)
+		log.Println("Config file changed:", e.Name)
 	})
+
 	v.WatchConfig()
 }
 

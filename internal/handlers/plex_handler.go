@@ -18,6 +18,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
+	"github.com/gin-gonic/gin"
 )
 
 const showItemTitle = "episode"
@@ -48,56 +49,53 @@ func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 }
 
 // Sends the payload to the channel for background processing
-func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseMultipartForm(0); err != nil {
+func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
+	if err := c.Request.ParseMultipartForm(0); err != nil {
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	log.Debug("ProcessWebhook: Received valid multipart form")
+	payload, hasPayload := c.Request.MultipartForm.Value["payload"]
+	if hasPayload {
+		log.Debug("decoding payload")
+		decodedPayload, statusCode, err := decodeWebhook(payload)
+		if err != nil {
 			log.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			c.JSON(statusCode, gin.H{"error": err.Error()})
 			return
 		}
-		log.Debug("ProcessWebhook: Received valid multipart form")
-		payload, hasPayload := r.MultipartForm.Value["payload"]
-		if hasPayload {
-			log.Debug("decoding payload")
-			decodedPayload, statusCode, err := decodeWebhook(payload)
-			if err != nil {
-				log.Error(err)
-				http.Error(w, err.Error(), statusCode)
-				return
-			}
-			clientUUID := decodedPayload.Player.UUID
-			log.Infof("Got a request from UUID: %s", clientUUID)
+		clientUUID := decodedPayload.Player.UUID
+		log.Infof("Got a request from UUID: %s", clientUUID)
 
-			log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
-			log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
+		log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
+		log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
 
-			// check filter for user if not blank
-			userID := config.GetString("plex.ownerNameFilter")
-			// only respond to events on a particular account if you share servers and only for movies and shows
-			if userID == "" || decodedPayload.Account.Title == userID {
-				if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
-					log.Debugf("Current length of plexChan: %d", len(plexChan))
-					select {
-					case plexChan <- decodedPayload:
-						// send succeeded
-					case <-time.After(time.Second * 3):
-						log.Error("Send on plexChan timed out")
-						http.Error(w, err.Error(), http.StatusTooManyRequests)
-						return
-					}
-					log.Debugf("Added length of plexChan: %d", len(plexChan))
+		// check filter for user if not blank
+		userID := config.GetString("plex.ownerNameFilter")
+		// only respond to events on a particular account if you share servers and only for movies and shows
+		if userID == "" || decodedPayload.Account.Title == userID {
+			if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
+				log.Debugf("Current length of plexChan: %d", len(plexChan))
+				select {
+				case plexChan <- decodedPayload:
+					// send succeeded
+					c.JSON(http.StatusOK, gin.H{"message": "Payload processed"})
+				case <-time.After(time.Second * 3):
+					log.Error("Send on plexChan timed out")
+					c.JSON(http.StatusTooManyRequests, gin.H{"error": "Send on plexChan timed out"})
+					return
 				}
-			} else {
-				log.Debugf("userID '%s' does not match filter", userID)
+				log.Debugf("Added length of plexChan: %d", len(plexChan))
 			}
 		} else {
-			log.Error("No payload found in request")
-			http.Error(w, "No payload found in request", http.StatusBadRequest)
-			return
+			log.Debugf("userID '%s' does not match filter", userID)
 		}
+	} else {
+		log.Error("No payload found in request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No payload found in request"})
+		return
 	}
-
-	return http.HandlerFunc(fn)
 }
 
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
@@ -605,7 +603,7 @@ func changeLight(state string, wg *sync.WaitGroup) {
 }
 
 // entry point for background tasks
-func PlexWorker(plexChan <-chan models.PlexWebhookPayload) {
+func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
 	log.Info("PlexWorker started")
 
 	var beqClient *ezbeq.BeqClient
@@ -666,7 +664,8 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload) {
 
 	// pointer so it can be modified by mediaPlay at will and be shared
 	skipActions := new(bool)
-
+	log.Info("Plex worker is ready")
+	readyChan <- true
 	// block forever until closed so it will wait in background for work
 	for i := range plexChan {
 		log.Debugf("Current length of plexChan in PlexWorker: %d", len(plexChan))
