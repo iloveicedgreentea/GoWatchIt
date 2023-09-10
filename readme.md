@@ -6,12 +6,14 @@
 
 This has become more of a general purpose home theater automation server. It is centered around Plex, but I am adding support for generic sources of info as well.
 
+* Simple web interface for configuration
 * Load/unload BEQ profiles automatically, no user action needed, correct codec detected
 * Detect aspect ratio and send command to HA to adjust accordingly
   * Also supports using my MadVR Envy Home Assistant integration 
 * Set Master Volume based on media type (movie, TV, etc)
 * Trigger lights when playing or stopping automatically
 * HDMI Sync detection and automation (pause while it is syncing)
+* Various MQTT sensors for volume control, lights, mute status, and current BEQ profile
 * Mute/Unmute Minidsp for things like night mode/WAF (turning off subs)
 * Mobile notifications (via HA) to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them

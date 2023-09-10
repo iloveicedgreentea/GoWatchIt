@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 
 	"github.com/spf13/viper"
 	"github.com/fsnotify/fsnotify"
@@ -11,6 +11,7 @@ import (
 )
 
 var v *viper.Viper
+var log = logger.GetLogger()
 
 func init() {
 	v = viper.New()
@@ -46,7 +47,7 @@ func init() {
 
 	// If still not found, log an error
 	if !found {
-		log.Fatalf("Error: No suitable config file found.")
+		log.Warn("no suitable config file found. Please set one up in the UI")
 		return
 	}
 
