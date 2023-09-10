@@ -1,11 +1,12 @@
 package mqtt
 
 import (
+	"fmt"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 )
 
 var log = logger.GetLogger()
@@ -25,13 +26,18 @@ func connect(clientID string) (mqtt.Client, error) {
 	return c, nil
 }
 
+func PublishWrapper(topic string, msg string) error {
+	// trigger automation
+	return Publish([]byte(msg), config.GetString(fmt.Sprintf("mqtt.%s", topic)))
+}
+
 // creates a connection to broker and sends the payload
 func Publish(payload []byte, topic string) error {
 	// use the topic as clientID so each invocation
 	// of Publish does not trip over each other
 	c, err := connect(topic)
 	if err != nil {
-		return err
+		return fmt.Errorf("error connecting to topic - %v", err)
 	}
 
 	defer c.Disconnect(5000)

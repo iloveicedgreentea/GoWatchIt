@@ -101,6 +101,10 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
 func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
 	wg := &sync.WaitGroup{}
+	err := mqtt.PublishWrapper("topicplayingstatus", "false")
+	if err != nil {
+		log.Error(err)
+	}
 	wg.Add(1)
 	go changeLight("on", wg)
 
@@ -122,6 +126,10 @@ func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistant
 // pause only happens with literally pausing
 func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
 	if !*skipActions {
+		err := mqtt.PublishWrapper("topicplayingstatus", "false")
+		if err != nil {
+			log.Error(err)
+		}
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 
@@ -262,7 +270,10 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 	// stop processing webhooks
 	*skipActions = true
-
+	err := mqtt.PublishWrapper("topicplayingstatus", "true")
+	if err != nil {
+		log.Error(err)
+	}
 	wg.Add(3)
 	go changeLight("off", wg)
 	go changeAspect(client, payload, wg)
@@ -364,6 +375,10 @@ func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssista
 		wg := &sync.WaitGroup{}
 		// mediaType string, codec string, edition string
 		// trigger lights
+		err := mqtt.PublishWrapper("topicplayingstatus", "true")
+		if err != nil {
+			log.Error(err)
+		}
 		wg.Add(1)
 		go changeLight("off", wg)
 		// Changing on resume is disabled because its annoying if you changed it since playing
