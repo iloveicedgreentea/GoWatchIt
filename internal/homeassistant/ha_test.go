@@ -12,7 +12,7 @@ import (
 
 func testSetup() (*HomeAssistantClient) {
 
-	haClient := NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.envyRemoteName"), config.GetString("homeAssistant.jvcRemoteName"), config.GetString("homeAssistant.binarySensorName"))
+	haClient := NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.remoteentityname"))
 
 	return haClient
 }
@@ -62,17 +62,17 @@ func TestReadAttributes(t *testing.T) {
 	}
 	tt := []testStruct{
 		{
-			entName: haClient.JVCEntityName,
+			entName: "nz7",
 			test:    &models.HAjvcResponse{},
 			entType: "remote",
 		},
 		{
-			entName: haClient.EnvyEntityName,
+			entName: "envy",
 			test:    &models.HAEnvyResponse{},
 			entType: "remote",
 		},
 		{
-			entName: haClient.BinaryName,
+			entName: "test_sensor",
 			test:    &models.HABinaryResponse{},
 			entType: "binary_sensor",
 		},

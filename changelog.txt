@@ -13,3 +13,11 @@ Add support for detecting HDMI sync using madvr Envy. It will detect when media 
 This prevents a black screen but stuff is playing which is annoying
 It also makes the denon codec detection more accurate
 New config homeAssistant.envyName
+
+
+9-10-23
+Web UI flow for configuring server
+New MQTT automations:
+    * "topicbeqcurrentprofile": -> which current profile is loaded
+    * "topicminidspmutestatus": -> true/false if minidsp(s) muted
+    * "topicplayingstatus": -> true/false if the tool is playing

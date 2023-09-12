@@ -100,14 +100,27 @@ func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
 
 func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 	// Get session object
+	var data models.SessionMediaContainer
+	var err error
 
-	res, err := c.getPlexReq("/status/sessions")
-	if err != nil {
-		return models.SessionMediaContainer{}, err
-	}
-	data, err := parseSessionMediaContainer(res)
-	if err != nil {
-		return models.SessionMediaContainer{}, err
+	// loop until not empty
+	for i := 0; i < 30; i++ {
+		res, err := c.getPlexReq("/status/sessions")
+		if err != nil {
+			return models.SessionMediaContainer{}, err
+		}
+		// if no response, keep trying
+		if len(res) == 0 {
+			log.Debugf("Plex session empty, waiting for %v", 30-i)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		data, err = parseSessionMediaContainer(res)
+		if err != nil {
+			return models.SessionMediaContainer{}, err
+		}
+
+		break
 	}
 
 	return data, err

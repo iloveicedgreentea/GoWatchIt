@@ -10,15 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/denon"
+	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/denon"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
-	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
-	"github.com/gin-gonic/gin"
+	"github.com/iloveicedgreentea/go-plex/models"
 )
 
 const showItemTitle = "episode"
@@ -152,12 +152,12 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 }
 
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entName string, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
 
 	for i := 0; i < waitTime; i++ {
-		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
+		isSignal, err = haClient.ReadAttributes(haClient.EntityName, attrResp, entType)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
@@ -190,7 +190,7 @@ func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 	default:
 		return errors.New("unknown cmd given")
 	}
-	
+
 }
 
 // playbackInteface is an interface to support various forms of playback
@@ -205,7 +205,7 @@ func playbackInteface(action string, h *homeassistant.HomeAssistantClient, p *pl
 // TODO: test this
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
 func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, plexClient *plex.PlexClient) {
-	if !config.GetBool("signal.waitforHDMIsync") {
+	if !config.GetBool("signal.enabled") {
 		wg.Done()
 		return
 	}
@@ -239,12 +239,12 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	switch signalSource {
 	case "envy":
 		// read envy attributes until its not nosignal
-		signal, err = readAttrAndWait(30, haClient.EnvyEntityName, "remote", &models.HAEnvyResponse{}, haClient)
+		signal, err = readAttrAndWait(30, "remote", &models.HAEnvyResponse{}, haClient)
 	case "jvc":
 		// read jvc attributes until its not nosignal
-		signal, err = readAttrAndWait(30, haClient.JVCEntityName, "remote", &models.HAjvcResponse{}, haClient)
+		signal, err = readAttrAndWait(30, "remote", &models.HAjvcResponse{}, haClient)
 	case "sensor":
-		signal, err = readAttrAndWait(30, haClient.BinaryName, "binary_sensor", &models.HABinaryResponse{}, haClient)
+		signal, err = readAttrAndWait(30, "binary_sensor", &models.HABinaryResponse{}, haClient)
 	default:
 		// TODO: maybe use a 15 sec delay?
 		log.Debug("using seconds for hdmi sync")
@@ -253,8 +253,8 @@ func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
 			return
 		}
-		time.Sleep(time.Duration(sec)*time.Second)
-		
+		time.Sleep(time.Duration(sec) * time.Second)
+
 	}
 
 	log.Debugf("HDMI Signal value is %v", signal)
@@ -669,7 +669,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 
 	if config.GetBool("homeAssistant.enabled") {
 		log.Info("Started with HA enabled")
-		haClient = homeassistant.NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.envyRemoteName"), config.GetString("homeAssistant.jvcRemoteName"), config.GetString("homeAssistant.binarySensorName"))
+		haClient = homeassistant.NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.remoteentityname"))
 	}
 	if config.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")

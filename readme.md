@@ -6,24 +6,21 @@
 
 This has become more of a general purpose home theater automation server. It is centered around Plex, but I am adding support for generic sources of info as well.
 
-* Simple web interface for configuration
+Meat & Potatos:
 * Load/unload BEQ profiles automatically, no user action needed, correct codec detected
+* Set Volume based on media type (movie, TV, etc)
+* Trigger lights when playing, pausing, or stopping automatically
+* HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen)
+
+Other cool stuff:
+* Mute/Unmute Minidsp automation for things like turning off subs at night
+* Simple web based UI for configuration
 * Detect aspect ratio and send command to HA to adjust accordingly
   * Also supports using my MadVR Envy Home Assistant integration 
-* Set Master Volume based on media type (movie, TV, etc)
-* Trigger lights when playing or stopping automatically
-* HDMI Sync detection and automation (pause while it is syncing)
 * Various MQTT sensors for volume control, lights, mute status, and current BEQ profile
-* Mute/Unmute Minidsp for things like night mode/WAF (turning off subs)
 * Mobile notifications (via HA) to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
-* All options are highly configurable with hot reload 
-* Built in support for Home Assistant and Minidsp webhooks (e.x mute on)
-
-*note: most communication to HA is done via MQTT so you will need to set this up*
-
-## Usage
-This tool is web API based. It is extensible by adding "handlers" which are listener endpoints for any function. 
+* Built in support for Home Assistant and Minidsp
 
 ## Setup
 Note: this assumes you have ezBEQ, Plex, and HomeAssistant working. Refer to their respective guides for installation help.
@@ -35,15 +32,15 @@ You don't strictly need HA and you can use your own systems but I recommend HA.
     * if you deploy a container, mount config.json to a volume called exactly `/config.json`
 2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
     * `locahost:9999/plexwebhook`
-3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth with an API, so I don't want to implement their locked-in auth method that has historically had outages.
-4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
-5) Add your UUID to the config.json so it filters by device
-    * can get UUID from `https://plex.tv/devices.xml` or run the tool and play something
-6) The app should detect the change and reload itself. This sometimes doesn't work with Docker, so might need a manual restart.
+3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth with an API, so I don't want to implement their locked-in auth method that has historically had outages (8/30/23 is the latest one by the way).
+4) Add your UUID to the config.json so it filters by device
+    * can get UUID from `https://plex.tv/devices.xml` or run the tool and play something, check the logs
+5) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
+6) The app should detect the change and reload itself. This doesn't usually work with Docker, so will need a manual restart.
 
 You should deploy this as a container, systemd unit, etc. 
 
-*side note: you should really set a compressor on your minidsp for safety as outlined in the BEQ forum post*
+*side note: you should really set a compressor on your minidsp for safety as outlined in the BEQ forum post, outside the scope here but you have been warned, I am not responsible for any damages*
 
 
 ### Handlers
@@ -68,11 +65,12 @@ And then inside an automation, you make an action
   # unmute subs
   - service: rest_command.minidsp
     data:
-      command: "off"
+      command: "off" (or "on")
 ```
 
 Using the above you can automate the mute and unmute of your minidsp with any automation source.
-
+ 
+You can then do cool stuff like create a binary sensor to show the state of the subs based on the MQTT topic
 
 ### MQTT
 For flexibility, this uses MQTT to send commands. This is so you can decide what to do with that info. You will need to set MQTT up. Detailed instructions here https://www.home-assistant.io/integrations/mqtt/
@@ -81,6 +79,44 @@ For flexibility, this uses MQTT to send commands. This is so you can decide what
 2) Install mqtt integration
 3) Set up your topics in HA and the tool's config
 4) Set up Automations in HA based on the payloads of MQTT
+
+Used Topics:
+Aspect ratio
+Current BEQ Profile
+Lights
+Minidsp mute status
+Volume
+Playing status
+
+
+Here are some sensor examples
+
+```yaml
+mqtt:
+  binary_sensor:
+    - name: "subs_muted"
+      state_topic: "theater/subs/status"
+      payload_on: "false"
+      payload_off: "true"
+    - name: "plex_playing"
+      state_topic: "theater/plex/playing"
+      payload_on: "true"
+      payload_off: "false"
+  sensor:
+    - name: "lights"
+      state_topic: "theater/lights/front"
+      value_template: "{{ value_json.state }}"
+    - name: "volume"
+      state_topic: "theater/denon/volume"
+      value_template: "{{ value_json.type }}"
+    - name: "aspectratio"
+      state_topic: "theater/jvc/aspectratio"
+      value_template: "{{ value_json.aspect }}"
+    - name: "beq_current_profile"
+      state_topic: "theater/beq/currentprofile"
+
+
+```
 
 ### Payloads
 In your Automations, you can action based on these payloads.
@@ -106,74 +142,142 @@ In your Automations, you can action based on these payloads.
 }
 ```
 
+All other payloads are "true" or "false" so create an MQTT binary sensor.
+
 ### Masking System Support
 
 There are two ways to do masking. One is using this tool. The other is using my MadVR Envy Home Assistant integration and using the Envy's aspect ratio (Aspect dec or Aspect int) attribute in an automation. The second way is most useful if you have a curtain like masking system, not a drop down one.
 
-If using this tool, you can use the default source (IMDB) or MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail because they intentionally change their HTML to break scrapers, but I tried to add retries for that. The Envy method requires my HA plugin. 
+If using this tool, you can use the default source (IMDB) or MadVR Envy. IMDB works fine but they are very hostile to scraping so there is a chance it may fail because they intentionally change their HTML to break scrapers, but I tried to add retries for that. It is provided as a best effort but IMDB can be unreliable, if not wrong. Variable Aspect Ratio movies like Interstellar will use the widest AR reported by IMDB as it is the most likely option. 
 
-*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic needs to be named topicAspectratioMadVrOnly. Run your actions for masking system in that automation. The payload does not matter as its read from the envy. I recommend delaying reading the attribute by 12 seconds or so until the envy scales the display correctly and the attribute changes*
+If you use an Envy with my method, you will get real time masking adjustments. I built my own infinite ratio CIH masking system.
 
-Here is an automation which uses MQTT and Envy attributes ([via my Envy integration](https://github.com/iloveicedgreentea/madvr-envy-homeassistant)). Modify to your needs. My masking system is set up for CIH so I mask off beyond 17:9. 
+*Note: if you enable madvr support, you must set up an Automation triggered by MQTT, topic needs to be named topicAspectratioMadVrOnly. Run your actions for masking system in that automation. The payload does not matter as its read from the envy.*
 
+Here is an automation which Envy attributes ([via my Envy integration](https://github.com/iloveicedgreentea/madvr-envy-homeassistant)). Modify to your needs. My masking system is set up for CIH so I mask off beyond 16:9. 
+
+Example Automation:
 ```yaml
-alias: Envy - MQTT - Masking system
-description: >-
-  Trigger masking if it changed, but not within 5 min so alternating scenes
-  don't trigger
+alias: "Envy: Masking System"
+description: ""
 trigger:
-  - platform: mqtt
-    topic: theater/envy/aspectratio
-condition: []
+  - platform: state
+    entity_id:
+      - remote.envy
+    attribute: aspect_dec
+condition:
+  - condition: state
+    entity_id: input_boolean.wide1
+    state: "off"
 action:
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 12
-      milliseconds: 0
   - if:
       - condition: numeric_state
         entity_id: remote.envy
-        attribute: aspect_ratio
+        attribute: aspect_dec
         above: 0
-        below: 1.89
+        below: 1.79
+      - condition: state
+        entity_id: input_boolean.wide1
+        state: "off"
+        enabled: false
     then:
       - service: switch.turn_on
         data: {}
         target:
-          entity_id: switch.masking_down
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 35
-          milliseconds: 0
-      - service: switch.turn_off
-        data: {}
-        target:
-          entity_id: switch.masking_down
+          entity_id: switch.masking_close
+      - stop: ""
+    alias: "1.78"
   - if:
       - condition: numeric_state
         entity_id: remote.envy
-        attribute: aspect_ratio
-        below: 10
-        above: 1.88
+        attribute: aspect_dec
+        above: 2.33
+        below: 6
+      - condition: state
+        entity_id: input_boolean.wide1
+        state: "off"
+        enabled: false
     then:
       - service: switch.turn_on
         data: {}
         target:
-          entity_id: switch.masking_up
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 35
-          milliseconds: 0
-      - service: switch.turn_off
+          entity_id: switch.masking_open
+      - stop: ""
+        error: false
+    alias: scope
+  - if:
+      - condition: numeric_state
+        entity_id: remote.envy
+        attribute: aspect_dec
+        above: 1.78
+        below: 1.87
+      - condition: state
+        entity_id: input_boolean.wide1
+        state: "off"
+        enabled: false
+    then:
+      - service: switch.turn_on
         data: {}
         target:
-          entity_id: switch.masking_up
-mode: single
-
+          entity_id: switch.masking_1_85_1
+      - stop: ""
+    alias: "1.85"
+  - if:
+      - condition: numeric_state
+        entity_id: remote.envy
+        attribute: aspect_dec
+        above: 1.86
+        below: 1.91
+      - condition: state
+        entity_id: input_boolean.wide1
+        state: "off"
+        enabled: false
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.masking_1_9_1
+      - stop: ""
+    alias: "1.9"
+  - if:
+      - condition: numeric_state
+        entity_id: remote.envy
+        attribute: aspect_dec
+        above: 1.9
+        below: 2.1
+      - condition: state
+        entity_id: input_boolean.wide1
+        state: "off"
+        enabled: false
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.masking_2_0_1
+      - stop: ""
+    alias: "2.0"
+  - if:
+      - condition: numeric_state
+        entity_id: remote.envy
+        attribute: aspect_dec
+        above: 2.1
+        below: 2.33
+      - condition: state
+        entity_id: input_boolean.wide1
+        state: "off"
+        enabled: false
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.masking_open
+      - stop: ""
+    alias: "2.2"
+mode: queued
+max: 10
 ```
+
+I have the condition set because the Envy internally sets things to 16:9 while it is syncing which can cause false positives for masking.
 
 ### HA Quickstart
 Here is an example of an automation to change lights based on MQTT.
@@ -215,10 +319,12 @@ action:
         data: {}
         target:
           entity_id: light.caseta_r_wireless_in_wall_dimmer
-mode: single
+mode: queued
+max: 10
 ```
 
 ### Config
+All fields are required unless otherwise stated
 
 create file named config.json, paste this in, remove the comments after
 
@@ -235,11 +341,9 @@ create file named config.json, paste this in, remove the comments after
         "triggeraspectratiochangeonevent": true,
         "triggerlightsonevent": true,
         "triggeravrmastervolumechangeonevent": true,
-        // optional if using hdmi sync. the name of the remote entities. you only need one
-        "envyremotename": "envy",
-        "jvcremotename": "nz7",
-        "binarysensorname": "some_sensor",
-        // names of scripts which call remote.xyz or play/pause/stop your player of choice if not using plex
+        // optional if using hdmi sync via an entity. the name of the remote entities, or a binary sensor. If binary sensor, set source.source to "binary_sensor". See readme
+        "remoteentityname": "jvc",
+        // optional: set only if plex.enabled is false. names of scripts which call Home assistant scripts to play/pause/stop
         "playscriptname": "",
         "pausescriptname": "",
         "stopscriptname": ""
@@ -257,7 +361,9 @@ create file named config.json, paste this in, remove the comments after
         // will publish the current profile here
         "topicbeqcurrentprofile": "theater/beq/currentprofile",
         // write mute status
-        "topicminidspmutestatus": "theater/minidsp/mutestatus"
+        "topicminidspmutestatus": "theater/minidsp/mutestatus",
+        // if tool is playing or not
+        "topicplayingstatus": "theater/plex/playing",
     },
     "plex": {
         // if you don't use plex
@@ -267,12 +373,13 @@ create file named config.json, paste this in, remove the comments after
         "ownernamefilter": "plex_owner_name to filter events on",
         // filter based on device uuid so only the client you want triggers things, or leave blank
         // must be uuid. easy way to get it is playing anything and searching logs for 'got a request from uuid:'
+        // or check the devices
         "deviceuuidfilter": "",
         "url": "http://xyz",
         "port": "32400",
         // if you enable trailers before movies, it can process it like turn off lights. no beq 
         "enabletrailersupport": true || false,
-        // get this from "http://(player ip):32500/resources". check readme
+        // optional if not using hdmi sync get this from "http://(player ip):32500/resources". Required for pausing/playing plex . check readme
         "playermachineidentifier": "uuid",
         "playerip": "xxx.xxx.xxx.xxx"
     },
@@ -299,17 +406,19 @@ create file named config.json, paste this in, remove the comments after
         // much slower but more accurate as it will get the actual codec playing
         // will also compare denon and plex to ensure correct codec is playing (sometimes plex will incorrectly transcode. might be a shield bug) (not ready)
         "useavrcodecsearch": false,
+        // optional if not using above field
         "denonip": "",
         "denonport": "23",
         // tell plex to stop if the playing codec does not match expected like when it transcodes atmos for no reason
+        // requires denon AVR above
         "stopplexifmismatch": true
     },
     // what to use for signal source
     "signal": {
-        // jvc, envy, or name of the binary sensor (see readme), or you can specify seconds to wait like "13"
-        "source": "jvc",
-        // true if you want to pause plex until hdmi sync is done
-        "waitforhdmisync": false
+      // true if you want to pause plex until hdmi sync is done
+      "enabled": true,
+        // jvc, envy, or name of the binary sensor (see readme), or you can specify seconds to pause for like "13"
+        "source": "jvc"
     },
     "main": {
         "listenport": "9999"
@@ -322,7 +431,7 @@ You must whitelist your server IP in "List of IP addresses and networks that are
 
 Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I don't want to do that so this is my form of protest.
 
-A local attacker hijacking my server and sending commands to Plex is not remotely in my threat model. 
+A local attacker hijacking my server and sending commands to Plex is not a concern. 
 
 ### Debug mode
 `export LOG_LEVEL=debug` to have it print out debug logs
@@ -341,7 +450,7 @@ For safety, the tool tries to unload the profile when it loads up each time in c
 ### Matching
 The tool will search the catalog and match based on codec (Atmos, DTS-X, etc), title, year, and edition. I have tested with multiple titles and everything matched as expected.
 
-*If you get an incorrect match, please open a github issue asap*
+*If you get an incorrect match, please open a github issue with the full log output and expected codec and title*
 
 ### Editions
 
@@ -349,27 +458,27 @@ This tool will do its best to match editions. It will look for one of the follow
 1) Plex edition metadata. Set this from your server in the UI
 2) Looking at the file name if it contains `Unrated, Ultimate, Theatrical, Extended, Director, Criterion`
 
-There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety. If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
+There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety reasons (different mastering, etc). If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
 
 If you find repeated match failures because of editions, open a github issue with debug logs of you triggering `media.play`
 
 ### HDMI Sync Automation
-This tool supports automatically waiting until HDMI sync is done. Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? This tool will prevent that. 
+This tool supports automatically waiting until HDMI sync is done. Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? Then everyone you are watching a movie with makes fun of you and you cry yourself to sleep? This tool will prevent that. 
 
-It supports three ways to get this info: my JVC integration, my Envy integration, a generic binary_sensor, or seconds to wait.
+It supports four ways to get this info: my JVC integration, my Envy integration, a generic binary_sensor, or you can pass in seconds to wait.
 
-If using a binary_sensor, you need to create an automation which will set the state to `off` when there is NO SIGNAL and `on` when there is. Getting that data is up to you. Set the `signal` config to the name of the binary sensor (e.g signal, if the entity is binary_sensor.signal)
+If using the first two methods, you just need to install the integration, then set `remoteentityname` to the name of the remote entity. Set `signal.source` to either `jvc` or `envy`.
 
-If using the first two, you just need to install it, nothing else.
+If using a binary_sensor, you need to create an automation which will set the state to `off` when there is NO SIGNAL and `on` when there is. Getting that data is up to you. Set the `signal` config to the name of the binary sensor (e.g signal, if the entity is binary_sensor.signal).
 
-If using seconds, provide the number of seconds to wait as a string such as "13" for 13 seconds. You can time how long your sync time is and add it here.
+If using seconds, provide the number of seconds to wait as a string such as "13" for 13 seconds. You can time how long your sync time is and add it here. It will pause for that amount of time then continue playing.
 
 You also must set `plex.playerMachineIdentifier` and `plex.playerIP`. To get this:
 1) Play something on your desired player (like a shield)
 2) `curl "http://(player IP):32500/resources"`
-    * Note this is *NOT THE SERVER IP!*
+    * Note this is *NOT THE SERVER IP!* and *only works while something is actively playing*
 3) Copy the `machineIdentifier` value
-4) Add this to that config field exacly
+4) Add this to that config field exactly as presented
 
 ## Building Binary
 GOOS=xxxx make build
@@ -388,9 +497,7 @@ channel processed by `func PlexWorker` which runs in the background.
 `models` contains all the structs needed for serialization/deserialization
 
 ### Adding handlers
-Check `main.go` for how to implement a new handler. Call `mux.Handle()` to add the new handler
-
-Variable aspect movies will use the widest aspect listed in IMDB
+Check `main.go` for how to implement a new handler. 
 
 ### Audio stuff
 Here are some examples of what kind of codec tags Plex will spit out based on file metadata

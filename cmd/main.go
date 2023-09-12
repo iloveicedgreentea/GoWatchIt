@@ -11,10 +11,21 @@ import (
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
+// static files are cached which causes issues
+func noCache() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
+        c.Header("Pragma", "no-cache")
+        c.Header("Expires", "Thu, 01 Jan 1970 00:00:00 GMT")
+        c.Next()
+    }
+}
+
 func main() {
 	log := logger.GetLogger()
 	log.Debug("Started in debug mode...")
 	r := gin.Default()
+	r.Use(noCache())
 
 	// you can copy this schema to create event handlers for any service
 	// create channel to receive jobs

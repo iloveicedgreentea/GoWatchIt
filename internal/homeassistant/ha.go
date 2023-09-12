@@ -20,20 +20,16 @@ type HomeAssistantClient struct {
 	Port           string
 	Token          string
 	HTTPClient     http.Client
-	EnvyEntityName string
-	JVCEntityName  string
-	BinaryName string
+	EntityName string
 }
 
 // // A client to interface with home assistant
-func NewClient(url, port string, token string, envyName string, jvcName string, binaryName string) *HomeAssistantClient {
+func NewClient(url, port string, token string, entityName string) *HomeAssistantClient {
 	return &HomeAssistantClient{
 		ServerURL:      url,
 		Port:           port,
 		Token:          token,
-		EnvyEntityName: envyName,
-		JVCEntityName:  jvcName,
-		BinaryName: binaryName,
+		EntityName: entityName,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -148,7 +144,7 @@ func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttrib
 	switch entType {
 	case "remote":
 		if respObj.GetState() == "off" {
-			return false, fmt.Errorf("envy state is %s", respObj.GetState())
+			return false, fmt.Errorf("entity state is %s", respObj.GetState())
 		}
 
 		return respObj.GetSignalStatus(), err
