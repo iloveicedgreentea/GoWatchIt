@@ -2,7 +2,6 @@ FROM golang:1.21 as build
 
 WORKDIR /go/src/app
 COPY . .
-
 RUN go mod download
 WORKDIR /go/src/app/cmd
 RUN go vet -v
@@ -13,4 +12,6 @@ FROM gcr.io/distroless/static-debian11
 
 
 COPY --from=build /go/bin/app /
+COPY --from=build /go/src/app/web /web
+
 CMD ["/app"]
