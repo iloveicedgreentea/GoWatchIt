@@ -11,10 +11,10 @@ Meat & Potatos:
 * Set Volume based on media type (movie, TV, etc)
 * Trigger lights when playing, pausing, or stopping automatically
 * HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen)
+* Web based UI for configuration
 
 Other cool stuff:
 * Mute/Unmute Minidsp automation for things like turning off subs at night
-* Simple web based UI for configuration
 * Detect aspect ratio and send command to HA to adjust accordingly
   * Also supports using my MadVR Envy Home Assistant integration 
 * Various MQTT sensors for volume control, lights, mute status, and current BEQ profile
@@ -27,11 +27,23 @@ Note: this assumes you have ezBEQ, Plex, and HomeAssistant working. Refer to the
 
 You don't strictly need HA and you can use your own systems but I recommend HA.
 
+Simple Way:
+
+1) Deploy via Docker -> `ghcr.io/iloveicedgreentea/plex-webhook-automation:$version` 
+2) Set up config via web ui -> `http://(server-ip):9999`
+   * can get UUID from `https://plex.tv/devices.xml`
+3) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
+    * `(server-ip):9999/plexwebhook`
+3) Whitelist your server IP in Plex so it can call the API without authentication. 
+4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
+
+Manual Way:
+
 0) Create `config.json` and set the values appropriately. See below.
 1) Either pull `ghcr.io/iloveicedgreentea/plex-webhook-automation:$version` or build the binary directly
     * if you deploy a container, mount config.json to a volume called exactly `/config.json`
 2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
-    * `locahost:9999/plexwebhook`
+    * `(server-ip):9999/plexwebhook`
 3) Whitelist your server IP in Plex so it can call the API without authentication. Plex refuses to implement local server auth with an API, so I don't want to implement their locked-in auth method that has historically had outages (8/30/23 is the latest one by the way).
 4) Add your UUID to the config.json so it filters by device
     * can get UUID from `https://plex.tv/devices.xml` or run the tool and play something, check the logs
@@ -330,11 +342,11 @@ create file named config.json, paste this in, remove the comments after
 
 ```json
 {
-    // note the case is lowercase now
+    // note the case is lowercase
     "homeassistant": {
+        "enabled": true,
         "url": "http://123.123.123.123",
         "port": "8123",
-        "enabled": true,
         // get a token from your user profile
         "token": "ey.xyzjwt",
         // trigger functions to change the following

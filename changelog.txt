@@ -21,3 +21,6 @@ New MQTT automations:
     * "topicbeqcurrentprofile": -> which current profile is loaded
     * "topicminidspmutestatus": -> true/false if minidsp(s) muted
     * "topicplayingstatus": -> true/false if the tool is playing
+Some functionality changes, check the readme
+HDMI Sync automation in testing
+*Breaking changes* All config fields are lowercase now

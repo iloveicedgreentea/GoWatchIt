@@ -71,7 +71,7 @@ func main() {
 	// TODO: Engine.SetTrustedProxies(nil)
 	port := config.GetString("main.listenPort")
 	if port == "" {
-		log.Fatal("error getting port")
+		port = "9999" 
 	}
 	log.Infof("Starting server on port %v", port)
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {

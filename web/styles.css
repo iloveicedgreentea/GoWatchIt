@@ -1,0 +1,117 @@
+/* Dark Theme Basics */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #1e1e1e;  /* Not pitch black, but dark enough */
+    color: #c7c7c7;  /* Not pure white, but light enough */
+}
+
+h1, h2 {
+    color: #f0f0f0;  /* Lighter text for headers */
+}
+
+/* Titles and Headers */
+h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 1.5em;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #3a3a3a;  /* Slightly lighter than the background */
+}
+
+/* Labels and Inputs */
+label {
+    display: inline-block;
+    width: 300px;
+    margin-bottom: 10px;
+    color: #bdbdbd;  /* Slightly muted text color for better contrast */
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #3a3a3a;  /* A shade lighter than the background */
+    border-radius: 4px;
+    background-color: #2a2a2a;  /* Slightly lighter than the main background */
+    color: #c7c7c7;  /* Same as body text color */
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+/* Buttons */
+button {
+    background-color: #005792;  /* A dark, but noticeable color */
+    color: #c7c7c7;  /* Same as body text color */
+    padding: 14px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0073aa;  /* A slightly lighter shade for hover */
+}
+
+/* Descriptions */
+.description {
+    display: block;
+    font-style: italic;
+    font-size: smaller;
+    color: #9c9c9c;  /* More muted than other text */
+}
+
+.container {
+    max-width: 800px;  /* You can set this to whatever you'd like */
+    margin: auto;  /* Horizontal centering */
+    padding: 20px;  /* Some space around */
+    background-color: #1e1e1e;  /* Same as body background */
+    border-radius: 8px;  /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* A subtle shadow for depth */
+}
+
+/* Responsive layout adjustments */
+@media (max-width: 900px) {
+    label {
+        display: block;
+        width: auto;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+        width: 100%;
+    }
+}
+
+/* Feedback and Interaction */
+button:disabled {
+    background-color: #333;
+    cursor: not-allowed;
+}
+
+.notification-success {
+    padding: 8px;
+    margin-left: 20px;
+    background-color: #4CAF50; /* green */
+    color: white;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.notification-error {
+    padding: 8px;
+    margin-left: 20px;
+    background-color: #f44336; /* red */
+    color: white;
+    border-radius: 4px;
+    display: inline-block;
+}

@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"os"
+
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -53,8 +54,10 @@ func GetConfig(c *gin.Context) {
 
 func SaveConfig(c *gin.Context) {
 	var jsonData map[string]interface{}
+
 	if err := c.ShouldBindJSON(&jsonData); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid Payload"})
+		c.JSON(400, gin.H{"error": err.Error()})
+		fmt.Println(c.Request.Body)
 		return
 	}
 
