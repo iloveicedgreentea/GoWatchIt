@@ -25,7 +25,19 @@ func main() {
 	log := logger.GetLogger()
 	log.Debug("Started in debug mode...")
 	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
 	r.Use(noCache())
+
+	log.Debug("Checking if config exists")
+	_, err := api.GetConfigPath()
+	if err != nil {
+		log.Debug("Config not found, creating")
+		err = api.CreateConfig(&gin.Context{})
+		if err != nil {
+			log.Fatalf("unable to create config: %v", err)
+		}
+
+	}
 
 	// you can copy this schema to create event handlers for any service
 	// create channel to receive jobs
@@ -68,7 +80,7 @@ func main() {
 	})
     // Register routes
     api.RegisterRoutes(r)
-	// TODO: Engine.SetTrustedProxies(nil)
+	r.SetTrustedProxies(nil)
 	port := config.GetString("main.listenPort")
 	if port == "" {
 		port = "9999" 

@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
-	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
+	"github.com/iloveicedgreentea/go-plex/models"
 )
 
 var log = logger.GetLogger()
@@ -92,7 +92,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 	log.Debug("Running mute command")
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
-		log.Debugf("ezbeq: Using endpoint %s", endpoint)
+		log.Debugf("muting device: %s", endpoint)
 		var method string
 		switch status {
 		case true:
@@ -112,13 +112,12 @@ func (c *BeqClient) MuteCommand(status bool) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Mute status set to %v", out.Mute)
+		log.Infof("device %s mute status set to %v", v.Name, out.Mute)
 
 		if out.Mute != status {
 			return fmt.Errorf("mute value %v requested but mute status is now %v", status, out.Mute)
 		}
 
-		
 	}
 
 	return mqtt.PublishWrapper("topicMinidspMuteStatus", fmt.Sprintf("%v", status))

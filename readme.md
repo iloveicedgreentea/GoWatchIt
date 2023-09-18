@@ -36,6 +36,7 @@ Simple Way:
     * `(server-ip):9999/plexwebhook`
 3) Whitelist your server IP in Plex so it can call the API without authentication. 
 4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work.
+5) App will restart within 5 seconds when config is changed
 
 Manual Way:
 
@@ -336,9 +337,11 @@ max: 10
 ```
 
 ### Config
+You can configure this with the web UI or manually. The app will be restarted after changing any values.
+
 All fields are required unless otherwise stated
 
-create file named config.json, paste this in, remove the comments after
+If editing manually, create a file named config.json, paste this in, remove the comments after
 
 ```json
 {

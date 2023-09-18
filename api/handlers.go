@@ -8,7 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 )
+
+var log = logger.GetLogger()
 
 func GetConfigPath() (string, error) {
 	ex, err := os.Executable()
@@ -40,16 +43,37 @@ func ConfigExists(c *gin.Context) {
 
 func GetConfig(c *gin.Context) {
 	path, err := GetConfigPath()
+	// if not found, create it
 	if err != nil {
-		c.JSON(500, gin.H{"error": "unable to find config"})
-		return
+		log.Debugf("Didn't get config: %v", err)
+		err = CreateConfig(c)
+		if err != nil {
+			log.Debugf("Didn't create config: %v", err)
+			c.JSON(500, gin.H{"error": "unable to create config"})
+			return
+		}
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
+		log.Debugf("Didn't read config: %v", err)
 		c.JSON(500, gin.H{"error": "unable to read config"})
 		return
 	}
 	c.Data(200, "application/json", data)
+}
+
+func CreateConfig(c *gin.Context) error {
+	log.Debug("Creating new config")
+
+	file, err := os.Create("/config.json")
+	if err != nil {
+		log.Error("Could not create file: ", err)
+		return err
+	}
+	defer file.Close()
+
+	log.Debug("Successfully created /config.json")
+	return nil
 }
 
 func SaveConfig(c *gin.Context) {
@@ -63,7 +87,8 @@ func SaveConfig(c *gin.Context) {
 
 	path, err := GetConfigPath()
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Unable to find config"})
+		log.Error("unable to get config")
+		c.JSON(500, gin.H{"error": "unable to get config"})
 		return
 	}
 
@@ -81,6 +106,7 @@ func SaveConfig(c *gin.Context) {
 
 	// Use your SaveConfigFile function to save the updated configuration
 	if err := config.SaveConfigFile(path); err != nil {
+		log.Error("unable to save config")
 		c.JSON(500, gin.H{"error": "Unable to save config"})
 		return
 	}

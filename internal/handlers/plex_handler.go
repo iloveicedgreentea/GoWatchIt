@@ -641,7 +641,6 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 		log.Debugf("Discovered devices: %v", beqClient.DeviceInfo)
 		if len(beqClient.DeviceInfo) == 0 {
 			log.Error("No devices found. Please check your ezbeq settings!")
-			return
 		}
 
 		// get the device names from the API call
