@@ -412,8 +412,8 @@ If editing manually, create a file named config.json, paste this in, remove the 
         "notifyonload": true,
         // name of the endpoint in ha to send notification to. look at the notify service in ha to see endpoints
         "notifyendpointname": "mobile_app_iphone",
-        // which author you want. none or blank will find the best match according to ezbeq application
-        "preferredauthor": "aron7awol" || "mobe1969" || "other supported author" || "",
+        // which author to filter on. blank will find the best match according to ezbeq 
+        "preferredauthor": "aron7awol" or "mobe1969" or "other supported author" or "",
         // slots you want to apply beq configs. minidsp 2x4hd has four preset slots. not tested on anything but 2x4hd
         "slots": [1],
         // use an ip enabled denon avr to get the codec instead of querying plex
