@@ -14,6 +14,8 @@ test:
 	@unset LOG_LEVEL && cd internal/ezbeq && go test -v
 docker-build:
 	docker buildx build --load --tag plex-webhook-automation-local .
+docker-push:
+	docker buildx build --push --platform linux/amd64 --tag ghcr.io/iloveicedgreentea/plex-webhook-automation:test . 
 docker-run: docker-build
 	docker run -p 9999:9999 -e LOG_LEVEL=debug plex-webhook-automation-local
 run: build

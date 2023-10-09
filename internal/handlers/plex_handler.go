@@ -51,11 +51,11 @@ func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 // Sends the payload to the channel for background processing
 func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 	if err := c.Request.ParseMultipartForm(0); err != nil {
-		log.Error(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Errorf("invalid multipart form: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{"invalid multipart form": err.Error()})
 		return
 	}
-	log.Debug("ProcessWebhook: Received valid multipart form")
+
 	payload, hasPayload := c.Request.MultipartForm.Value["payload"]
 	if hasPayload {
 		log.Debug("decoding payload")
