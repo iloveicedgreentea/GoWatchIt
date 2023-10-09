@@ -405,7 +405,7 @@
                     <label for="plex-deviceuuidfilter">Device UUID Filter
                         <span class="description">
                             The client identifier of the device to filter webhooks for. You should set this to your
-                            theater player UUID
+                            theater player UUID, or a comma separated string (filter1,filter2) if you have multiple devices. If blank, it will not filter anything. Get your UUID from logs after playing something or https://plex.tv/devices.xml after signing in
                         </span>
                     </label>
                     <input type="text" id="plex-deviceuuidfilter" name="plex.deviceuuidfilter">
@@ -422,7 +422,7 @@
                 <div>
                     <label for="plex-playerip">Player IP
                         <span class="description">
-                            IP of your player device (like a shield)
+                            optional if not using hdmi sync IP of your player device (like a shield)
                         </span>
                     </label>
                     <input type="text" id="plex-playerip" name="plex.playerip">

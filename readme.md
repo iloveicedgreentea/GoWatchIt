@@ -388,7 +388,7 @@ If editing manually, create a file named config.json, paste this in, remove the 
         "ownernamefilter": "plex_owner_name to filter events on",
         // filter based on device uuid so only the client you want triggers things, or leave blank
         // must be uuid. easy way to get it is playing anything and searching logs for 'got a request from uuid:'
-        // or check the devices
+        // or check the devices. You can split it with a comma for multiple devices
         "deviceuuidfilter": "",
         "url": "http://xyz",
         "port": "32400",

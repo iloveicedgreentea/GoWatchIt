@@ -24,3 +24,6 @@ New MQTT automations:
 Some functionality changes, check the readme
 HDMI Sync automation in testing
 *Breaking changes* All config fields are lowercase now
+
+10-9-23
+Modify UUID filter to accept comma for multiple

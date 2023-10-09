@@ -19,6 +19,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
 	"github.com/iloveicedgreentea/go-plex/models"
+	"golang.org/x/exp/slices"
 )
 
 const showItemTitle = "episode"
@@ -452,6 +453,25 @@ func getEditionName(data models.MediaContainer) string {
 	}
 }
 
+// ensure the client matches so it doesnt trigger from unwanted clients
+func checkUUID(clientUUID string, filterConfig string) bool {
+
+	// trim all spaces from the string
+	clientUUID = strings.ReplaceAll(clientUUID, " ", "")
+	filter := strings.ReplaceAll(filterConfig, " ", "")
+
+	// split the filter string by comma
+	filterArr := strings.Split(filter, ",")
+
+	// iterate over each uuid in filterArr and compare with clientUUID
+	if !slices.Contains(filterArr, clientUUID) {
+		log.Debugf("filter '%s' does not match uuid '%s'", filterArr, clientUUID)
+		return false
+	}
+
+	return true
+}
+
 // based on event type, determine what to do
 func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
@@ -459,8 +479,8 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	clientUUID := payload.Player.UUID
 	// ensure the client matches so it doesnt trigger from unwanted clients
 
-	if config.GetString("plex.deviceUUIDFilter") != clientUUID || config.GetString("plex.deviceUUIDFilter") == "" {
-		log.Debug("Client UUID does not match enabled filter")
+	if !checkUUID(clientUUID, config.GetString("plex.deviceUUIDFilter")) {
+		log.Infof("Got a webhook but Client UUID '%s' does not match enabled filter", clientUUID)
 		return
 	}
 
