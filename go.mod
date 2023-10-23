@@ -6,7 +6,7 @@ require (
 	github.com/StalkR/imdb v1.0.15
 	github.com/anaskhan96/soup v1.2.5
 	github.com/eclipse/paho.mqtt.golang v1.4.3
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/reiver/go-telnet v0.0.0-20180421082511-9ff0b2ab096e
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.16.0
