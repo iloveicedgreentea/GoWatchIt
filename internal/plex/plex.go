@@ -103,7 +103,7 @@ func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 	var data models.SessionMediaContainer
 	var err error
 
-	// loop until not empty
+	// loop until not empty for 30s
 	for i := 0; i < 30; i++ {
 		res, err := c.getPlexReq("/status/sessions")
 		if err != nil {
@@ -195,7 +195,8 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	log.Debugf("Codecs from plex received: %v, %v", codecTitle, codecExtendTitle)
 
 	// Titles are more likely to have atmos so check it first
-	// check if it contains atmos
+
+	// Atmos logic
 	atmosFlag := insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecTitle, "Atmos")
 
 	// check if contains DDP
@@ -217,7 +218,7 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "DD+ Atmos"
 	}
 
-	// if false and true, DD+
+	// if not atmos and DD+, return DD+
 	if !atmosFlag && ddpFlag {
 		return "DD+"
 	}
@@ -533,34 +534,36 @@ func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (floa
 	// return aspect ratio
 	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
 }
-
-// makePlexReq makes a request to a client player for playback control
 func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
-	params := url.Values{}
-	// add plex client id
-	params.Add("X-Plex-Client-Identifier", c.MachineID)
-
-	u, err := url.Parse(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
-	if err != nil {
-		return nil, err
+	// Construct the URL with url.URL
+	u := &url.URL{
+		Scheme: "http", // or "https" if applicable
+		Host:   fmt.Sprintf("%s:%s", c.ServerURL, c.Port),
+		Path:   path,
 	}
+
+	// Add query parameters if needed
+	params := url.Values{}
+	params.Add("X-Plex-Client-Identifier", c.MachineID)
 	u.RawQuery = params.Encode()
 
 	log.Debugf("using params: %s", u.RawQuery)
 
+	// Create the request
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-	// add plex client id also needed as header
 	req.Header.Add("X-Plex-Client-Identifier", c.MachineID)
 
+	// Execute the request
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error when calling plex API: %v", err)
 	}
 	defer res.Body.Close()
 
+	// Read the response
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
