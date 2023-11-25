@@ -344,7 +344,7 @@ All fields are required unless otherwise stated
 If editing manually, create a file named config.json, paste this in, remove the comments after
 
 ```json
-{
+
     // note the case is lowercase
     "homeassistant": {
         "enabled": true,
@@ -398,12 +398,12 @@ If editing manually, create a file named config.json, paste this in, remove the 
         "playermachineidentifier": "uuid",
         "playerip": "xxx.xxx.xxx.xxx"
     },
-    "ezbeq": {
+    "ezbeq": 
         "url": "http://xyz",
         "port": "8080",
         "enabled": true,
-        // support beq for tv shows also, some exist
-        "enabletvbeq": true,
+        // support beq for tv shows also, some existyhgt
+        "": true,
         // will log what it will do, but will not load beq profiles
         "dryrun": false,
         // some beq catalogs have negative mv adjustment. recommend to true unless you really like bass, can cause damage
@@ -427,7 +427,7 @@ If editing manually, create a file named config.json, paste this in, remove the 
         // tell plex to stop if the playing codec does not match expected like when it transcodes atmos for no reason
         // requires denon AVR above
         "stopplexifmismatch": true
-    },
+    ,
     // what to use for signal source
     "signal": {
       // true if you want to pause plex until hdmi sync is done
@@ -438,7 +438,7 @@ If editing manually, create a file named config.json, paste this in, remove the 
     "main": {
         "listenport": "9999"
     }
-}
+
 ```
 
 ### Authentication

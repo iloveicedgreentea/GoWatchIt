@@ -19,7 +19,12 @@ func connect(clientID string) (mqtt.Client, error) {
 	opts.SetPassword(config.GetString("mqtt.password"))
 
 	c := mqtt.NewClient(opts)
-	if token := c.Connect(); token.WaitTimeout(5*time.Second) && token.Error() != nil {
+	token := c.Connect()
+	if !token.WaitTimeout(5*time.Second) {
+		return nil, fmt.Errorf("timeout when connecting to mqtt broker")
+	}
+	
+	if token.Error() != nil {
 		return nil, token.Error()
 	}
 
