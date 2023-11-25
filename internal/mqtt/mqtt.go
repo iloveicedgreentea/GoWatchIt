@@ -42,7 +42,8 @@ func Publish(payload []byte, topic string) error {
 
 	defer c.Disconnect(5000)
 	// max retry
-	attempts := 3
+	attempts := 4
+	var lastErr error
 
 	// if there is some error, retry up to attempts
 	for i := 0; i < attempts; i++ {
@@ -51,19 +52,22 @@ func Publish(payload []byte, topic string) error {
 		err = token.Error()
 		// sleep for 1 sec and try again
 		if err != nil {
-			log.Debugf("Error with sending MQTT: %v. Attemps: %v", err, i)
+			lastErr = err
+			log.Warnf("Error with sending MQTT: %v. Attemps: %v", err, i)
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		// if this doesnt return true, it timed out
 		if !token.WaitTimeout(10 * time.Second) {
-			log.Debug("Timeout when waiting for mqtt token")
+			timeoutErr := fmt.Errorf("timeout when waiting for mqtt token")
+            log.Warning(timeoutErr.Error())
+            lastErr = timeoutErr
 			continue
 		}
 
-		break
+		return nil
 	}
 
-	return nil
+	return lastErr
 }

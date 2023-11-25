@@ -75,6 +75,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 		// check filter for user if not blank
 		userID := config.GetString("plex.ownerNameFilter")
 		// only respond to events on a particular account if you share servers and only for movies and shows
+		// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
 		if userID == "" || decodedPayload.Account.Title == userID {
 			if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
 				log.Debugf("Current length of plexChan: %d", len(plexChan))
@@ -90,7 +91,8 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 				log.Debugf("Added length of plexChan: %d", len(plexChan))
 			}
 		} else {
-			log.Debugf("userID '%s' does not match filter", userID)
+			// TODO: this seems to be hitting even when the filter matches
+			log.Debugf("userID '%s' does not match filter of %s", decodedPayload.Account.Title, userID)
 		}
 	} else {
 		log.Error("No payload found in request")
@@ -102,6 +104,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
 func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
 	wg := &sync.WaitGroup{}
+	// TODO: this is not working
 	err := mqtt.PublishWrapper("topicplayingstatus", "false")
 	if err != nil {
 		log.Error(err)
