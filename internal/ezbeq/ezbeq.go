@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
@@ -281,6 +282,11 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
+	if !config.GetBool("beq.enabled") {
+		log.Debug("BEQ is disabled, skipping")
+		return nil
+	}
+
 	if m.TMDB == "" {
 		return errors.New("tmdb is empty. Can't find a match")
 	}
@@ -379,6 +385,10 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 
 // UnloadBeqProfile will unload all profiles from all devices
 func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
+	if !config.GetBool("beq.enabled") {
+		log.Debug("BEQ is disabled, skipping")
+		return nil
+	}
 	if m.DryrunMode {
 		return nil
 	}

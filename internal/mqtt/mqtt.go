@@ -38,6 +38,10 @@ func PublishWrapper(topic string, msg string) error {
 
 // creates a connection to broker and sends the payload
 func Publish(payload []byte, topic string) error {
+	if ! config.GetBool("mqtt.enabled") { 
+		log.Debugf("MQTT is disabled, skipping publish to topic %v", topic)
+		return nil
+	}
 	// use the topic as clientID so each invocation
 	// of Publish does not trip over each other
 	c, err := connect(topic)
