@@ -19,6 +19,8 @@ func minidspRouter(payload models.MinidspRequest, beqClient *ezbeq.BeqClient) {
 		muteOff(beqClient)
 	case strings.Contains(payload.Command, "on"):
 		muteOn(beqClient)
+	default:
+		log.Warnf("Minidsp: unknown command %s", payload.Command)
 	}
 }
 

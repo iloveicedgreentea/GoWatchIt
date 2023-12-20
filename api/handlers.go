@@ -13,6 +13,7 @@ import (
 
 var log = logger.GetLogger()
 
+// GetConfigPath returns the path to the config file
 func GetConfigPath() (string, error) {
 	ex, err := os.Executable()
 	if err != nil {
@@ -31,6 +32,7 @@ func GetConfigPath() (string, error) {
 	return "", os.ErrNotExist
 }
 
+// ConfigExists checks if the config exists for the API
 func ConfigExists(c *gin.Context) {
 	configPath, err := GetConfigPath()
 	if err != nil {
@@ -41,6 +43,7 @@ func ConfigExists(c *gin.Context) {
 	c.JSON(200, gin.H{"exists": err == nil})
 }
 
+// GetConfig returns the config for the API
 func GetConfig(c *gin.Context) {
 	path, err := GetConfigPath()
 	// if not found, create it
@@ -62,6 +65,7 @@ func GetConfig(c *gin.Context) {
 	c.Data(200, "application/json", data)
 }
 
+// CreateConfig creates a new config file
 func CreateConfig(c *gin.Context) error {
 	log.Debug("Creating new config")
 
@@ -76,6 +80,7 @@ func CreateConfig(c *gin.Context) error {
 	return nil
 }
 
+// SaveConfig saves the config for the API
 func SaveConfig(c *gin.Context) {
 	var jsonData map[string]interface{}
 

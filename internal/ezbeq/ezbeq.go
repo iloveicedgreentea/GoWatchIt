@@ -225,10 +225,12 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 	code := urlEncode(m.Codec)
 	var endpoint string
 	// done this way to make it easier to add future authors
+	// TODO: make this a whitelist, I think the API already does this but not sure
 	switch m.PreferredAuthor {
 	case "None", "none", "":
 		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d", code, m.Year)
 	default:
+		// TODO: make test for different authors, make sure it acts as a whitelist
 		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, m.Year, urlEncode(m.PreferredAuthor))
 	}
 	log.Debugf("sending ezbeq search request to %s", endpoint)

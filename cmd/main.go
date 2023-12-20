@@ -22,21 +22,26 @@ func noCache() gin.HandlerFunc {
 }
 
 func main() {
+	/* 
+	###############################
+	Setups
+	############################## */
 	log := logger.GetLogger()
-	log.Debug("Started in debug mode...")
+	log.Info("Starting up...")
+	log.Debug("Starting in debug mode...")
 	r := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
+	// do not cache static files
 	r.Use(noCache())
 
-	log.Debug("Checking if config exists")
+	log.Info("Checking if a config exists...")
 	_, err := api.GetConfigPath()
 	if err != nil {
-		log.Debug("Config not found, creating")
+		log.Info("Creating a new config file...")
 		err = api.CreateConfig(&gin.Context{})
 		if err != nil {
-			log.Fatalf("unable to create config: %v", err)
+			log.Fatalf("Unable to create config file: %v", err)
 		}
-
 	}
 
 	// you can copy this schema to create event handlers for any service
@@ -49,11 +54,19 @@ func main() {
 	minidspReady := make(chan bool)
 
 	// run worker forever in background
+	/* 
+	###############################
+	handlers
+	############################## */
 	go handlers.PlexWorker(plexChan, plexReady)
 	go handlers.MiniDspWorker(minidspChan, minidspReady)
 
+	/* ###############################
+		Routes
+	   ############################## */
 	// healthcheck
 	r.GET("/health", handlers.ProcessHealthcheckWebhookGin)
+
 	// Add plex webhook handler
 	// TODO: split out non plex specific stuff into a library
 	r.POST("/plexwebhook", func(c *gin.Context) {
@@ -68,8 +81,11 @@ func main() {
     r.POST("/save-config", api.SaveConfig)
 	// TODO: add generic webhook endpoint, maybe mqtt?
 
-	// wait for workers to get ready
 	// TODO implement signal checking, error chan, etc
+	/* 
+	###############################
+	block until workers get ready
+	############################## */
 	<-plexReady
 	<-minidspReady
 	log.Info("All workers are ready.")
@@ -78,6 +94,7 @@ func main() {
 	r.NoRoute(func(c *gin.Context) {
 		c.File("./web/index.html") 
 	})
+
     // Register routes
     api.RegisterRoutes(r)
 	r.SetTrustedProxies(nil)

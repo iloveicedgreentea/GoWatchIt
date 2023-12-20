@@ -679,6 +679,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 			Slots:      config.GetIntSlice("ezbeq.slots"),
 			// try to skip by default
 			SkipSearch:      true,
+			// TODO: make this a whitelist
 			PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 		}
 
