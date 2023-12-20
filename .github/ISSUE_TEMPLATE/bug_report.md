@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Create a bug report
 title: ''
 labels: bug
 assignees: iloveicedgreentea
@@ -20,12 +20,18 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Debug logs**
-Run the program with LOG_LEVEL=debug and send me the entire log output from start to finish
+**Configuration**
+Navigate to (your-server-ip):9999/debug and paste the output here
 
-**Desktop (please complete the following information):**
+**Error logs**
+Paste the exact error message you get
+
+**Debug logs**
+Run the program with LOG_LEVEL=debug and send me the entire log output while you trigger the bug, if possible.
+
+**Info (please complete the following information):**
  - OS: [Windows, Unraid, etc]
- - Version [e.g. 22]
+ - Version [e.g. 1.2]
  - Deployment method: [Docker, binary]
 
 **Additional context**

@@ -32,6 +32,8 @@
 - [Setup](#setup)
 - [Usage](#usage)
 - [Home Assistant Quickstart](#Home-Assistant-Quickstart)
+- [How BEQ Support Works](#How-BEQ-Support-Works)
+- [Help](#help)
 
 ## Features
 
@@ -368,3 +370,6 @@ English (FLAC 5.1) --- English (FLAC 5.1)
 English (EAC3 Stereo) --- English (EAC3 Stereo) 
 English (EAC3 5.1) --- Main Audio (English EAC3 5.1) 
 English (EAC3 5.1) --- English (EAC3 5.1) 
+
+## Help
+If you need help or support due to an error or bug, you must file an issue. If you have a general question, you can ask in the Discussions tab or the AVS Forum post (linked as website above)
