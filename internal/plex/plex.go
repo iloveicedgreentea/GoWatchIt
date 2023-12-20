@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/StalkR/imdb"
+	// "github.com/StalkR/imdb"
 	"github.com/anaskhan96/soup"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
@@ -508,32 +508,32 @@ func (e *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 // get the aspect ratio like 1.78 (16:9) 1.85 ~17:9 from IMDB
-func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (float64, error) {
-	// Plex directly not useful since almost everything is in a 1.78:1 container
+// func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (float64, error) {
+// 	// Plex directly not useful since almost everything is in a 1.78:1 container
 
-	// poll IMDB to get title id if its blank
-	if imdbID == "" {
-		results, err := imdb.SearchTitle(c.ImdbClient, title)
-		if err != nil {
-			return 0, err
-		}
-		if len(results) == 0 {
-			return 0, errors.New("not found")
-		}
+// 	// poll IMDB to get title id if its blank
+// 	if imdbID == "" {
+// 		results, err := imdb.SearchTitle(c.ImdbClient, title)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+// 		if len(results) == 0 {
+// 			return 0, errors.New("not found")
+// 		}
 
-		// get the title based on name and year match
-		for _, result := range results {
-			if result.Year == year && strings.Contains(strings.ToLower(result.Name), title) {
-				// get technical info
-				log.Debugf("found year match: ID %s, Name %s", result.ID, result.Name)
-				return parseImdbTechnicalInfo(result.ID, c.ImdbClient)
-			}
-		}
-	}
+// 		// get the title based on name and year match
+// 		for _, result := range results {
+// 			if result.Year == year && strings.Contains(strings.ToLower(result.Name), title) {
+// 				// get technical info
+// 				log.Debugf("found year match: ID %s, Name %s", result.ID, result.Name)
+// 				return parseImdbTechnicalInfo(result.ID, c.ImdbClient)
+// 			}
+// 		}
+// 	}
 
-	// return aspect ratio
-	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
-}
+// 	// return aspect ratio
+// 	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
+// }
 func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	// Construct the URL with url.URL
 	u := &url.URL{

@@ -3,7 +3,6 @@ module github.com/iloveicedgreentea/go-plex
 go 1.21
 
 require (
-	github.com/StalkR/imdb v1.0.15
 	github.com/anaskhan96/soup v1.2.5
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/fsnotify/fsnotify v1.7.0

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/StalkR/imdb"
+	// "github.com/StalkR/imdb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,29 +121,29 @@ func TestMapCodecs(t *testing.T) {
 
 }
 
-func TestImdbClient(t *testing.T) {
+// func TestImdbClient(t *testing.T) {
 
-	client := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: &customTransport{http.DefaultTransport},
-	}
+// 	client := &http.Client{
+// 		Timeout:   10 * time.Second,
+// 		Transport: &customTransport{http.DefaultTransport},
+// 	}
 
-	title := "Lord of the rings"
-	r, err := imdb.SearchTitle(client, title)
-	if err != nil {
-		t.Fatalf("SearchTitle(%s) error: %v", title, err)
-	}
-	if len(r) < 10 {
-		t.Fatalf("SearchTitle(%s) len < 50: %d", title, len(r))
-	}
-	if accepted := map[string]bool{
-		"tt7631058": true, // The Lord of the Rings (TV Series)
-		"tt0120737": true, // The Lord of the Rings: The Fellowship of the Ring (2001)
-	}; !accepted[r[0].ID] {
-		t.Errorf("SearchTitle(%s)[0].ID = %v; want any of %v", title, r[0].ID, accepted)
-	}
+// 	title := "Lord of the rings"
+// 	r, err := imdb.SearchTitle(client, title)
+// 	if err != nil {
+// 		t.Fatalf("SearchTitle(%s) error: %v", title, err)
+// 	}
+// 	if len(r) < 10 {
+// 		t.Fatalf("SearchTitle(%s) len < 50: %d", title, len(r))
+// 	}
+// 	if accepted := map[string]bool{
+// 		"tt7631058": true, // The Lord of the Rings (TV Series)
+// 		"tt0120737": true, // The Lord of the Rings: The Fellowship of the Ring (2001)
+// 	}; !accepted[r[0].ID] {
+// 		t.Errorf("SearchTitle(%s)[0].ID = %v; want any of %v", title, r[0].ID, accepted)
+// 	}
 
-}
+// }
 
 // test parsing of aspect ratio given a title
 func TestImdbTechInfo(t *testing.T) {
@@ -190,35 +190,35 @@ func TestImdbTechInfo(t *testing.T) {
 }
 
 // test that it can find the correct title and return the aspect
-func TestGetImdbInfoAspect(t *testing.T) {
-	serverUrl := os.Getenv("PLEX_URL")
-	serverPrt := os.Getenv("PLEX_PORT")
-	c := NewClient(serverUrl, serverPrt, "", "")
-	assert := assert.New(t)
+// func TestGetImdbInfoAspect(t *testing.T) {
+// 	serverUrl := os.Getenv("PLEX_URL")
+// 	serverPrt := os.Getenv("PLEX_PORT")
+// 	c := NewClient(serverUrl, serverPrt, "", "")
+// 	assert := assert.New(t)
 
-	tests := []aspectTest{
-		// test each kind of aspect + variable aspect movies until Nolan gets with the times
-		{
-			Data:          testData{Name: "the matrix", Year: 1999, ID: "tt0133093"},
-			ExpectedValue: 2.39,
-		},
-		{
-			Data:          testData{Name: "justice league", Year: 2021, ID: "tt12361974"},
-			ExpectedValue: 1.33,
-		},
-		{
-			Data:          testData{Name: "superbad", Year: 2007, ID: "tt0829482"},
-			ExpectedValue: 1.85,
-		},
-	}
-	for _, test := range tests {
-		aspect, err := c.GetAspectRatio(test.Data.Name, test.Data.Year, test.Data.ID)
-		if err != nil {
-			t.Fatalf("failed for %s - %v", test.Data.Name, err)
-		}
-		assert.Equal(test.ExpectedValue, aspect, fmt.Sprintf("%s Aspect ratio does not match", test.Data.ID))
-	}
-}
+// 	tests := []aspectTest{
+// 		// test each kind of aspect + variable aspect movies until Nolan gets with the times
+// 		{
+// 			Data:          testData{Name: "the matrix", Year: 1999, ID: "tt0133093"},
+// 			ExpectedValue: 2.39,
+// 		},
+// 		{
+// 			Data:          testData{Name: "justice league", Year: 2021, ID: "tt12361974"},
+// 			ExpectedValue: 1.33,
+// 		},
+// 		{
+// 			Data:          testData{Name: "superbad", Year: 2007, ID: "tt0829482"},
+// 			ExpectedValue: 1.85,
+// 		},
+// 	}
+// 	for _, test := range tests {
+// 		aspect, err := c.GetAspectRatio(test.Data.Name, test.Data.Year, test.Data.ID)
+// 		if err != nil {
+// 			t.Fatalf("failed for %s - %v", test.Data.Name, err)
+// 		}
+// 		assert.Equal(test.ExpectedValue, aspect, fmt.Sprintf("%s Aspect ratio does not match", test.Data.ID))
+// 	}
+// }
 
 // for dev only - get the entire table, ensure it can parse titles
 func TestGetImdbTechInfo(t *testing.T) {
