@@ -13,16 +13,24 @@ import (
 
 var log = logger.GetLogger()
 
-// GetConfigPath returns the path to the config file
-func GetConfigPath() (string, error) {
+func GenConfigPaths() (string, string){
 	ex, err := os.Executable()
 	if err != nil {
-		return "", err
+		log.Error(err)
 	}
 
 	exPath := filepath.Dir(ex)
-	configPath1 := filepath.Join(exPath, "../config.json")
-	configPath2 := "/config.json" // Fallback path (for Docker)
+	configPath1 := "/config.json" // docker
+	configPath2 := filepath.Join(exPath, "../config.json") // Fallback path (for local)
+
+	log.Debugf("Config paths: %s, %s", configPath1, configPath2)
+
+	return configPath1, configPath2
+}
+
+// GetConfigPath returns the path to the config file
+func GetConfigPath() (string, error) {
+	configPath1, configPath2 := GenConfigPaths()
 
 	if _, err := os.Stat(configPath1); err == nil {
 		return configPath1, nil
@@ -68,15 +76,23 @@ func GetConfig(c *gin.Context) {
 // CreateConfig creates a new config file
 func CreateConfig(c *gin.Context) error {
 	log.Debug("Creating new config")
+	configPath1, configPath2 := GenConfigPaths()
 
-	file, err := os.Create("/config.json")
+	// try to create config in the first path
+	file, err := os.Create(configPath1)
 	if err != nil {
-		log.Error("Could not create file: ", err)
-		return err
+		log.Debugf("Unable to create config in %s: %v", configPath1, err)
+		// try to create config in the second path
+		file, err = os.Create(configPath2)
+		if err != nil {
+			// if we can't create it in either path, return the error
+			log.Errorf("Unable to create config in %s: %v", configPath2, err)
+			return fmt.Errorf("unable to create config in %s or %s", configPath1, configPath2)
+		}
 	}
 	defer file.Close()
 
-	log.Debug("Successfully created /config.json")
+	log.Debug("Successfully created config file")
 	return nil
 }
 
