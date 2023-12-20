@@ -19,4 +19,4 @@ docker-push:
 docker-run: docker-build
 	docker run -p 9999:9999 -e LOG_LEVEL=debug plex-webhook-automation-local
 run: build
-	@./build/server
+	LOG_LEVEL=debug ./build/server

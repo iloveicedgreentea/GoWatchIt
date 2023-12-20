@@ -7,8 +7,7 @@
 
 <p align="center">
   <a href="https://github.com/iloveicedgreentea/GoWatchIt/releases">
-    <img src="https://img.shields.io/github/v/release/iloveicedgreentea/gowatchit
-" alt="Version" />
+    <img src="https://img.shields.io/github/v/release/iloveicedgreentea/gowatchit" alt="Version" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-CC_Custom-blue" alt="License MIT" />
@@ -36,8 +35,6 @@
 
 ## Features
 
-This application is primarily focused on Plex and HomeAssistant but I plan on adding support for other sources in the future. 
-
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
 * Set volume based on media type (Movie, Show, etc)
@@ -47,25 +44,27 @@ Main features:
 
 Other cool stuff:
 * Mute/Unmute Minidsp automation for things like turning off subs at night
-* Various MQTT sensors for volume control, lights, mute status, and current BEQ profile
-* Mobile notifications (via HA) to notify for events like loading/unloading BEQ was successful or failed
+* Various MQTT sensors for playing status, volume control, lights, mute status, and current BEQ profile
+* Mobile notifications to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * Built in support for Home Assistant and Minidsp
 
+This application is primarily focused on Plex and HomeAssistant but I plan on adding support for other sources in the future. 
 
 ## Setup
 > ⚠️ ⚠️ *Warning: You should really set a compressor on your minidsp for safety as outlined in the [BEQ forum post](https://www.avsforum.com/threads/bass-eq-for-filtered-movies.2995212/). I am not responsible for any damage* ⚠️ ⚠️
 ### Prerequisites
-> ℹ  It is assumed you have ezBEQ, Plex, and HomeAssistant working. Refer to their respective guides for installation help.
-* MQTT Broker
-* Home Assistant
+> ℹ  It is assumed you have the following tools working. Refer to their respective guides for installation help.
+* MQTT Broker (Optional)
+* Home Assistant (Optional)
 * Plex
 * ezBEQ
-* Minidsp (other DSPs may work but I have not tested them)
+* Minidsp (other DSPs may work but I have not tested them. If ezBEQ supports it, it should be work)
+
+You can configure this to only load BEQ profiles, or do everything else besides BEQ. It is up to you.
 
 ### Docker Setup
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
-
 
 1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
 2) Configure the application via web ui -> `http://(you-server-ip):9999`
@@ -88,6 +87,8 @@ TLDR: `make build`
 The web UI is the primary way to configure this application. It is available at `http://(your-server-ip):9999`
 
 It will automatically restart the application when you save config.
+
+Each section has an enable/disable toggle. If you disable a section, it will not be used. For example, if you disable BEQ, it will not load BEQ profiles. If you disable MQTT, it will not send MQTT messages.
 
 ### General Usage
 This application will load BEQ profiles automatically when you play something in Plex. It will also set volume, lights, and mute/unmute minidsp if you enable those options. The application itself is not controlling things like lights but relies on Home Assistant to perform the action via MQTT.

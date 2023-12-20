@@ -29,15 +29,15 @@ func main() {
 	log := logger.GetLogger()
 	log.Info("Starting up...")
 	log.Debug("Starting in debug mode...")
-	r := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
 	// do not cache static files
 	r.Use(noCache())
 
 	log.Info("Checking if a config exists...")
 	_, err := api.GetConfigPath()
 	if err != nil {
-		log.Info("Creating a new config file...")
+		log.Info("Config not found. Creating a new config file...")
 		err = api.CreateConfig(&gin.Context{})
 		if err != nil {
 			log.Fatalf("Unable to create config file: %v", err)

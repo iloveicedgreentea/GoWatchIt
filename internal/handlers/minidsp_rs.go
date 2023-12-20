@@ -90,7 +90,7 @@ func MiniDspWorker(minidspChan <-chan models.MinidspRequest, readyChan chan<- bo
 		}
 	}
 
-	log.Info("minidsp worker is ready")
+	log.Info("Minidsp worker is ready")
 	readyChan <- true
 
 	// block forever until closed so it will wait in background for work
