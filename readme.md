@@ -51,6 +51,8 @@ Other cool stuff:
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * Built in support for Home Assistant and Minidsp
 
+> ℹ Jellyfin support is coming soon®
+
 This application is primarily focused on Plex and HomeAssistant but I plan on adding support for other sources in the future. 
 
 ## Setup
