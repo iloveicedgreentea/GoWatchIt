@@ -117,6 +117,30 @@ func TestDecodeWebhook(t *testing.T) {
 	assert.Equal(t, expectedData, payload)
 }
 
+func TestJFPayload(t *testing.T) {
+	// open testing file
+	jsonFile, err := os.ReadFile("testdata/jf_pause.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var jsonStr []string
+	jsonStr = append(jsonStr, string(jsonFile))
+
+	// mock request
+	payload, code, err := decodeWebhook(jsonStr)
+	if err != nil {
+		t.Fatalf("Error: %v", err)
+	}
+	if code != 0 {
+		t.Fatalf("Code is not 0: %d", code)
+	}
+
+	assert.NotEmpty(t, payload.Metadata.Year)
+	assert.NotEmpty(t, payload.Metadata.Type)
+	assert.NotEmpty(t, payload.Player.UUID)
+
+}
+
 // saving in case I need to test handlers directly
 
 // func TestHandler(t *testing.T) {
