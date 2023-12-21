@@ -37,6 +37,10 @@
 
 ## Features
 
+Players Supported:
+* Plex 
+* Jellyfin (experimental) via [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-plugin-webhooks)
+
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
 * Set volume based on media type (Movie, Show, etc)
@@ -61,11 +65,19 @@ This application is primarily focused on Plex and HomeAssistant but I plan on ad
 > ℹ  It is assumed you have the following tools working. Refer to their respective guides for installation help.
 * MQTT Broker (Optional)
 * Home Assistant (Optional)
-* Plex
+* Plex or Jellyfin
 * ezBEQ
 * Minidsp (other DSPs may work but I have not tested them. If ezBEQ supports it, it should be work)
 
 You can configure this to only load BEQ profiles, or do everything else besides BEQ. It is up to you.
+
+### Jellyfin Specifics
+
+You must use [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-plugin-webhooks) to send webhooks to this application. It is not built in like Plex.
+
+You must configure it to send Plex-style webhooks.
+
+Configure this application via the Plex section and it "should work" but no promises until support is official.
 
 ### Docker Setup
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
