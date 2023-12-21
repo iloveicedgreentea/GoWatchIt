@@ -31,6 +31,7 @@ func init() {
 
 	// Try the first path
 	v.SetConfigFile(configPath1)
+
 	err = v.ReadInConfig()
 	if err == nil {
 		found = true
@@ -39,6 +40,21 @@ func init() {
 	// If not found, try the fallback path
 	if !found {
 		v.SetConfigFile(configPath2)
+		err = v.ReadInConfig()
+		if err == nil {
+			found = true
+		}
+	}
+	// if in a testing env
+	if !found {
+
+		// Try the directory of the executable first
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("Could not find executable path: %v", err)
+		}
+		configpathTest := filepath.Join(cwd, "../../config.json")
+		v.SetConfigFile(configpathTest)
 		err = v.ReadInConfig()
 		if err == nil {
 			found = true

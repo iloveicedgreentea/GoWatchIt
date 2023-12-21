@@ -17,20 +17,16 @@ type PlexWebhookPayload struct {
 type IntOrString struct {
 	IntValue    int
 	StringValue string
-	IsInt       bool
 }
 
 func (ios *IntOrString) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &ios.IntValue); err == nil {
-		ios.IsInt = true
 		return nil
 	}
 
 	if err := json.Unmarshal(data, &ios.StringValue); err != nil {
 		return err
 	}
-
-	ios.IsInt = false
 	return nil
 }
 

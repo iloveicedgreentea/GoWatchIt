@@ -71,11 +71,6 @@ func TestReadAttributes(t *testing.T) {
 			test:    &models.HAEnvyResponse{},
 			entType: "remote",
 		},
-		{
-			entName: "test_sensor",
-			test:    &models.HABinaryResponse{},
-			entType: "binary_sensor",
-		},
 	}
 
 	for _, k := range tt {

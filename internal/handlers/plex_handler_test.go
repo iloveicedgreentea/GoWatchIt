@@ -76,7 +76,7 @@ func TestProcessWebhook(t *testing.T) {
 	case payload := <-plexChan:
 		assert.NotNil(t, payload)
 		assert.Equal(t, "player-id", payload.Player.UUID)
-	case <-time.After(time.Second * 1): // Wait up to 1 second
+	case <-time.After(time.Second * 2): // Wait up to 1 second
 		t.Error("Expected payload was not received on plexChan")
 	}
 

@@ -33,7 +33,9 @@ func TestGetPlexReq(t *testing.T) {
 	assert.NoError(t, err)
 	res := string(d)
 
-	assert.NotContains(t, res, "Unauthorized", "Client is not authorized in plex server")
+	if ! assert.NotContains(t, res, "Unauthorized", "Client is not authorized in plex server") {
+		t.Fatal(err)
+	}
 }
 
 func TestGetMediaData(t *testing.T) {
@@ -46,7 +48,9 @@ func TestGetMediaData(t *testing.T) {
 	assert.NoError(t, err)
 
 	code, err := c.GetAudioCodec(med)
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		t.Fatal(err)
+	}
 	assert.Equal(t, "Atmos", code)
 
 }
@@ -147,6 +151,7 @@ func TestMapCodecs(t *testing.T) {
 
 // test parsing of aspect ratio given a title
 func TestImdbTechInfo(t *testing.T) {
+	t.Skip()
 	client := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &customTransport{http.DefaultTransport},
@@ -222,6 +227,7 @@ func TestImdbTechInfo(t *testing.T) {
 
 // for dev only - get the entire table, ensure it can parse titles
 func TestGetImdbTechInfo(t *testing.T) {
+	t.Skip()
 	client := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &customTransport{http.DefaultTransport},

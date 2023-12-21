@@ -6,22 +6,15 @@ import (
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/models"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 )
 
 // TestMuteCmds send commands to minidsp
 func TestMuteCmds(t *testing.T) {
-	v := viper.New()
-	v.SetConfigFile("../config.json")
-
-	err := v.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
 	assert := assert.New(t)
 
-	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
+	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
 	assert.NoError(err)
 
 	// send mute commands
@@ -29,23 +22,16 @@ func TestMuteCmds(t *testing.T) {
 	assert.NoError(c.MuteCommand(false))
 }
 func TestGetStatus(t *testing.T) {
-	v := viper.New()
-	v.SetConfigFile("../config.json")
-
-	err := v.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
 	c := &BeqClient{
-		ServerURL: v.GetString("ezbeq.url"),
-		Port:      v.GetString("ezbeq.port"),
+		ServerURL: config.GetString("ezbeq.url"),
+		Port:      config.GetString("ezbeq.port"),
 	}
 
 	// send mute commands
 	assert.NotEmpty(t, c.Port)
 	assert.NotEmpty(t, c.ServerURL)
 
-	err = c.GetStatus()
+	err := c.GetStatus()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, c.DeviceInfo)
 
@@ -386,16 +372,9 @@ func TestUrlEncode(t *testing.T) {
 }
 
 func TestSearchCatalog(t *testing.T) {
-	// TODO: remove all viper references
-	v := viper.New()
-	v.SetConfigFile("../config.json")
-	err := v.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
 	assert := assert.New(t)
 
-	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
+	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
 	assert.NoError(err)
 
 	// list of testing structs
@@ -572,15 +551,9 @@ func TestSearchCatalog(t *testing.T) {
 // ezbeq doesnt expose a failure if the entry_id is wrong, so need to look at UI for now
 // I could write a scraper to find instance of fast five in slot one, thats a lot of work for a small test
 func TestLoadProfile(t *testing.T) {
-	v := viper.New()
-	v.SetConfigFile("../config.json")
-	err := v.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
 	assert := assert.New(t)
 
-	c, err := NewClient(v.GetString("ezbeq.url"), v.GetString("ezbeq.port"))
+	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
 	assert.NoError(err)
 
 	tt := []models.SearchRequest{
