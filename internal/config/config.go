@@ -3,8 +3,8 @@ package config
 import (
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 
-	"github.com/spf13/viper"
 	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
 
 	"os"
 	"path/filepath"
@@ -47,14 +47,15 @@ func init() {
 
 	// If still not found, log an error
 	if !found {
-		log.Warn("no suitable config file found. Please set one up in the UI")
+		log.Error("no suitable config file found. Please set one up in the UI")
 		return
 	}
 
 	v.OnConfigChange(func(e fsnotify.Event) {
-		log.Println("Config file changed:", e.Name)
+		log.Debugf("Config file changed: %s", e.Name)
+		log.Info("Config reloaded")
 	})
-
+	// hot reload for config
 	v.WatchConfig()
 }
 
@@ -81,4 +82,3 @@ func GetInt(key string) int {
 func GetIntSlice(key string) []int {
 	return v.GetIntSlice(key)
 }
-

@@ -36,6 +36,7 @@ function populateFields(config) {
     document.getElementById('homeassistant-stopscriptname').value = config.homeassistant.stopscriptname;
 
     // MQTT
+    document.getElementById('mqtt-enabled').checked = config.mqtt.enabled;
     document.getElementById('mqtt-url').value = config.mqtt.url;
     document.getElementById('mqtt-username').value = config.mqtt.username;
     document.getElementById('mqtt-password').value = config.mqtt.password;
@@ -103,6 +104,7 @@ function buildFinalConfig() {
     };
 
     const mqttConfig = {
+        "enabled": document.getElementById('mqtt-enabled').checked,
         "url": document.getElementById('mqtt-url').value,
         "username": document.getElementById('mqtt-username').value,
         "password": document.getElementById('mqtt-password').value,

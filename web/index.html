@@ -147,8 +147,7 @@
                 <div>
                     <label for="ezbeq-url">EzBEQ URL
                         <span class="description">
-                            EzBEQ URL - "http://x.x.x.x" <- Must have http://
-                        </span>
+                            EzBEQ URL - "http://x.x.x.x" <- Must have http:// </span>
                     </label>
 
                     <input type="text" id="ezbeq-url" name="ezbeq.url">
@@ -181,8 +180,7 @@
                 <div>
                     <label for="homeassistant-url">Home Assistant URL
                         <span class="description">
-                            URL - "http://x.x.x.x" <- Must have http://
-                        </span>
+                            URL - "http://x.x.x.x" <- Must have http:// </span>
                     </label>
 
                     <input type="text" id="homeassistant-url" name="homeassistant.url">
@@ -282,10 +280,18 @@
             <!-- MQTT Section -->
             <h2>MQTT</h2>
             <div>
+                <label for="mqtt-enabled">Enabled MQTT
+                    <span class="description">
+                        Enable the use of MQTT
+                    </span>
+                </label>
+
+                <input type="checkbox" id="mqtt-enabled" name="mqtt.enabled">
+            </div>
+            <div>
                 <label for="mqtt-url">MQTT URL with port
                     <span class="description">
-                        URL - "http://x.x.x.x:1883" <- Must have http://
-                    </span>
+                        URL - "http://x.x.x.x:1883" <- Must have http:// </span>
                 </label>
 
                 <input type="text" id="mqtt-url" name="mqtt.url">
@@ -378,8 +384,7 @@
                 <div>
                     <label for="plex-url">Plex URL
                         <span class="description">
-                            URL - "http://x.x.x.x" <- Must have http://
-                        </span>
+                            URL - "http://x.x.x.x" <- Must have http:// </span>
                     </label>
 
                     <input type="text" id="plex-url" name="plex.url">
@@ -406,7 +411,9 @@
                     <label for="plex-deviceuuidfilter">Device UUID Filter
                         <span class="description">
                             The client identifier of the device to filter webhooks for. You should set this to your
-                            theater player UUID, or a comma separated string (filter1,filter2) if you have multiple devices. If blank, it will not filter anything. Get your UUID from logs after playing something or https://plex.tv/devices.xml after signing in
+                            theater player UUID, or a comma separated string (filter1,filter2) if you have multiple
+                            devices. If blank, it will not filter anything. Get your UUID from logs after playing
+                            something or https://plex.tv/devices.xml after signing in
                         </span>
                     </label>
                     <input type="text" id="plex-deviceuuidfilter" name="plex.deviceuuidfilter">
