@@ -83,7 +83,7 @@ Configure this application via the Plex section and it "should work" but no prom
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
 
 1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
-2) You must mount a volume to `/data` to persist data
+2) You must mount a volume to `/data`
 3) Configure the application via web ui -> `http://(you-server-ip):9999`
    * can get your player UUID from `https://plex.tv/devices.xml` while logged in
 4) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
@@ -239,6 +239,21 @@ You must whitelist your server IP in "List of IP addresses and networks that are
 
 Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I may eventually implement their auth flow but it is not a priority.
 
+### Endpoints
+`/config`
+It will return the current config as JSON
+
+`/logs`
+It will return the current logs
+
+`/minidspwebhook`
+This is the minidsp webhook endpoint. It accepts POST requests with a JSON body of `{"command": "on"}` or `{"command": "off"}`. It will mute or unmute the minidsp depending on the command. 
+
+`/plexwebhook`
+This is the main endpoint Plex will write to
+
+
+
 ### Debugging
 These are environment variables you can set to get more info
 
@@ -387,4 +402,6 @@ English (EAC3 5.1) --- Main Audio (English EAC3 5.1)
 English (EAC3 5.1) --- English (EAC3 5.1) 
 
 ## Help
+First check your logs to see whats happening via the `/logs` endpoint.
+
 If you need help or support due to an error or bug, you must file an issue. If you have a general question, you can ask in the Discussions tab or the AVS Forum post (linked as website above)

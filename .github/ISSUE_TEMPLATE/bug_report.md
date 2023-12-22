@@ -21,13 +21,12 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Configuration**
-Navigate to (your-server-ip):9999/debug and paste the output here
-
-**Error logs**
-Paste the exact error message you get
+Navigate to `(your-server-ip):9999/config` and paste the output here
 
 **Debug logs**
 Run the program with LOG_LEVEL=debug and send me the entire log output while you trigger the bug, if possible.
+
+Get logs from the `(your-server-ip):9999/logs` endpoint
 
 **Info (please complete the following information):**
  - OS: [Windows, Unraid, etc]

@@ -29,8 +29,8 @@ HDMI Sync automation in testing
 Modify UUID filter to accept comma for multiple
 
 12-sometime-23
-* Breaking change - volume must now be /data
+* Breaking change - volume must now be mounted to /data
 * log to a file
 * add /logs endpoint
 * add prelim jellyfin support
-* new name
+* new name/logo
