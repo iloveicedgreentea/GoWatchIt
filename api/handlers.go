@@ -13,14 +13,14 @@ import (
 
 var log = logger.GetLogger()
 
-func GenConfigPaths() (string, string){
+func GenConfigPaths() (string, string) {
 	ex, err := os.Executable()
 	if err != nil {
 		log.Error(err)
 	}
 
 	exPath := filepath.Dir(ex)
-	configPath1 := "/config.json" // docker
+	configPath1 := "/data/config.json"                     // docker
 	configPath2 := filepath.Join(exPath, "../config.json") // Fallback path (for local)
 
 	log.Debugf("Config paths: %s, %s", configPath1, configPath2)
@@ -49,6 +49,16 @@ func ConfigExists(c *gin.Context) {
 	}
 	_, err = os.Stat(configPath)
 	c.JSON(200, gin.H{"exists": err == nil})
+}
+
+// Route for getting logs
+func GetLogs(c *gin.Context) {
+	logFile, err := os.ReadFile("/data/application.log")
+	if err != nil {
+		c.JSON(500, gin.H{"error": "unable to read log file: " + err.Error()})
+		return
+	}
+	c.Data(200, "text/plain", logFile)
 }
 
 // GetConfig returns the config for the API

@@ -83,13 +83,14 @@ Configure this application via the Plex section and it "should work" but no prom
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
 
 1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
-2) Configure the application via web ui -> `http://(you-server-ip):9999`
+2) You must mount a volume to `/data` to persist data
+3) Configure the application via web ui -> `http://(you-server-ip):9999`
    * can get your player UUID from `https://plex.tv/devices.xml` while logged in
-3) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
+4) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
     * e.g `(your-server-ip):9999/plexwebhook`
-3) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
-4) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work
-5) The Application will restart within 5 seconds when config is saved in the UI
+5) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
+6) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work
+6) The Application will restart within 5 seconds when config is saved in the UI
 
 ### Non-Docker Setup
 I don't recommend this as it is more work and you will need to set up systemd or something to keep it running. I don't provide support for this method but if you know what you are doing, it is very easy to build the binary and run it.

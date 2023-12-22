@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-
+	"os"
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/api"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
@@ -26,6 +26,12 @@ func main() {
 	###############################
 	Setups
 	############################## */
+
+	// truncate old logs
+	err := os.Remove("/data/application.log")
+    if err != nil && !os.IsNotExist(err) {
+        panic(err)
+    }
 	log := logger.GetLogger()
 	log.Info("Starting up...")
 	log.Debug("Starting in debug mode...")
@@ -35,7 +41,7 @@ func main() {
 	r.Use(noCache())
 
 	log.Info("Checking if a config exists...")
-	_, err := api.GetConfigPath()
+	_, err = api.GetConfigPath()
 	if err != nil {
 		log.Info("Config not found. Creating a new config file...")
 		err = api.CreateConfig(&gin.Context{})

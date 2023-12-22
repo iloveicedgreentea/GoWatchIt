@@ -22,10 +22,10 @@ func init() {
 	}
 
 	exPath := filepath.Dir(ex)
-	configPath1 := filepath.Join(exPath, "../config.json")
-
-	// Fallback path (for Docker)
-	configPath2 := "/config.json"
+	// docker path
+	configPath1 := "/data/config.json"
+	// local
+	configPath2 := filepath.Join(exPath, "../config.json")
 
 	var found bool
 
