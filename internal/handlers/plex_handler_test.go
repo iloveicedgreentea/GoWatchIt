@@ -30,6 +30,8 @@ func TestCheckUUID(t *testing.T) {
 		{"fakeuuidtesting", "fakeuuidtesting,fakeuuidtesting2", true},
 		{"fakeuuidtesting", "fakeuuidtestingfail, fakeuuidtesting2", false},
 		{"fakeuuidtesting", "fakeuuidtesting, fakeuuidtesting2,fakeuuidtesting3", true},
+		{"fakeuuidtesting", "", true},
+
 	}
 	for _, tc := range tt {
 		tc := tc

@@ -454,11 +454,13 @@ func checkUUID(clientUUID string, filterConfig string) bool {
 
 	// trim all spaces from the string
 	clientUUID = strings.ReplaceAll(clientUUID, " ", "")
-	filter := strings.ReplaceAll(filterConfig, " ", "")
-
+	filter := strings.ReplaceAll(filterConfig, " ", "") // trim all spaces from the string
+	if filter == "" {
+		log.Debug("No filter set, allowing all clients")
+		return true
+	}
 	// split the filter string by comma
 	filterArr := strings.Split(filter, ",")
-
 	// iterate over each uuid in filterArr and compare with clientUUID
 	if !slices.Contains(filterArr, clientUUID) {
 		log.Debugf("filter '%s' does not match uuid '%s'", filterArr, clientUUID)
