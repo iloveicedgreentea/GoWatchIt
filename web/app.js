@@ -56,6 +56,15 @@ function populateFields(config) {
     document.getElementById('plex-playermachineidentifier').value = config.plex.playermachineidentifier;
     document.getElementById('plex-playerip').value = config.plex.playerip;
     document.getElementById('plex-enabletrailersupport').checked = config.plex.enabletrailersupport;
+    // jellyfin
+    document.getElementById('jellyfin-enabled').checked = config.jellyfin.enabled;
+    document.getElementById('jellyfin-url').value = config.jellyfin.url;
+    document.getElementById('jellyfin-port').value = config.jellyfin.port;
+    document.getElementById('jellyfin-ownernamefilter').value = config.jellyfin.ownernamefilter;
+    document.getElementById('jellyfin-deviceuuidfilter').value = config.jellyfin.deviceuuidfilter;
+    document.getElementById('jellyfin-playermachineidentifier').value = config.jellyfin.playermachineidentifier;
+    document.getElementById('jellyfin-playerip').value = config.jellyfin.playerip;
+    document.getElementById('jellyfin-apiToken').value = config.jellyfin.apiToken;
 
     // Signal
     document.getElementById('signal-enabled').checked = config.signal.enabled;
@@ -126,6 +135,16 @@ function buildFinalConfig() {
         "playerip": document.getElementById('plex-playerip').value,
         "enabletrailersupport": document.getElementById('plex-enabletrailersupport').checked
     };
+    const jellyfinConfig = {
+        "enabled": document.getElementById('jellyfin-enabled').checked,
+        "url": document.getElementById('jellyfin-url').value,
+        "port": document.getElementById('jellyfin-port').value,
+        "ownernamefilter": document.getElementById('jellyfin-ownernamefilter').value,
+        "deviceuuidfilter": document.getElementById('jellyfin-deviceuuidfilter').value,
+        "playermachineidentifier": document.getElementById('jellyfin-playermachineidentifier').value,
+        "playerip": document.getElementById('jellyfin-playerip').value,
+        "apiToken": document.getElementById('jellyfin-apiToken').value
+    };
     const signalConfig = {
         "enabled": document.getElementById('signal-enabled').checked,
         "source": document.getElementById('signal-source').value
@@ -137,6 +156,7 @@ function buildFinalConfig() {
         "main": mainConfig,
         "mqtt": mqttConfig,
         "plex": plexConfig,
+        "jellyfin": jellyfinConfig,
         "signal": signalConfig
     };
 

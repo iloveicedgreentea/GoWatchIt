@@ -447,6 +447,84 @@
                 </div>
 
             </div>
+            <!-- jellyfin Section -->
+            <h2>jellyfin</h2>
+            <div>
+                <label for="jellyfin-enabled">Enabled
+                    <span class="description">
+                        Use jellyfin
+                    </span>
+                </label>
+
+                <input type="checkbox" id="jellyfin-enabled" name="jellyfin.enabled">
+            </div>
+            <div id="jellyfin-section">
+                <div>
+                    <label for="jellyfin-url">jellyfin URL
+                        <span class="description">
+                            URL - "http://x.x.x.x" <- Must have http:// </span>
+                    </label>
+
+                    <input type="text" id="jellyfin-url" name="jellyfin.url">
+                </div>
+                <div>
+                    <label for="jellyfin-port">jellyfin port
+                        <span class="description">
+                            port - "32400"
+                        </span>
+                    </label>
+
+                    <input type="text" id="jellyfin-port" name="jellyfin.port">
+                </div>
+                <div>
+                    <label for="jellyfin-ownernamefilter">Owner Name Filter
+                        <span class="description">
+                            Your main owner account, will filter webhooks so others don't trigger
+                            leave blank if you don't want to filter on accounts
+                        </span>
+                    </label>
+                    <input type="text" id="jellyfin-ownernamefilter" name="jellyfin.ownernamefilter">
+                </div>
+                <div>
+                    <label for="jellyfin-deviceuuidfilter">Device UUID Filter
+                        <span class="description">
+                            The client identifier of the device to filter webhooks for. You should set this to your
+                            theater player UUID, or a comma separated string (filter1,filter2) if you have multiple
+                            devices. If blank, it will not filter anything. Get your UUID from logs after playing
+                            something or https://jellyfin.tv/devices.xml after signing in
+                        </span>
+                    </label>
+                    <input type="text" id="jellyfin-deviceuuidfilter" name="jellyfin.deviceuuidfilter">
+                </div>
+                <div>
+                    <label for="jellyfin-playermachineidentifier">Player Machine Identifier
+                        <span class="description">
+                            optional if not using hdmi sync get this from "http://(player ip):32500/resources". Required
+                            for pausing/playing jellyfin . check readme
+                        </span>
+                    </label>
+                    <input type="text" id="jellyfin-playermachineidentifier" name="jellyfin.playermachineidentifier">
+                </div>
+                <div>
+                    <label for="jellyfin-playerip">Player IP
+                        <span class="description">
+                            optional if not using hdmi sync IP of your player device (like a shield)
+                        </span>
+                    </label>
+                    <input type="text" id="jellyfin-playerip" name="jellyfin.playerip">
+                </div>
+
+                <div>
+                    <label for="jellyfin-apiToken">Enable Trailer Support
+                        <span class="description">
+                            if you enable trailers before movies, it can process it like turn off lights. no beq
+                        </span>
+                    </label>
+
+                    <input type="text" id="jellyfin-apiToken" name="jellyfin.apiToken">
+                </div>
+
+            </div>
 
             <!-- Signal Section -->
             <h2>HDMI Signal Sync</h2>

@@ -39,7 +39,7 @@
 
 Players Supported:
 * Plex 
-* Jellyfin (experimental) via [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-plugin-webhooks)
+* Jellyfin (experimental)
 
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
@@ -77,7 +77,7 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 
 1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
 2) You must mount a volume to `/data`
-3) Configure the application via web ui -> `http://(you-server-ip):9999`
+3) Configure the application via web ui -> `http://(your-server-ip):9999`
 4) Set up your player with the instructions below
 
 ### Plex Specifics
@@ -90,10 +90,37 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 
 ### Jellyfin Specifics
 
-You must use [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-plugin-webhooks) to send webhooks to this application. It is not built in like Plex.
+You must use the [official Jellyfin Webhooks plugin](https://github.com/jellyfin/jellyfin-plugin-webhook/tree/master) to send webhooks to this application.
 
-You must configure it to send Plex-style webhooks.
+1) Create a Generic webhook (NOT GenericForm)
+2) Add http://(your-server-ip):9999/jellyfinwebook as the url
+3) Types:
+  * PlaybackStart
+  * PlaybackProgress (needed for pause)
+  * PlaybackStopped
+4) You can optionally add a user filter
+5) Item types: Movies, Episodes
 
+Configure the webhook in whatever way you want but it *must* include the following:
+
+```json
+{
+  "DeviceId": "{{DeviceId}}",
+  "DeviceName": "{{DeviceName}}",
+  "ClientName": "{{ClientName}}",
+  "UserId": "{{UserId}}",
+  "ItemId": "{{ItemId}}",
+  "ItemType": "{{ItemType}}",
+  "NotificationType": "{{NotificationType}}",
+  "Year": "{{Year}}",
+{{#if_equals NotificationType 'PlaybackStop'}}
+    "PlayedToCompletion": "{{PlayedToCompletion}}"
+{{/if_equals}}
+{{#if_equals NotificationType 'PlaybackProgress'}}
+    "IsPaused": "{{IsPaused}}"
+{{/if_equals}}
+}
+```
 #### Generate API Key
 
 1) Navigate to the dashboard
