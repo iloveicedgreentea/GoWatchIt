@@ -1,6 +1,6 @@
 <!-- README.md -->
 <p align="center">
-  <img src="./logo.png" alt="Project Logo" width="200" height="200"/>
+  <img src="./logo-upscale.png" alt="Project Logo" width="200" height="200"/>
 </p>
 
 <h1 align="center">GoWatchIt</h1>
@@ -65,11 +65,28 @@ This application is primarily focused on Plex and HomeAssistant but I plan on ad
 > ℹ  It is assumed you have the following tools working. Refer to their respective guides for installation help.
 * MQTT Broker (Optional)
 * Home Assistant (Optional)
-* Plex or Jellyfin
+* Plex or Jellyfin (still experimental)
 * ezBEQ
 * Minidsp (other DSPs may work but I have not tested them. If ezBEQ supports it, it should be work)
 
 You can configure this to only load BEQ profiles, or do everything else besides BEQ. It is up to you.
+
+### Docker Setup
+> ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
+> ℹ  If you are using Jellyfin, read the Jellyfin specific instructions below
+
+1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
+2) You must mount a volume to `/data`
+3) Configure the application via web ui -> `http://(you-server-ip):9999`
+4) Set up your player with the instructions below
+
+### Plex Specifics
+1) get your player UUID(s) from `https://plex.tv/devices.xml` while logged in
+2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
+    * e.g `(your-server-ip):9999/plexwebhook`
+3) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
+4) Add UUID(s) and user filters to the application config
+5) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work
 
 ### Jellyfin Specifics
 
@@ -77,20 +94,15 @@ You must use [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-pl
 
 You must configure it to send Plex-style webhooks.
 
-Configure this application via the Plex section and it "should work" but no promises until support is official.
+#### Generate API Key
 
-### Docker Setup
-> ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
+1) Navigate to the dashboard
+2) Click on“API Keys” under “Advanced” 
+3) Click “Create”
+4) Store the API securely 
 
-1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
-2) You must mount a volume to `/data`
-3) Configure the application via web ui -> `http://(you-server-ip):9999`
-   * can get your player UUID from `https://plex.tv/devices.xml` while logged in
-4) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
-    * e.g `(your-server-ip):9999/plexwebhook`
-5) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
-6) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work
-6) The Application will restart within 5 seconds when config is saved in the UI
+#### Configure 
+
 
 ### Non-Docker Setup
 I don't recommend this as it is more work and you will need to set up systemd or something to keep it running. I don't provide support for this method but if you know what you are doing, it is very easy to build the binary and run it.
@@ -103,12 +115,12 @@ TLDR: `make build`
 ### Web UI
 The web UI is the primary way to configure this application. It is available at `http://(your-server-ip):9999`
 
-It will automatically restart the application when you save config.
+It will automatically restart the application when you save.
 
 Each section has an enable/disable toggle. If you disable a section, it will not be used. For example, if you disable BEQ, it will not load BEQ profiles. If you disable MQTT, it will not send MQTT messages.
 
 ### General Usage
-This application will load BEQ profiles automatically when you play something in Plex. It will also set volume, lights, and mute/unmute minidsp if you enable those options. The application itself is not controlling things like lights but relies on Home Assistant to perform the action via MQTT.
+This application will load BEQ profiles automatically when you play something in Plex. It will also set volume, lights, and mute/unmute minidsp if you enable those options. The application itself is not controlling things like lights but relies on Home Assistant to perform the action via MQTT. In theory, you could use any home automation system but Home Assistant is the only one officially supported but anything that can receive MQTT messages should work.
 
 ## Home Assistant Quickstart
 
@@ -120,14 +132,20 @@ MQTT is used so this application could theoretically be used with any home autom
 3) Set up your topics in HA and the application's config
 4) Set up Automations in HA based on the payloads of MQTT
 
-Features that will write to Topics
-Current BEQ Profile
-Lights
-Minidsp mute status
-Volume
-Playing status
+Features that will write to Topics of your choosing:
+* Current BEQ Profile
+* Lights
+* Minidsp mute status
+* Item type (Movie, Show, etc)
+* Playing status
 
-These Topics allow you to trigger automations in HA based on sensor values such as triggering HVAC when playing status is true.
+These Topics allow you to trigger automations in HA based on sensor values such as:
+
+* Triggering HVAC when playing status is true for X minutes (e.g circulate stale air)
+* Toggling lights when playing status changes
+* Displaying current BEQ profile on a dashboard
+* Modulating volume based on item type (e.g a lower volume for shows, higher for movies)
+* Muting/unmuting minidsp(s) and showing the status
 
 Here are some sensor examples
 
@@ -151,8 +169,6 @@ mqtt:
       value_template: "{{ value_json.type }}"
     - name: "beq_current_profile"
       state_topic: "theater/beq/currentprofile"
-
-
 ```
 
 ### Automation Example
@@ -204,6 +220,9 @@ max: 10
 `/plexwebhook`
 This endpoint is where you should tell Plex to send webhooks to. It automatically processes them. No further action is needed. This handler does most of the work - Loading BEQ,  lights, volume, etc
 
+`/jellyfin` 
+Coming soon
+
 `/minidspwebhook`
 This endpoint accepts commands used by minidsp-rs which are performed by EZbeq. Here is how to trigger it with Home Assistant
 
@@ -226,33 +245,20 @@ And then inside an automation, you make an action
 ```
 
 Using the above you can automate the mute and unmute of your minidsp with any automation source.
- 
-You can then do cool stuff like create a binary sensor to show the state of the subs based on the MQTT topic
+
+One use case is to mute the subs at night. You can use the time integration to trigger this at a certain time or with a button press.
 
 ### Config
-The only supported way to configure this is via the web UI. You can also edit the config.json file directly but this is not supported and will probably break things.
-
-Refer to the web UI for the latest config options.
+The only supported way to configure this is via the web UI. You can dump the current config via the `/config` endpoint.
 
 ### Authentication
 You must whitelist your server IP in "List of IP addresses and networks that are allowed without auth"
 
 Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I may eventually implement their auth flow but it is not a priority.
 
-### Endpoints
-`/config`
-It will return the current config as JSON
-
+### Logs
 `/logs`
-It will return the current logs
-
-`/minidspwebhook`
-This is the minidsp webhook endpoint. It accepts POST requests with a JSON body of `{"command": "on"}` or `{"command": "off"}`. It will mute or unmute the minidsp depending on the command. 
-
-`/plexwebhook`
-This is the main endpoint Plex will write to
-
-
+It will return the current logs as of the last request. It will not stream logs. You can use this to get logs for debugging. Refresh the page to get the latest logs.
 
 ### Debugging
 These are environment variables you can set to get more info
@@ -279,11 +285,12 @@ This application will do its best to match editions. It will look for one of the
 1) Plex edition metadata. Set this from your server in the Plex UI
 2) Looking at the file name if it contains `Unrated, Ultimate, Theatrical, Extended, Director, Criterion`
 
-There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety reasons (different editions have different mastering, etc). If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
+There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety reasons (different editions have different masterings, etc). If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
 
 If you find repeated match failures because of editions, open a github issue with debug logs of you triggering `media.play`
 
 ### HDMI Sync Automation
+*Coming soon*
 This application supports automatically waiting until HDMI sync is complete. 
 
 Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? Then everyone in your theater makes fun of you and you cry yourself to sleep? This application will prevent that. 
@@ -304,7 +311,7 @@ You also must set `plex.playerMachineIdentifier` and `plex.playerIP`. To get thi
 4) Add this to that config field exactly as presented
 
 ### Audio stuff
-Here are some examples of what kind of codec tags Plex will spit out based on file metadata
+Here are some examples of what kind of codec tags Plex will have based on file metadata
 
  TrueHD 7.1
 Unknown (TRUEHD 7.1) --- Surround 7.1 (TRUEHD) 
