@@ -2,14 +2,21 @@ FROM golang:1.21 as build
 
 WORKDIR /go/src/app
 COPY . .
-
 RUN go mod download
+WORKDIR /go/src/app/cmd
 RUN go vet -v
 
 RUN CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM gcr.io/distroless/static-debian11
+FROM alpine:20230901
 
+RUN apk add  supervisor
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/watch.py /watch.py
 
 COPY --from=build /go/bin/app /
-CMD ["/app"]
+COPY --from=build /go/src/app/web /web
+EXPOSE 9999
+
+# CMD ["/app"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

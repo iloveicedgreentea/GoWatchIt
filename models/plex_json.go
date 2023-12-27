@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 // PlexPayload is a typical payload for webhooks
 type PlexWebhookPayload struct {
 	Event    string   `json:"event"`
@@ -10,10 +12,28 @@ type PlexWebhookPayload struct {
 	Player   Player   `json:"Player"`
 	Metadata Metadata `json:"Metadata"`
 }
+
+// Needed for future jellyfin support
+type IntOrString struct {
+	IntValue    int
+	StringValue string
+}
+
+func (ios *IntOrString) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &ios.IntValue); err == nil {
+		return nil
+	}
+
+	if err := json.Unmarshal(data, &ios.StringValue); err != nil {
+		return err
+	}
+	return nil
+}
+
 type Account struct {
-	ID    int    `json:"id"`
-	Thumb string `json:"thumb"`
-	Title string `json:"title"`
+	ID    IntOrString `json:"id"`
+	Thumb string      `json:"thumb"`
+	Title string      `json:"title"`
 }
 type Server struct {
 	Title string `json:"title"`
