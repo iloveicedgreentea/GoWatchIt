@@ -7,13 +7,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	// "github.com/StalkR/imdb"
-	"github.com/anaskhan96/soup"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
@@ -40,10 +37,6 @@ func NewClient(url, port string, machineID string, clientIP string) *PlexClient 
 		Port:      port,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
-		},
-		ImdbClient: &http.Client{
-			Timeout:   10 * time.Second,
-			Transport: &customTransport{http.DefaultTransport},
 		},
 		MachineID: machineID,
 		ClientIP:  clientIP,
@@ -344,168 +337,168 @@ func imdbStoFloat64(s string) (r float64) {
 }
 
 // http request to the tech info page
-func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
-	// use our slow client
-	resp, err := soup.GetWithClient(fmt.Sprintf("https://www.imdb.com/title/%s/technical", titleID), client)
+// func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
+// 	// use our slow client
+// 	resp, err := soup.GetWithClient(fmt.Sprintf("https://www.imdb.com/title/%s/technical", titleID), client)
 
-	if err != nil {
-		return []soup.Root{}, err
-	}
-	if len(resp) == 0 {
-		return []soup.Root{}, errors.New("soup response was empty")
-	}
-	log.Debug("Done getting soup response")
-	docs := soup.HTMLParse(resp)
+// 	if err != nil {
+// 		return []soup.Root{}, err
+// 	}
+// 	if len(resp) == 0 {
+// 		return []soup.Root{}, errors.New("soup response was empty")
+// 	}
+// 	log.Debug("Done getting soup response")
+// 	docs := soup.HTMLParse(resp)
 
-	// the page uses tr/td to display the info
-	techSoup := docs.Find("ul", "class", "ipc-metadata-list--base")
+// 	// the page uses tr/td to display the info
+// 	techSoup := docs.Find("ul", "class", "ipc-metadata-list--base")
 
-	// catch nil pointer dereference
-	if techSoup.Pointer == nil {
-		log.Error("error getting list of technical items from imdb")
-		return []soup.Root{}, techSoup.Error
-	}
-	res := techSoup.FindAll("li", "class", "ipc-metadata-list__item")
+// 	// catch nil pointer dereference
+// 	if techSoup.Pointer == nil {
+// 		log.Error("error getting list of technical items from imdb")
+// 		return []soup.Root{}, techSoup.Error
+// 	}
+// 	res := techSoup.FindAll("li", "class", "ipc-metadata-list__item")
 
-	return res, nil
-}
+// 	return res, nil
+// }
 
 // return the table name given a soup.Root schema
-func parseImdbTableSchema(input soup.Root) string {
-	// 	<li role=\"presentation\" class=\"ipc-metadata-list__item\" data-testid=\"list-item\"><span
-	// 	class=\"ipc-metadata-list-item__label\" aria-disabled=\"false\">Color</span>
-	// <div class=\"ipc-metadata-list-item__content-container\">
-	// 	<ul class=\"ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline
-	// 		ipc-metadata-list-item__list-content base\" role=\"presentation\">
-	// 		<li role=\"presentation\" class=\"ipc-inline-list__item\"><a
-	// 				class=\"ipc-metadata-list-item__list-content-item
-	// 				ipc-metadata-list-item__list-content-item--link\" role=\"button\" tabindex=\"0\"
-	// 				aria-disabled=\"false\" href=\"/search/title/?colors=color&amp;ref_=ttspec_spec_3\">Color</a>
-	// 		</li>
-	// 	</ul>
-	// </div>
-	// </li>
-	res := input.Find("span", "class", "ipc-metadata-list-item__label")
-	if res.Pointer == nil {
-		return "nil"
-	}
-	return strings.TrimSpace(res.Text())
-}
+// func parseImdbTableSchema(input soup.Root) string {
+// 	// 	<li role=\"presentation\" class=\"ipc-metadata-list__item\" data-testid=\"list-item\"><span
+// 	// 	class=\"ipc-metadata-list-item__label\" aria-disabled=\"false\">Color</span>
+// 	// <div class=\"ipc-metadata-list-item__content-container\">
+// 	// 	<ul class=\"ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline
+// 	// 		ipc-metadata-list-item__list-content base\" role=\"presentation\">
+// 	// 		<li role=\"presentation\" class=\"ipc-inline-list__item\"><a
+// 	// 				class=\"ipc-metadata-list-item__list-content-item
+// 	// 				ipc-metadata-list-item__list-content-item--link\" role=\"button\" tabindex=\"0\"
+// 	// 				aria-disabled=\"false\" href=\"/search/title/?colors=color&amp;ref_=ttspec_spec_3\">Color</a>
+// 	// 		</li>
+// 	// 	</ul>
+// 	// </div>
+// 	// </li>
+// 	res := input.Find("span", "class", "ipc-metadata-list-item__label")
+// 	if res.Pointer == nil {
+// 		return "nil"
+// 	}
+// 	return strings.TrimSpace(res.Text())
+// }
 
-// return the ratios as float64 given a schema of ratios
-func parseImdbAspectSchema(input []soup.Root) []float64 {
-	var aspects []float64
-	// get the items as text
-	for _, aspect := range input {
-		text := aspect.FullText()
-		log.Debugf("parsed aspect text: %v", text)
-		// split text by newline
-		htmlLines := strings.Split(text, " \n")
-		// get only the number
-		for _, s := range htmlLines {
-			// ignore empty strings
-			if len(s) >= 8 {
-				aspects = append(aspects, imdbStoFloat64(s))
-			}
-		}
-	}
-	sort.Float64s(aspects)
-	log.Debugf("discovered aspects: %v", aspects)
-	return aspects
-}
+// // return the ratios as float64 given a schema of ratios
+// func parseImdbAspectSchema(input []soup.Root) []float64 {
+// 	var aspects []float64
+// 	// get the items as text
+// 	for _, aspect := range input {
+// 		text := aspect.FullText()
+// 		log.Debugf("parsed aspect text: %v", text)
+// 		// split text by newline
+// 		htmlLines := strings.Split(text, " \n")
+// 		// get only the number
+// 		for _, s := range htmlLines {
+// 			// ignore empty strings
+// 			if len(s) >= 8 {
+// 				aspects = append(aspects, imdbStoFloat64(s))
+// 			}
+// 		}
+// 	}
+// 	sort.Float64s(aspects)
+// 	log.Debugf("discovered aspects: %v", aspects)
+// 	return aspects
+// }
 
-// determine the aspect ratio(s) from a given title
-func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error) {
-	log.Debugf("parsing info for %s", titleID)
-	var res []soup.Root
-	var err error
-	// try up to n times, it seems to sometimes return nil from imdb scraping
-	for i := 0; i < 5; i++ {
-		res, err = getImdbTechInfo(titleID, client)
-		if err != nil {
-			log.Error(err)
-			time.Sleep(time.Second * 1)
-			continue
-		}
-	}
+// // determine the aspect ratio(s) from a given title
+// func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error) {
+// 	log.Debugf("parsing info for %s", titleID)
+// 	var res []soup.Root
+// 	var err error
+// 	// try up to n times, it seems to sometimes return nil from imdb scraping
+// 	for i := 0; i < 5; i++ {
+// 		res, err = getImdbTechInfo(titleID, client)
+// 		if err != nil {
+// 			log.Error(err)
+// 			time.Sleep(time.Second * 1)
+// 			continue
+// 		}
+// 	}
 
-	// schema
-	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item"><button
-	//         class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Aspect ratio</button>
-	//     <div class="ipc-metadata-list-item__content-container">
-	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
-	//             role="presentation">
-	//             <li role="presentation" class="ipc-inline-list__item"><label
-	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
-	//                     for="_blank">1.85 : 1</label></li>
-	//         </ul>
-	//     </div>
-	// </li>
-	for _, val := range res {
-		if val.Pointer == nil {
-			return 0, val.Error
-		}
+// 	// schema
+// 	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item"><button
+// 	//         class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Aspect ratio</button>
+// 	//     <div class="ipc-metadata-list-item__content-container">
+// 	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
+// 	//             role="presentation">
+// 	//             <li role="presentation" class="ipc-inline-list__item"><label
+// 	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
+// 	//                     for="_blank">1.85 : 1</label></li>
+// 	//         </ul>
+// 	//     </div>
+// 	// </li>
+// 	for _, val := range res {
+// 		if val.Pointer == nil {
+// 			return 0, val.Error
+// 		}
 
-		tableName := parseImdbTableSchema(val)
-		log.Debugf("Table name: %s", tableName)
-		// imdb has intentional anti-scraping html
-		if tableName == "nil" {
-			continue
-		}
-		// loop through and search until we get to "camera", its after AR so we can exit faster
-		if tableName == "Camera" {
-			break
-		}
-		// if its not camera or AR, keep searching
-		// if tableName != "Aspect Ratio" {
-		// 	continue
-		// }
-		if tableName == "Aspect ratio" {
-			// loop through and find all aspects
-			// the second element will be the data
-			// find the max ratio and return it - max because I would rather zoom to scope and have 16:9 shots cropped
-			// log.Debug(val.HTML())
-			// break
-			vals := val.FindAll("li", "class", "ipc-inline-list__item")
-			aspects := parseImdbAspectSchema(vals)
-			// return the maximum value in slice
-			if len(aspects) > 1 {
-				return aspects[len(aspects)-1], nil
-			} else {
-				return aspects[0], nil
-			}
+// 		tableName := parseImdbTableSchema(val)
+// 		log.Debugf("Table name: %s", tableName)
+// 		// imdb has intentional anti-scraping html
+// 		if tableName == "nil" {
+// 			continue
+// 		}
+// 		// loop through and search until we get to "camera", its after AR so we can exit faster
+// 		if tableName == "Camera" {
+// 			break
+// 		}
+// 		// if its not camera or AR, keep searching
+// 		// if tableName != "Aspect Ratio" {
+// 		// 	continue
+// 		// }
+// 		if tableName == "Aspect ratio" {
+// 			// loop through and find all aspects
+// 			// the second element will be the data
+// 			// find the max ratio and return it - max because I would rather zoom to scope and have 16:9 shots cropped
+// 			// log.Debug(val.HTML())
+// 			// break
+// 			vals := val.FindAll("li", "class", "ipc-inline-list__item")
+// 			aspects := parseImdbAspectSchema(vals)
+// 			// return the maximum value in slice
+// 			if len(aspects) > 1 {
+// 				return aspects[len(aspects)-1], nil
+// 			} else {
+// 				return aspects[0], nil
+// 			}
 
-		}
-	}
+// 		}
+// 	}
 
-	return 0, nil
-}
+// 	return 0, nil
+// }
 
-// Prevent IMDB rate limiting
-type customTransport struct {
-	http.RoundTripper
-}
+// // Prevent IMDB rate limiting
+// type customTransport struct {
+// 	http.RoundTripper
+// }
 
-func (e *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	defer time.Sleep(time.Second) // don't go too fast or risk being blocked by AWS WAF
-	// headers to get around anti-scraping
-	r.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
-	r.Header.Set("Accept-Language", "en-US,en;q=0.9")
-	r.Header.Set("Authority", "m.media-amazon.com")
-	r.Header.Set("Cache-Control", "max-age=0")
-	r.Header.Set("Sec-Ch-Ua-Mobile", "?0")
-	r.Header.Set("Sec-Ch-Ua-Platform", "\"macOS\"")
-	r.Header.Set("Sec-Fetch-Dest", "image")
-	r.Header.Set("Sec-Fetch-Mode", "no-cors")
-	r.Header.Set("Sec-Fetch-Site", "cross-site")
-	r.Header.Set("Sec-Fetch-User", "?1")
-	r.Header.Set("Referer", "https://www.imdb.com/")
-	r.Header.Set("Content-Type", "text/plain;charset=UTF-8")
-	r.Header.Set("Origin", "https://www.imdb.com")
-	r.Header.Set("X-Imdb-Client-Name", "imdb-ics-tpanswerscta")
+// func (e *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+// 	defer time.Sleep(time.Second) // don't go too fast or risk being blocked by AWS WAF
+// 	// headers to get around anti-scraping
+// 	r.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
+// 	r.Header.Set("Accept-Language", "en-US,en;q=0.9")
+// 	r.Header.Set("Authority", "m.media-amazon.com")
+// 	r.Header.Set("Cache-Control", "max-age=0")
+// 	r.Header.Set("Sec-Ch-Ua-Mobile", "?0")
+// 	r.Header.Set("Sec-Ch-Ua-Platform", "\"macOS\"")
+// 	r.Header.Set("Sec-Fetch-Dest", "image")
+// 	r.Header.Set("Sec-Fetch-Mode", "no-cors")
+// 	r.Header.Set("Sec-Fetch-Site", "cross-site")
+// 	r.Header.Set("Sec-Fetch-User", "?1")
+// 	r.Header.Set("Referer", "https://www.imdb.com/")
+// 	r.Header.Set("Content-Type", "text/plain;charset=UTF-8")
+// 	r.Header.Set("Origin", "https://www.imdb.com")
+// 	r.Header.Set("X-Imdb-Client-Name", "imdb-ics-tpanswerscta")
 
-	return e.RoundTripper.RoundTrip(r)
-}
+// 	return e.RoundTripper.RoundTrip(r)
+// }
 
 // get the aspect ratio like 1.78 (16:9) 1.85 ~17:9 from IMDB
 // func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (float64, error) {

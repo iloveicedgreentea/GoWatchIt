@@ -2,27 +2,25 @@ package plex
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 
 	// "strings"
 	"testing"
-	"time"
 
 	// "github.com/StalkR/imdb"
 	"github.com/stretchr/testify/assert"
 )
 
-type aspectTest struct {
-	Data          testData
-	ExpectedValue float64
-}
-type testData struct {
-	Name    string
-	TitleID string
-	Year    int
-	ID      string
-}
+// type aspectTest struct {
+// 	Data          testData
+// 	ExpectedValue float64
+// }
+// type testData struct {
+// 	Name    string
+// 	TitleID string
+// 	Year    int
+// 	ID      string
+// }
 
 // test to ensure server is white listed
 func TestGetPlexReq(t *testing.T) {
@@ -150,49 +148,49 @@ func TestMapCodecs(t *testing.T) {
 // }
 
 // test parsing of aspect ratio given a title
-func TestImdbTechInfo(t *testing.T) {
-	t.Skip()
-	client := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: &customTransport{http.DefaultTransport},
-	}
-	assert := assert.New(t)
-	tests := []aspectTest{
-		// test each kind of aspect + variable aspect movies until Nolan gets with the times
-		{
-			Data:          testData{Name: "tenet", TitleID: "tt6723592"},
-			ExpectedValue: 2.39,
-		},
-		{
-			Data:          testData{Name: "matrix", TitleID: "tt0133093"},
-			ExpectedValue: 2.39,
-		},
-		{
-			Data:          testData{Name: "21jumpst", TitleID: "tt1232829"},
-			ExpectedValue: 2.35,
-		},
-		{
-			Data:          testData{Name: "superbad", TitleID: "tt0829482"},
-			ExpectedValue: 1.85,
-		},
-		{
-			Data:          testData{Name: "theoffice", TitleID: "tt0386676"},
-			ExpectedValue: 1.78,
-		},
-		{
-			Data:          testData{Name: "ZSjusticleague", TitleID: "tt12361974"},
-			ExpectedValue: 1.33,
-		},
-	}
-	// execute each test
-	for _, test := range tests {
-		res, err := parseImdbTechnicalInfo(test.Data.TitleID, client)
-		if err != nil {
-			t.Fatalf("Test failed for %s: %v", test.Data.TitleID, err)
-		}
-		assert.Equal(test.ExpectedValue, res, fmt.Sprintf("%s Aspect ratio does not match", test.Data.TitleID))
-	}
-}
+// func TestImdbTechInfo(t *testing.T) {
+// 	t.Skip()
+// 	client := &http.Client{
+// 		Timeout:   10 * time.Second,
+// 		Transport: &customTransport{http.DefaultTransport},
+// 	}
+// 	assert := assert.New(t)
+// 	tests := []aspectTest{
+// 		// test each kind of aspect + variable aspect movies until Nolan gets with the times
+// 		{
+// 			Data:          testData{Name: "tenet", TitleID: "tt6723592"},
+// 			ExpectedValue: 2.39,
+// 		},
+// 		{
+// 			Data:          testData{Name: "matrix", TitleID: "tt0133093"},
+// 			ExpectedValue: 2.39,
+// 		},
+// 		{
+// 			Data:          testData{Name: "21jumpst", TitleID: "tt1232829"},
+// 			ExpectedValue: 2.35,
+// 		},
+// 		{
+// 			Data:          testData{Name: "superbad", TitleID: "tt0829482"},
+// 			ExpectedValue: 1.85,
+// 		},
+// 		{
+// 			Data:          testData{Name: "theoffice", TitleID: "tt0386676"},
+// 			ExpectedValue: 1.78,
+// 		},
+// 		{
+// 			Data:          testData{Name: "ZSjusticleague", TitleID: "tt12361974"},
+// 			ExpectedValue: 1.33,
+// 		},
+// 	}
+// 	// execute each test
+// 	for _, test := range tests {
+// 		res, err := parseImdbTechnicalInfo(test.Data.TitleID, client)
+// 		if err != nil {
+// 			t.Fatalf("Test failed for %s: %v", test.Data.TitleID, err)
+// 		}
+// 		assert.Equal(test.ExpectedValue, res, fmt.Sprintf("%s Aspect ratio does not match", test.Data.TitleID))
+// 	}
+// }
 
 // test that it can find the correct title and return the aspect
 // func TestGetImdbInfoAspect(t *testing.T) {
@@ -226,26 +224,26 @@ func TestImdbTechInfo(t *testing.T) {
 // }
 
 // for dev only - get the entire table, ensure it can parse titles
-func TestGetImdbTechInfo(t *testing.T) {
-	t.Skip()
-	client := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: &customTransport{http.DefaultTransport},
-	}
-	// assert := assert.New(t)
-	// superbad
-	res, err := getImdbTechInfo("tt0829482", client)
-	// multple aspects tenet
-	// res, err := getImdbTechInfo("tt6723592", client)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Test that pulled technical info titles match
-	expectedTitles := []string{"Runtime", "Sound mix", "Color", "Aspect ratio", "Camera", "Laboratory", "Film Length", "Negative Format", "Cinematographic Process", "Printed Film Format"}
-	for index, title := range expectedTitles {
-		assert.Equal(t, title, parseImdbTableSchema(res[index]))
-	}
-}
+// func TestGetImdbTechInfo(t *testing.T) {
+// 	t.Skip()
+// 	client := &http.Client{
+// 		Timeout:   10 * time.Second,
+// 		Transport: &customTransport{http.DefaultTransport},
+// 	}
+// 	// assert := assert.New(t)
+// 	// superbad
+// 	res, err := getImdbTechInfo("tt0829482", client)
+// 	// multple aspects tenet
+// 	// res, err := getImdbTechInfo("tt6723592", client)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	// Test that pulled technical info titles match
+// 	expectedTitles := []string{"Runtime", "Sound mix", "Color", "Aspect ratio", "Camera", "Laboratory", "Film Length", "Negative Format", "Cinematographic Process", "Printed Film Format"}
+// 	for index, title := range expectedTitles {
+// 		assert.Equal(t, title, parseImdbTableSchema(res[index]))
+// 	}
+// }
 
 // For dev only - gets a list of every audio codec present in library
 func TestGetPlexMovies(t *testing.T) {
