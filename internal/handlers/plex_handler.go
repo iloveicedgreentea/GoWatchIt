@@ -102,14 +102,11 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
 func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
-	wg := &sync.WaitGroup{}
-	// TODO: this is not working
-	err := mqtt.PublishWrapper("topicplayingstatus", "false")
+	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
 	if err != nil {
 		log.Error(err)
 	}
-	wg.Add(1)
-	go changeLight("on", wg)
+	go changeLight("on")
 
 	err = beqClient.UnloadBeqProfile(m)
 	if err != nil {
@@ -127,14 +124,12 @@ func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistant
 // pause only happens with literally pausing
 func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
 	if !*skipActions {
-		err := mqtt.PublishWrapper("topicplayingstatus", "false")
+		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
 		if err != nil {
 			log.Error(err)
 		}
-		wg := &sync.WaitGroup{}
 
-		wg.Add(1)
-		go changeLight("on", wg)
+		go changeLight("on")
 
 		err = beqClient.UnloadBeqProfile(m)
 		if err != nil {
@@ -205,6 +200,7 @@ func playbackInteface(action string, h *homeassistant.HomeAssistantClient, p *pl
 // waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
 func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, plexClient *plex.PlexClient) {
 	if !config.GetBool("signal.enabled") {
+		*skipActions = false
 		wg.Done()
 		return
 	}
@@ -269,16 +265,13 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 	// stop processing webhooks
 	*skipActions = true
-	err := mqtt.PublishWrapper("topicplayingstatus", "true")
+	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
 	if err != nil {
 		log.Error(err)
 	}
-	wg.Add(1)
-	go changeLight("off", wg)
-	// wg.Add(1)
+	go changeLight("off")
 	// go changeAspect(client, payload, wg)
-	wg.Add(1)
-	go changeMasterVolume(m.MediaType, wg)
+	go changeMasterVolume(m.MediaType)
 
 	// if not using denoncodec, do this in background
 	if !useDenonCodec {
@@ -295,7 +288,9 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	}
 
 	// slower but more accurate
+	// TODO: abstract library this for any AVR
 	if useDenonCodec {
+		// TODO: make below a function
 		// wait for sync
 		wg.Add(1)
 		waitForHDMISync(wg, skipActions, haClient, client)
@@ -340,7 +335,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	}
 
 	log.Debugf("Found codec: %s", m.Codec)
-
+	// TODO: check if beq is enabled
 	// if its a show and you dont want beq enabled, exit
 	if payload.Metadata.Type == showItemTitle {
 		if !config.GetBool("ezbeq.enableTvBeq") {
@@ -372,15 +367,13 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 // resume is only after pausing as long as the media item is still active
 func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
 	if !*skipActions {
-		wg := &sync.WaitGroup{}
 		// mediaType string, codec string, edition string
 		// trigger lights
-		err := mqtt.PublishWrapper("topicplayingstatus", "true")
+		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
 		if err != nil {
 			log.Error(err)
 		}
-		wg.Add(1)
-		go changeLight("off", wg)
+		go changeLight("off")
 		// Changing on resume is disabled because its annoying if you changed it since playing
 		// go changeMasterVolume(vip, mediaType)
 
@@ -431,7 +424,7 @@ func getEditionName(data models.MediaContainer) string {
 	if edition != "" {
 		return edition
 	}
-
+	// otherwise try to extract from file name
 	switch {
 	case strings.Contains(fileName, "extended"):
 		return "Extended"
@@ -522,20 +515,21 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		go mediaPlay(plexClient, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
+		// TODO: add lights and stuff here to do async, not blocked by other functions
+		mediaPlay(plexClient, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
-		go mediaStop(beqClient, haClient, payload, model)
+		mediaStop(beqClient, haClient, payload, model)
 	case "media.pause":
 		log.Debug("Event Router: media.pause received")
-		go mediaPause(beqClient, haClient, payload, model, skipActions)
+		mediaPause(beqClient, haClient, payload, model, skipActions)
 	// Pressing the 'resume' button in plex is media.play
 	case "media.resume":
 		log.Debug("Event Router: media.resume received")
-		go mediaResume(beqClient, haClient, payload, model, skipActions)
+		mediaResume(beqClient, haClient, payload, model, skipActions)
 	case "media.scrobble":
 		log.Debug("Scrobble received")
-		go mediaScrobble()
+		mediaScrobble()
 	default:
 		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
@@ -612,8 +606,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 // }
 
 // trigger HA for MV change per type
-func changeMasterVolume(mediaType string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func changeMasterVolume(mediaType string) {
 	if config.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && config.GetBool("homeAssistant.enabled") {
 		log.Debug("changeMasterVolume: Changing volume")
 		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicVolume"))
@@ -624,13 +617,12 @@ func changeMasterVolume(mediaType string, wg *sync.WaitGroup) {
 }
 
 // trigger HA for light change given entity and desired state
-func changeLight(state string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func changeLight(state string) {
 	if config.GetBool("homeAssistant.triggerLightsOnEvent") && config.GetBool("homeAssistant.enabled") {
 		log.Debug("changeLight: Changing light")
 		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topicLights"))
 		if err != nil {
-			log.Error()
+			log.Errorf("Error changing light: %v", err)
 		}
 	}
 }

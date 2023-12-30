@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 )
 
 var log = logger.GetLogger()
@@ -121,7 +121,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 
 	}
 
-	return mqtt.PublishWrapper("topicMinidspMuteStatus", fmt.Sprintf("%v", status))
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicMinidspMuteStatus"), fmt.Sprintf("%v", status))
 }
 
 // MakeCommand sends the command of payload
@@ -380,7 +380,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper("topicBeqCurrentProfile", catalog.SortTitle)
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), catalog.SortTitle)
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
@@ -405,5 +405,5 @@ func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper("topicBeqCurrentProfile", "")
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), "")
 }

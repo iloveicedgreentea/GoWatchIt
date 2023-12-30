@@ -33,7 +33,7 @@ func connect(clientID string) (mqtt.Client, error) {
 
 func PublishWrapper(topic string, msg string) error {
 	// trigger automation
-	return Publish([]byte(msg), config.GetString(fmt.Sprintf("mqtt.%s", topic)))
+	return Publish([]byte(msg), topic)
 }
 
 // creates a connection to broker and sends the payload
