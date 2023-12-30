@@ -17,6 +17,6 @@ docker-build:
 docker-push:
 	docker buildx build --push --platform linux/amd64 --tag ghcr.io/iloveicedgreentea/plex-webhook-automation:test . 
 docker-run:
-	docker run -p 9999:9999 -e SUPER_DEBUG=true -e LOG_FILE=false -e LOG_LEVEL=debug -v $(shell pwd)/docker/data:/data plex-webhook-automation-local
+	docker run -p 9999:9999 -e SUPER_DEBUG=false -e LOG_FILE=false -e LOG_LEVEL=debug -v $(shell pwd)/docker/data:/data plex-webhook-automation-local
 run: build
 	LOG_FILE=false LOG_LEVEL=debug ./build/server

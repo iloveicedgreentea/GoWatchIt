@@ -78,7 +78,6 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 		// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
 		if userID == "" || decodedPayload.Account.Title == userID {
 			if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
-				log.Debugf("Current length of plexChan: %d", len(plexChan))
 				select {
 				case plexChan <- decodedPayload:
 					// send succeeded
@@ -507,6 +506,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 
 	log.Debugf("Event Router: Got media type of: %s ", payload.Metadata.Type)
 
+	// mutate with data from plex
 	model.Year = payload.Metadata.Year
 	model.MediaType = payload.Metadata.Type
 	model.Edition = editionName
@@ -520,20 +520,20 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		mediaPlay(plexClient, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
+		go mediaPlay(plexClient, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
-		mediaStop(beqClient, haClient, payload, model)
+		go mediaStop(beqClient, haClient, payload, model)
 	case "media.pause":
 		log.Debug("Event Router: media.pause received")
-		mediaPause(beqClient, haClient, payload, model, skipActions)
+		go mediaPause(beqClient, haClient, payload, model, skipActions)
 	// Pressing the 'resume' button in plex is media.play
 	case "media.resume":
 		log.Debug("Event Router: media.resume received")
-		mediaResume(beqClient, haClient, payload, model, skipActions)
+		go mediaResume(beqClient, haClient, payload, model, skipActions)
 	case "media.scrobble":
 		log.Debug("Scrobble received")
-		mediaScrobble()
+		go mediaScrobble()
 	default:
 		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
