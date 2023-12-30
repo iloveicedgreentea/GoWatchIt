@@ -132,8 +132,8 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 			log.Error(err)
 		}
 		wg := &sync.WaitGroup{}
-		wg.Add(1)
 
+		wg.Add(1)
 		go changeLight("on", wg)
 
 		err = beqClient.UnloadBeqProfile(m)
@@ -273,9 +273,11 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	if err != nil {
 		log.Error(err)
 	}
-	wg.Add(3)
+	wg.Add(1)
 	go changeLight("off", wg)
+	// wg.Add(1)
 	// go changeAspect(client, payload, wg)
+	wg.Add(1)
 	go changeMasterVolume(m.MediaType, wg)
 
 	// if not using denoncodec, do this in background
