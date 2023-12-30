@@ -27,7 +27,6 @@ function populateFields(config) {
     document.getElementById('homeassistant-url').value = config.homeassistant.url;
     document.getElementById('homeassistant-port').value = config.homeassistant.port;
     document.getElementById('homeassistant-token').value = config.homeassistant.token;
-    document.getElementById('homeassistant-triggeraspectratiochangeonevent').checked = config.homeassistant.triggeraspectratiochangeonevent;
     document.getElementById('homeassistant-triggerlightsonevent').checked = config.homeassistant.triggerlightsonevent;
     document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked = config.homeassistant.triggeravrmastervolumechangeonevent;
     document.getElementById('homeassistant-remoteentityname').value = config.homeassistant.remoteentityname;
@@ -42,7 +41,6 @@ function populateFields(config) {
     document.getElementById('mqtt-password').value = config.mqtt.password;
     document.getElementById('mqtt-topiclights').value = config.mqtt.topiclights;
     document.getElementById('mqtt-topicvolume').value = config.mqtt.topicvolume;
-    document.getElementById('mqtt-topicaspectratio').value = config.mqtt.topicaspectratio;
     document.getElementById('mqtt-topicbeqcurrentprofile').value = config.mqtt.topicbeqcurrentprofile;
     document.getElementById('mqtt-topicminidspmutestatus').value = config.mqtt.topicminidspmutestatus;
     document.getElementById('mqtt-topicplayingstatus').value = config.mqtt.topicplayingstatus;
@@ -99,7 +97,6 @@ function buildFinalConfig() {
         "url": document.getElementById('homeassistant-url').value,
         "port": document.getElementById('homeassistant-port').value,
         "token": document.getElementById('homeassistant-token').value,
-        "triggeraspectratiochangeonevent": document.getElementById('homeassistant-triggeraspectratiochangeonevent').checked,
         "triggerlightsonevent": document.getElementById('homeassistant-triggerlightsonevent').checked,
         "triggeravrmastervolumechangeonevent": document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked,
         "remoteentityname": document.getElementById('homeassistant-remoteentityname').value,
@@ -119,7 +116,6 @@ function buildFinalConfig() {
         "password": document.getElementById('mqtt-password').value,
         "topiclights": document.getElementById('mqtt-topiclights').value,
         "topicvolume": document.getElementById('mqtt-topicvolume').value,
-        "topicaspectratio": document.getElementById('mqtt-topicaspectratio').value,
         "topicbeqcurrentprofile": document.getElementById('mqtt-topicbeqcurrentprofile').value,
         "topicminidspmutestatus": document.getElementById('mqtt-topicminidspmutestatus').value,
         "topicplayingstatus": document.getElementById('mqtt-topicplayingstatus').value

@@ -43,12 +43,12 @@
                 <div>
                     <label for="ezbeq-adjustmastervolumewithprofile">Adjust Master Volume With Profile
                         <span class="description">
-                            Every BEQ profile has a MV adjustment. Most lower the MV, I recommend this on.
+                            Most BEQ profiles have a Master Volume adjustment. Most lower the MV but some raise it. I recommend this on because the BEQ is created with MV in mind.
                         </span>
                     </label>
 
                     <input type="checkbox" id="ezbeq-adjustmastervolumewithprofile"
-                        name="ezbeq.adjustmastervolumewithprofile">
+                        name="ezbeq.adjustmastervolumewithprofile" checked>
                 </div>
                 <div>
                     <label for="ezbeq-denonip">Denon AVR IP address
@@ -111,7 +111,7 @@
                         </span>
                     </label>
 
-                    <input type="text" id="ezbeq-port" name="ezbeq.port">
+                    <input type="text" id="ezbeq-port" name="ezbeq.port" value="8080">
                 </div>
                 <div>
                     <label for="ezbeq-preferredauthor">BEQ Preferred Author
@@ -129,7 +129,7 @@
                         </span>
                     </label>
                     <div id="slots">
-                        <input type="checkbox" id="slot1" name="slots" value="1"> 1
+                        <input type="checkbox" id="slot1" name="slots" value="1" checked> 1
                         <input type="checkbox" id="slot2" name="slots" value="2"> 2
                         <input type="checkbox" id="slot3" name="slots" value="3"> 3
                         <input type="checkbox" id="slot4" name="slots" value="4"> 4
@@ -183,7 +183,7 @@
                             URL - "http://x.x.x.x" <- Must have http:// </span>
                     </label>
 
-                    <input type="text" id="homeassistant-url" name="homeassistant.url">
+                    <input type="text" id="homeassistant-url" name="homeassistant.url" placeholder="http://x.x.x.x">
                 </div>
                 <div>
                     <label for="homeassistant-port">Home Assistant port
@@ -192,7 +192,7 @@
                         </span>
                     </label>
 
-                    <input type="text" id="homeassistant-port" name="homeassistant.port">
+                    <input type="text" id="homeassistant-port" name="homeassistant.port" value="8123">
                 </div>
                 <div>
                     <label for="homeassistant-token">Home Assistant token
@@ -204,16 +204,6 @@
                     <input type="text" id="homeassistant-token" name="homeassistant.token">
                 </div>
 
-                <div>
-                    <label for="homeassistant-triggeraspectratiochangeonevent">Trigger Aspect Ratio Change On Event
-                        <span class="description">
-                            Send state change to MQTT when aspect ratio is detected on play
-                        </span>
-                    </label>
-
-                    <input type="checkbox" id="homeassistant-triggeraspectratiochangeonevent"
-                        name="homeassistant.triggeraspectratiochangeonevent">
-                </div>
                 <div>
                     <label for="homeassistant-triggerlightsonevent">Trigger Light Change On Event
                         <span class="description">
@@ -239,7 +229,7 @@
                         <span class="description">
                             Optional if using hdmi sync via an entity. the name of the remote entities, or a binary
                             sensor.
-                            If binary sensor, set source.source to "binary_sensor". See readme
+                            If binary sensor, set source.source to "binary_sensor". See readme for details
                         </span>
                     </label>
                     <input type="text" id="homeassistant-remoteentityname" name="homeassistant.remoteentityname">
@@ -294,7 +284,7 @@
                         URL - "http://x.x.x.x:1883" <- Must have http:// </span>
                 </label>
 
-                <input type="text" id="mqtt-url" name="mqtt.url">
+                <input type="text" id="mqtt-url" name="mqtt.url" placeholder="http://x.x.x.x:1883">
             </div>
             <div>
                 <label for="mqtt-username">Username
@@ -330,15 +320,6 @@
                     </span>
                 </label>
                 <input type="text" id="mqtt-topicvolume" name="mqtt.topicvolume">
-            </div>
-
-            <div>
-                <label for="mqtt-topicaspectratio">Topic Aspect Ratio
-                    <span class="description">
-                        Topic for Aspect Ratio state
-                    </span>
-                </label>
-                <input type="text" id="mqtt-topicaspectratio" name="mqtt.topicaspectratio">
             </div>
 
             <div>
@@ -387,7 +368,7 @@
                             URL - "http://x.x.x.x" <- Must have http:// </span>
                     </label>
 
-                    <input type="text" id="plex-url" name="plex.url">
+                    <input type="text" id="plex-url" name="plex.url" placeholder="http://x.x.x.x">
                 </div>
                 <div>
                     <label for="plex-port">Plex port
@@ -396,12 +377,12 @@
                         </span>
                     </label>
 
-                    <input type="text" id="plex-port" name="plex.port">
+                    <input type="text" id="plex-port" name="plex.port" value="32400">
                 </div>
                 <div>
                     <label for="plex-ownernamefilter">Owner Name Filter
                         <span class="description">
-                            Your main owner account, will filter webhooks so others don't trigger
+                            Your primary account, will filter webhooks so others don't trigger
                             leave blank if you don't want to filter on accounts
                         </span>
                     </label>
@@ -421,8 +402,8 @@
                 <div>
                     <label for="plex-playermachineidentifier">Player Machine Identifier
                         <span class="description">
-                            optional if not using hdmi sync get this from "http://(player ip):32500/resources". Required
-                            for pausing/playing plex . check readme
+                            Optional if not using hdmi sync get this from "http://(player ip):32500/resources". Required
+                            for pausing/playing plex. Check readme
                         </span>
                     </label>
                     <input type="text" id="plex-playermachineidentifier" name="plex.playermachineidentifier">
@@ -430,7 +411,7 @@
                 <div>
                     <label for="plex-playerip">Player IP
                         <span class="description">
-                            optional if not using hdmi sync IP of your player device (like a shield)
+                            Optional if not using hdmi sync IP of your CLIENT device (like a shield)
                         </span>
                     </label>
                     <input type="text" id="plex-playerip" name="plex.playerip">
@@ -439,7 +420,7 @@
                 <div>
                     <label for="plex-enabletrailersupport">Enable Trailer Support
                         <span class="description">
-                            if you enable trailers before movies, it can process it like turn off lights. no beq
+                            If you enable trailers before movies, it can process it like turn off lights. No beq obviously. I keep this off so trailers behave like they do in commercial theaters
                         </span>
                     </label>
 
@@ -465,16 +446,16 @@
                             URL - "http://x.x.x.x" <- Must have http:// </span>
                     </label>
 
-                    <input type="text" id="jellyfin-url" name="jellyfin.url">
+                    <input type="text" id="jellyfin-url" name="jellyfin.url" placeholder="http://x.x.x.x">
                 </div>
                 <div>
                     <label for="jellyfin-port">jellyfin port
                         <span class="description">
-                            port - "32400"
+                            port - "8096"
                         </span>
                     </label>
 
-                    <input type="text" id="jellyfin-port" name="jellyfin.port">
+                    <input type="text" id="jellyfin-port" name="jellyfin.port" value="8096">
                 </div>
                 <div>
                     <label for="jellyfin-ownernamefilter">Owner Name Filter
