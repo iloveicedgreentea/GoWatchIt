@@ -48,11 +48,16 @@ func JellyfinWorker(jfChan <-chan models.JellyfinWebhook, readyChan chan<- bool)
 		log.Debug(i)
 		// if its not an empty struct
 		if i != (models.JellyfinWebhook{}) {
-			resp, err := jellyfinClient.GetCodec(i.UserID, i.ItemID)
+			// get metadata
+			metadata, err := jellyfinClient.GetMetadata(i.UserID, i.ItemID)
+			if err != nil {
+				log.Errorf("Error getting metadata from jellyfin API: %v", err)
+			}
+			codec, displayTitle, err := jellyfinClient.GetCodec(metadata)
 			if err != nil {
 				log.Errorf("Error getting codec: %v", err)
 			}
-			log.Debugf("Response: %v", resp)
+			log.Debugf("Response: %v, %v", codec, displayTitle)
 		}
 		log.Debug("eventRouter done processing payload")
 	}

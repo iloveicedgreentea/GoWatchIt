@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,7 +43,7 @@ func NewClient(url, port string, machineID string, clientIP string) *JellyfinCli
 	}
 }
 
-// generic function to make a request 
+// generic function to make a request
 func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadCloser, error) {
 	u := url.URL{
 		Scheme: "http",
@@ -59,7 +60,6 @@ func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadClo
 	// add auth
 	// url encoded header value
 	r.Header.Add("Authorization", fmt.Sprintf("MediaBrowser Token=\"%v\"", config.GetString("jellyfin.apitoken")))
-	log.Debugf("Request: %#v", r)
 	// make request
 	resp, err := c.HTTPClient.Do(&r)
 	if err != nil {
@@ -69,19 +69,18 @@ func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadClo
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("error making request to %#v: %v", u, resp.Status)
 	}
-	
+
 	return resp.Body, err
 }
+
 // TODO: is paused
 
-
-// get the codec of a media file
-func (c *JellyfinClient) GetCodec(userID, itemID string) (string, error) {
+func  (c *JellyfinClient) GetMetadata(userID, itemID string) (metadata models.JellyfinMetadata, err error) {
 	// take the itemID and get the codec
 	endpoint := fmt.Sprintf("/Users/%s/Items/%s", userID, itemID)
 	r, err := c.makeRequest(endpoint, "get")
 	if err != nil {
-		return "", err
+		return metadata, err
 	}
 	defer r.Close()
 
@@ -90,22 +89,61 @@ func (c *JellyfinClient) GetCodec(userID, itemID string) (string, error) {
 
 	b, err := io.ReadAll(r)
 	if err != nil {
-		return "", err
+		return metadata, err
 	}
 	err = json.Unmarshal(b, &payload)
-	
+
 	if err != nil {
-		log.Debugf("GetCodec Response: %v", string(b))
-		return "", err
+		log.Debugf("GetCodec Response: %#v", string(b))
+		return metadata, err
 	}
-	// TODO: get which stream is audio
-	log.Debug(payload.MediaStreams)
-	
-	return "ok", nil
-	
+
+	return payload, nil
 }
 
-func GetEdition() string {
-	return "jellyfin"
+// get the codec of a media file returns the codec and the display title e.g eac3, Dolby Digital+
+func (c *JellyfinClient) GetCodec(payload models.JellyfinMetadata) (codec, displayTitle string, err error) {
+	// get the audio stream
+	for _, stream := range payload.MediaStreams {
+		if stream.Type == "Audio" {
+			log.Debugf("Codec: %#v", stream)
+			return stream.Codec, stream.DisplayTitle, nil
+		}
+	}
+
+	return "", "", errors.New("no audio stream found")
 }
 
+func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition string) {
+	var path string
+	// extract file name from sources
+	for _, source := range payload.MediaSources {
+		if source.Type == "Default" {
+			path = source.Path
+		}
+	}
+	if path == "" {
+		log.Errorf("No path found for edition in jellyfin - %#v", payload)
+		return ""
+	}
+
+	f := strings.ToLower(path)
+
+	// otherwise try to extract from file name
+	switch {
+	case strings.Contains(f, "extended"):
+		return "Extended"
+	case strings.Contains(f, "unrated"):
+		return "Unrated"
+	case strings.Contains(f, "theatrical"):
+		return "Theatrical"
+	case strings.Contains(f, "ultimate"):
+		return "Ultimate"
+	case strings.Contains(f, "director"):
+		return "Director"
+	case strings.Contains(f, "criterion"):
+		return "Criterion"
+	default:
+		return ""
+	}
+}
