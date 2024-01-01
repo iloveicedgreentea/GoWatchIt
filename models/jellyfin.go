@@ -26,137 +26,137 @@ type JellyfinMetadata struct {
 	DateCreated                  time.Time        `json:"DateCreated"`
 	DateLastMediaAdded           time.Time        `json:"DateLastMediaAdded"`
 	ExtraType                    string           `json:"ExtraType"`
-	AirsBeforeSeasonNumber       int              `json:"AirsBeforeSeasonNumber"`
-	AirsAfterSeasonNumber        int              `json:"AirsAfterSeasonNumber"`
-	AirsBeforeEpisodeNumber      int              `json:"AirsBeforeEpisodeNumber"`
-	CanDelete                    bool             `json:"CanDelete"`
-	CanDownload                  bool             `json:"CanDownload"`
-	HasSubtitles                 bool             `json:"HasSubtitles"`
-	PreferredMetadataLanguage    string           `json:"PreferredMetadataLanguage"`
-	PreferredMetadataCountryCode string           `json:"PreferredMetadataCountryCode"`
-	SupportsSync                 bool             `json:"SupportsSync"`
+	// AirsBeforeSeasonNumber       int              `json:"AirsBeforeSeasonNumber"`
+	// AirsAfterSeasonNumber        int              `json:"AirsAfterSeasonNumber"`
+	// AirsBeforeEpisodeNumber      int              `json:"AirsBeforeEpisodeNumber"`
+	// CanDelete                    bool             `json:"CanDelete"`
+	// CanDownload                  bool             `json:"CanDownload"`
+	// HasSubtitles                 bool             `json:"HasSubtitles"`
+	// PreferredMetadataLanguage    string           `json:"PreferredMetadataLanguage"`
+	// PreferredMetadataCountryCode string           `json:"PreferredMetadataCountryCode"`
+	// SupportsSync                 bool             `json:"SupportsSync"`
 	Container                    string           `json:"Container"`
 	SortName                     string           `json:"SortName"`
 	ForcedSortName               string           `json:"ForcedSortName"`
-	Video3DFormat                string           `json:"Video3DFormat"`
-	PremiereDate                 time.Time        `json:"PremiereDate"`
+	// Video3DFormat                string           `json:"Video3DFormat"`
+	// PremiereDate                 time.Time        `json:"PremiereDate"`
 	ExternalUrls                 []ExternalUrls   `json:"ExternalUrls"`
 	MediaSources                 []MediaSources   `json:"MediaSources"`
-	CriticRating                 int              `json:"CriticRating"`
-	ProductionLocations          []string         `json:"ProductionLocations"`
+	// CriticRating                 int              `json:"CriticRating"`
+	// ProductionLocations          []string         `json:"ProductionLocations"`
 	Path                         string           `json:"Path"`
-	EnableMediaSourceDisplay     bool             `json:"EnableMediaSourceDisplay"`
-	OfficialRating               string           `json:"OfficialRating"`
-	CustomRating                 string           `json:"CustomRating"`
-	ChannelID                    string           `json:"ChannelId"`
-	ChannelName                  string           `json:"ChannelName"`
-	Overview                     string           `json:"Overview"`
-	Taglines                     []string         `json:"Taglines"`
-	Genres                       []string         `json:"Genres"`
-	CommunityRating              int              `json:"CommunityRating"`
-	CumulativeRunTimeTicks       int              `json:"CumulativeRunTimeTicks"`
-	RunTimeTicks                 int              `json:"RunTimeTicks"`
-	PlayAccess                   string           `json:"PlayAccess"`
+	// EnableMediaSourceDisplay     bool             `json:"EnableMediaSourceDisplay"`
+	// OfficialRating               string           `json:"OfficialRating"`
+	// CustomRating                 string           `json:"CustomRating"`
+	// ChannelID                    string           `json:"ChannelId"`
+	// ChannelName                  string           `json:"ChannelName"`
+	// Overview                     string           `json:"Overview"`
+	// Taglines                     []string         `json:"Taglines"`
+	// Genres                       []string         `json:"Genres"`
+	// CommunityRating              int              `json:"CommunityRating"`
+	// CumulativeRunTimeTicks       int              `json:"CumulativeRunTimeTicks"`
+	// RunTimeTicks                 int              `json:"RunTimeTicks"`
+	// PlayAccess                   string           `json:"PlayAccess"`
 	AspectRatio                  string           `json:"AspectRatio"`
-	ProductionYear               int              `json:"ProductionYear"`
-	IsPlaceHolder                bool             `json:"IsPlaceHolder"`
-	Number                       string           `json:"Number"`
-	ChannelNumber                string           `json:"ChannelNumber"`
-	IndexNumber                  int              `json:"IndexNumber"`
-	IndexNumberEnd               int              `json:"IndexNumberEnd"`
-	ParentIndexNumber            int              `json:"ParentIndexNumber"`
-	RemoteTrailers               []RemoteTrailers `json:"RemoteTrailers"`
-	ProviderIds                  ProviderIds      `json:"ProviderIds"`
-	IsHD                         bool             `json:"IsHD"`
+	// ProductionYear               int              `json:"ProductionYear"`
+	// IsPlaceHolder                bool             `json:"IsPlaceHolder"`
+	// Number                       string           `json:"Number"`
+	// ChannelNumber                string           `json:"ChannelNumber"`
+	// IndexNumber                  int              `json:"IndexNumber"`
+	// IndexNumberEnd               int              `json:"IndexNumberEnd"`
+	// ParentIndexNumber            int              `json:"ParentIndexNumber"`
+	// RemoteTrailers               []RemoteTrailers `json:"RemoteTrailers"`
+	// ProviderIds                  ProviderIds      `json:"ProviderIds"`
+	// IsHD                         bool             `json:"IsHD"`
 	IsFolder                     bool             `json:"IsFolder"`
 	ParentID                     string           `json:"ParentId"`
 	Type                         string           `json:"Type"`
-	People                       []People         `json:"People"`
-	Studios                      []Studios        `json:"Studios"`
-	GenreItems                   []GenreItems     `json:"GenreItems"`
-	ParentLogoItemID             string           `json:"ParentLogoItemId"`
-	ParentBackdropItemID         string           `json:"ParentBackdropItemId"`
-	ParentBackdropImageTags      []string         `json:"ParentBackdropImageTags"`
-	LocalTrailerCount            int              `json:"LocalTrailerCount"`
+	// People                       []People         `json:"People"`
+	// Studios                      []Studios        `json:"Studios"`
+	// GenreItems                   []GenreItems     `json:"GenreItems"`
+	// ParentLogoItemID             string           `json:"ParentLogoItemId"`
+	// ParentBackdropItemID         string           `json:"ParentBackdropItemId"`
+	// ParentBackdropImageTags      []string         `json:"ParentBackdropImageTags"`
+	// LocalTrailerCount            int              `json:"LocalTrailerCount"`
 	UserData                     UserData         `json:"UserData"`
-	RecursiveItemCount           int              `json:"RecursiveItemCount"`
-	ChildCount                   int              `json:"ChildCount"`
+	// RecursiveItemCount           int              `json:"RecursiveItemCount"`
+	// ChildCount                   int              `json:"ChildCount"`
 	SeriesName                   string           `json:"SeriesName"`
 	SeriesID                     string           `json:"SeriesId"`
 	SeasonID                     string           `json:"SeasonId"`
-	SpecialFeatureCount          int              `json:"SpecialFeatureCount"`
-	DisplayPreferencesID         string           `json:"DisplayPreferencesId"`
-	Status                       string           `json:"Status"`
-	AirTime                      string           `json:"AirTime"`
-	AirDays                      []string         `json:"AirDays"`
-	Tags                         []string         `json:"Tags"`
-	PrimaryImageAspectRatio      int              `json:"PrimaryImageAspectRatio"`
-	Artists                      []string         `json:"Artists"`
-	ArtistItems                  []ArtistItems    `json:"ArtistItems"`
-	Album                        string           `json:"Album"`
-	CollectionType               string           `json:"CollectionType"`
-	DisplayOrder                 string           `json:"DisplayOrder"`
-	AlbumID                      string           `json:"AlbumId"`
-	AlbumPrimaryImageTag         string           `json:"AlbumPrimaryImageTag"`
-	SeriesPrimaryImageTag        string           `json:"SeriesPrimaryImageTag"`
-	AlbumArtist                  string           `json:"AlbumArtist"`
-	AlbumArtists                 []AlbumArtists   `json:"AlbumArtists"`
-	SeasonName                   string           `json:"SeasonName"`
+	// SpecialFeatureCount          int              `json:"SpecialFeatureCount"`
+	// DisplayPreferencesID         string           `json:"DisplayPreferencesId"`
+	// Status                       string           `json:"Status"`
+	// AirTime                      string           `json:"AirTime"`
+	// AirDays                      []string         `json:"AirDays"`
+	// Tags                         []string         `json:"Tags"`
+	// PrimaryImageAspectRatio      int              `json:"PrimaryImageAspectRatio"`
+	// Artists                      []string         `json:"Artists"`
+	// ArtistItems                  []ArtistItems    `json:"ArtistItems"`
+	// Album                        string           `json:"Album"`
+	// CollectionType               string           `json:"CollectionType"`
+	// DisplayOrder                 string           `json:"DisplayOrder"`
+	// AlbumID                      string           `json:"AlbumId"`
+	// AlbumPrimaryImageTag         string           `json:"AlbumPrimaryImageTag"`
+	// SeriesPrimaryImageTag        string           `json:"SeriesPrimaryImageTag"`
+	// AlbumArtist                  string           `json:"AlbumArtist"`
+	// AlbumArtists                 []AlbumArtists   `json:"AlbumArtists"`
+	// SeasonName                   string           `json:"SeasonName"`
 	MediaStreams                 []MediaStreams   `json:"MediaStreams"`
 	VideoType                    string           `json:"VideoType"`
 	PartCount                    int              `json:"PartCount"`
 	MediaSourceCount             int              `json:"MediaSourceCount"`
-	ImageTags                    ImageTags        `json:"ImageTags"`
-	BackdropImageTags            []string         `json:"BackdropImageTags"`
-	ScreenshotImageTags          []string         `json:"ScreenshotImageTags"`
-	ParentLogoImageTag           string           `json:"ParentLogoImageTag"`
-	ParentArtItemID              string           `json:"ParentArtItemId"`
-	ParentArtImageTag            string           `json:"ParentArtImageTag"`
-	SeriesThumbImageTag          string           `json:"SeriesThumbImageTag"`
-	ImageBlurHashes              ImageBlurHashes  `json:"ImageBlurHashes"`
-	SeriesStudio                 string           `json:"SeriesStudio"`
-	ParentThumbItemID            string           `json:"ParentThumbItemId"`
-	ParentThumbImageTag          string           `json:"ParentThumbImageTag"`
-	ParentPrimaryImageItemID     string           `json:"ParentPrimaryImageItemId"`
-	ParentPrimaryImageTag        string           `json:"ParentPrimaryImageTag"`
-	Chapters                     []Chapters       `json:"Chapters"`
-	LocationType                 string           `json:"LocationType"`
-	IsoType                      string           `json:"IsoType"`
-	MediaType                    string           `json:"MediaType"`
-	EndDate                      time.Time        `json:"EndDate"`
-	LockedFields                 []string         `json:"LockedFields"`
-	TrailerCount                 int              `json:"TrailerCount"`
-	MovieCount                   int              `json:"MovieCount"`
-	SeriesCount                  int              `json:"SeriesCount"`
-	ProgramCount                 int              `json:"ProgramCount"`
-	EpisodeCount                 int              `json:"EpisodeCount"`
-	SongCount                    int              `json:"SongCount"`
-	AlbumCount                   int              `json:"AlbumCount"`
-	ArtistCount                  int              `json:"ArtistCount"`
-	MusicVideoCount              int              `json:"MusicVideoCount"`
-	LockData                     bool             `json:"LockData"`
-	Width                        int              `json:"Width"`
-	Height                       int              `json:"Height"`
-	CameraMake                   string           `json:"CameraMake"`
-	CameraModel                  string           `json:"CameraModel"`
-	Software                     string           `json:"Software"`
-	ExposureTime                 int              `json:"ExposureTime"`
-	FocalLength                  int              `json:"FocalLength"`
-	ImageOrientation             string           `json:"ImageOrientation"`
-	Aperture                     int              `json:"Aperture"`
-	ShutterSpeed                 int              `json:"ShutterSpeed"`
-	Latitude                     int              `json:"Latitude"`
-	Longitude                    int              `json:"Longitude"`
-	Altitude                     int              `json:"Altitude"`
-	IsoSpeedRating               int              `json:"IsoSpeedRating"`
-	SeriesTimerID                string           `json:"SeriesTimerId"`
-	ProgramID                    string           `json:"ProgramId"`
-	ChannelPrimaryImageTag       string           `json:"ChannelPrimaryImageTag"`
-	StartDate                    time.Time        `json:"StartDate"`
-	CompletionPercentage         int              `json:"CompletionPercentage"`
-	IsRepeat                     bool             `json:"IsRepeat"`
-	EpisodeTitle                 string           `json:"EpisodeTitle"`
-	ChannelType                  string           `json:"ChannelType"`
+	// ImageTags                    ImageTags        `json:"ImageTags"`
+	// BackdropImageTags            []string         `json:"BackdropImageTags"`
+	// ScreenshotImageTags          []string         `json:"ScreenshotImageTags"`
+	// ParentLogoImageTag           string           `json:"ParentLogoImageTag"`
+	// ParentArtItemID              string           `json:"ParentArtItemId"`
+	// ParentArtImageTag            string           `json:"ParentArtImageTag"`
+	// SeriesThumbImageTag          string           `json:"SeriesThumbImageTag"`
+	// ImageBlurHashes              ImageBlurHashes  `json:"ImageBlurHashes"`
+	// SeriesStudio                 string           `json:"SeriesStudio"`
+	// ParentThumbItemID            string           `json:"ParentThumbItemId"`
+	// ParentThumbImageTag          string           `json:"ParentThumbImageTag"`
+	// ParentPrimaryImageItemID     string           `json:"ParentPrimaryImageItemId"`
+	// ParentPrimaryImageTag        string           `json:"ParentPrimaryImageTag"`
+	// Chapters                     []Chapters       `json:"Chapters"`
+	// LocationType                 string           `json:"LocationType"`
+	// IsoType                      string           `json:"IsoType"`
+	// MediaType                    string           `json:"MediaType"`
+	// EndDate                      time.Time        `json:"EndDate"`
+	// LockedFields                 []string         `json:"LockedFields"`
+	// TrailerCount                 int              `json:"TrailerCount"`
+	// MovieCount                   int              `json:"MovieCount"`
+	// SeriesCount                  int              `json:"SeriesCount"`
+	// ProgramCount                 int              `json:"ProgramCount"`
+	// EpisodeCount                 int              `json:"EpisodeCount"`
+	// SongCount                    int              `json:"SongCount"`
+	// AlbumCount                   int              `json:"AlbumCount"`
+	// ArtistCount                  int              `json:"ArtistCount"`
+	// MusicVideoCount              int              `json:"MusicVideoCount"`
+	// LockData                     bool             `json:"LockData"`
+	// Width                        int              `json:"Width"`
+	// Height                       int              `json:"Height"`
+	// CameraMake                   string           `json:"CameraMake"`
+	// CameraModel                  string           `json:"CameraModel"`
+	// Software                     string           `json:"Software"`
+	// ExposureTime                 int              `json:"ExposureTime"`
+	// FocalLength                  int              `json:"FocalLength"`
+	// ImageOrientation             string           `json:"ImageOrientation"`
+	// Aperture                     int              `json:"Aperture"`
+	// ShutterSpeed                 int              `json:"ShutterSpeed"`
+	// Latitude                     int              `json:"Latitude"`
+	// Longitude                    int              `json:"Longitude"`
+	// Altitude                     int              `json:"Altitude"`
+	// IsoSpeedRating               int              `json:"IsoSpeedRating"`
+	// SeriesTimerID                string           `json:"SeriesTimerId"`
+	// ProgramID                    string           `json:"ProgramId"`
+	// ChannelPrimaryImageTag       string           `json:"ChannelPrimaryImageTag"`
+	// StartDate                    time.Time        `json:"StartDate"`
+	// CompletionPercentage         int              `json:"CompletionPercentage"`
+	// IsRepeat                     bool             `json:"IsRepeat"`
+	// EpisodeTitle                 string           `json:"EpisodeTitle"`
+	// ChannelType                  string           `json:"ChannelType"`
 	Audio                        string           `json:"Audio"`
 	IsMovie                      bool             `json:"IsMovie"`
 	IsSports                     bool             `json:"IsSports"`
@@ -165,8 +165,8 @@ type JellyfinMetadata struct {
 	IsNews                       bool             `json:"IsNews"`
 	IsKids                       bool             `json:"IsKids"`
 	IsPremiere                   bool             `json:"IsPremiere"`
-	TimerID                      string           `json:"TimerId"`
-	CurrentProgram               CurrentProgram   `json:"CurrentProgram"`
+	// TimerID                      string           `json:"TimerId"`
+	// CurrentProgram               CurrentProgram   `json:"CurrentProgram"`
 }
 type ExternalUrls struct {
 	Name string `json:"Name"`
@@ -204,33 +204,33 @@ type MediaStreams struct {
 	IsInterlaced              bool   `json:"IsInterlaced"`
 	IsAVC                     bool   `json:"IsAVC"`
 	ChannelLayout             string `json:"ChannelLayout"`
-	BitRate                   int    `json:"BitRate"`
-	BitDepth                  int    `json:"BitDepth"`
-	RefFrames                 int    `json:"RefFrames"`
-	PacketLength              int    `json:"PacketLength"`
-	Channels                  int    `json:"Channels"`
-	SampleRate                int    `json:"SampleRate"`
-	IsDefault                 bool   `json:"IsDefault"`
-	IsForced                  bool   `json:"IsForced"`
-	Height                    int    `json:"Height"`
-	Width                     int    `json:"Width"`
-	AverageFrameRate          int    `json:"AverageFrameRate"`
-	RealFrameRate             int    `json:"RealFrameRate"`
+	// BitRate                   int    `json:"BitRate"`
+	// BitDepth                  int    `json:"BitDepth"`
+	// RefFrames                 int    `json:"RefFrames"`
+	// PacketLength              int    `json:"PacketLength"`
+	// Channels                  int    `json:"Channels"`
+	// SampleRate                int    `json:"SampleRate"`
+	// IsDefault                 bool   `json:"IsDefault"`
+	// IsForced                  bool   `json:"IsForced"`
+	// Height                    int    `json:"Height"`
+	// Width                     int    `json:"Width"`
+	// AverageFrameRate          int    `json:"AverageFrameRate"`
+	// RealFrameRate             int    `json:"RealFrameRate"`
 	Profile                   string `json:"Profile"`
 	Type                      string `json:"Type"`
 	AspectRatio               string `json:"AspectRatio"`
-	Index                     int    `json:"Index"`
-	Score                     int    `json:"Score"`
-	IsExternal                bool   `json:"IsExternal"`
-	DeliveryMethod            string `json:"DeliveryMethod"`
-	DeliveryURL               string `json:"DeliveryUrl"`
-	IsExternalURL             bool   `json:"IsExternalUrl"`
-	IsTextSubtitleStream      bool   `json:"IsTextSubtitleStream"`
-	SupportsExternalStream    bool   `json:"SupportsExternalStream"`
+	// Index                     int    `json:"Index"`
+	// Score                     int    `json:"Score"`
+	// IsExternal                bool   `json:"IsExternal"`
+	// DeliveryMethod            string `json:"DeliveryMethod"`
+	// DeliveryURL               string `json:"DeliveryUrl"`
+	// IsExternalURL             bool   `json:"IsExternalUrl"`
+	// IsTextSubtitleStream      bool   `json:"IsTextSubtitleStream"`
+	// SupportsExternalStream    bool   `json:"SupportsExternalStream"`
 	Path                      string `json:"Path"`
-	PixelFormat               string `json:"PixelFormat"`
-	Level                     int    `json:"Level"`
-	IsAnamorphic              bool   `json:"IsAnamorphic"`
+	// PixelFormat               string `json:"PixelFormat"`
+	// Level                     int    `json:"Level"`
+	// IsAnamorphic              bool   `json:"IsAnamorphic"`
 }
 type MediaAttachments struct {
 	Codec       string `json:"Codec"`
@@ -381,15 +381,15 @@ type GenreItems struct {
 	ID   string `json:"Id"`
 }
 type UserData struct {
-	Rating                int       `json:"Rating"`
-	PlayedPercentage      int       `json:"PlayedPercentage"`
-	UnplayedItemCount     int       `json:"UnplayedItemCount"`
-	PlaybackPositionTicks int       `json:"PlaybackPositionTicks"`
-	PlayCount             int       `json:"PlayCount"`
-	IsFavorite            bool      `json:"IsFavorite"`
-	Likes                 bool      `json:"Likes"`
-	LastPlayedDate        time.Time `json:"LastPlayedDate"`
-	Played                bool      `json:"Played"`
+	// Rating                int       `json:"Rating"`
+	// PlayedPercentage      int       `json:"PlayedPercentage"`
+	// UnplayedItemCount     int       `json:"UnplayedItemCount"`
+	// PlaybackPositionTicks int       `json:"PlaybackPositionTicks"`
+	// PlayCount             int       `json:"PlayCount"`
+	// IsFavorite            bool      `json:"IsFavorite"`
+	// Likes                 bool      `json:"Likes"`
+	// LastPlayedDate        time.Time `json:"LastPlayedDate"`
+	// Played                bool      `json:"Played"`
 	Key                   string    `json:"Key"`
 	ItemID                string    `json:"ItemId"`
 }

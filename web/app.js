@@ -61,7 +61,7 @@ function populateFields(config) {
     document.getElementById('jellyfin-ownernamefilter').value = config.jellyfin.ownernamefilter;
     document.getElementById('jellyfin-deviceuuidfilter').value = config.jellyfin.deviceuuidfilter;
     document.getElementById('jellyfin-playermachineidentifier').value = config.jellyfin.playermachineidentifier;
-    document.getElementById('jellyfin-playerip').value = config.jellyfin.playerip;
+    document.getElementById('jellyfin-userID').value = config.jellyfin.userID;
     document.getElementById('jellyfin-apiToken').value = config.jellyfin.apiToken;
 
     // Signal
@@ -138,7 +138,7 @@ function buildFinalConfig() {
         "ownernamefilter": document.getElementById('jellyfin-ownernamefilter').value,
         "deviceuuidfilter": document.getElementById('jellyfin-deviceuuidfilter').value,
         "playermachineidentifier": document.getElementById('jellyfin-playermachineidentifier').value,
-        "playerip": document.getElementById('jellyfin-playerip').value,
+        "userID": document.getElementById('jellyfin-userID').value,
         "apiToken": document.getElementById('jellyfin-apiToken').value
     };
     const signalConfig = {

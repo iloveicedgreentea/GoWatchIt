@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
@@ -40,17 +43,31 @@ func NewClient(url, port string, machineID string, clientIP string) *JellyfinCli
 }
 
 // generic function to make a request 
-func (c *JellyfinClient) makeRequest(endpoint string) (io.ReadCloser, error) {
-	u := fmt.Sprintf("%v:%v%v", c.ServerURL, c.Port, endpoint)
-	// TODO: add auth
-	log.Debugf("Making request to %v", u)
-	resp, err := c.HTTPClient.Get(u)
+func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadCloser, error) {
+	u := url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%v:%v", c.ServerURL, c.Port),
+		Path:   endpoint,
+	}
+	log.Debugf("Making request to %v", u.String())
+	// create request with auth
+	r := http.Request{
+		Method: strings.ToUpper(method),
+		URL:    &u,
+		Header: http.Header{},
+	}
+	// add auth
+	// url encoded header value
+	r.Header.Add("Authorization", fmt.Sprintf("MediaBrowser Token=\"%v\"", config.GetString("jellyfin.apitoken")))
+	log.Debugf("Request: %#v", r)
+	// make request
+	resp, err := c.HTTPClient.Do(&r)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("error making request to %v: %v", u, resp.Status)
+		return nil, fmt.Errorf("error making request to %#v: %v", u, resp.Status)
 	}
 	
 	return resp.Body, err
@@ -62,7 +79,7 @@ func (c *JellyfinClient) makeRequest(endpoint string) (io.ReadCloser, error) {
 func (c *JellyfinClient) GetCodec(userID, itemID string) (string, error) {
 	// take the itemID and get the codec
 	endpoint := fmt.Sprintf("/Users/%s/Items/%s", userID, itemID)
-	r, err := c.makeRequest(endpoint)
+	r, err := c.makeRequest(endpoint, "get")
 	if err != nil {
 		return "", err
 	}

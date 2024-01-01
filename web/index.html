@@ -443,10 +443,10 @@
                 <div>
                     <label for="jellyfin-url">jellyfin URL
                         <span class="description">
-                            URL - "http://x.x.x.x" <- Must have http:// </span>
+                            IP or domain nail </span>
                     </label>
 
-                    <input type="text" id="jellyfin-url" name="jellyfin.url" placeholder="http://x.x.x.x">
+                    <input type="text" id="jellyfin-url" name="jellyfin.url" placeholder="x.x.x.x">
                 </div>
                 <div>
                     <label for="jellyfin-port">jellyfin port
@@ -487,18 +487,19 @@
                     <input type="text" id="jellyfin-playermachineidentifier" name="jellyfin.playermachineidentifier">
                 </div>
                 <div>
-                    <label for="jellyfin-playerip">Player IP
+                    <label for="jellyfin-userID">User ID
                         <span class="description">
-                            optional if not using hdmi sync IP of your player device (like a shield)
+                            The GUID of your user. Get this from your jellyfin profile page -> check the url
+                            e.g http://1.2.3.4:8096/web/index.html#!/myprofile.html?userId=183349739232834923894235 <- this value
                         </span>
                     </label>
-                    <input type="text" id="jellyfin-playerip" name="jellyfin.playerip">
+                    <input type="text" id="jellyfin-userID" name="jellyfin.userID">
                 </div>
 
                 <div>
-                    <label for="jellyfin-apiToken">Enable Trailer Support
+                    <label for="jellyfin-apiToken">API Token
                         <span class="description">
-                            if you enable trailers before movies, it can process it like turn off lights. no beq
+                            The Jellyfin API token from Dashboard -> Admin -> API Keys
                         </span>
                     </label>
 
