@@ -1,4 +1,4 @@
-package denon
+package avr
 
 import (
 	"testing"
@@ -6,7 +6,10 @@ import (
 )
 
 func setupTest() *DenonClient {
-	return NewClient("192.168.88.40", "23")
+	return &DenonClient{
+		ServerURL: "192.168.88.40",
+		Port: "23",
+	}
 }
 func TestMakeReq(t *testing.T) {
 	c := setupTest()
