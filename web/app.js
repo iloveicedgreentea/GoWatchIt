@@ -5,8 +5,7 @@ function populateFields(config) {
     // EZBeq
     document.getElementById('ezbeq-adjustmastervolumewithprofile').checked = config.ezbeq.adjustmastervolumewithprofile;
     document.getElementById('ezbeq-enabled').checked = config.ezbeq.enabled;
-    document.getElementById('ezbeq-denonip').value = config.ezbeq.denonip;
-    document.getElementById('ezbeq-denonport').value = config.ezbeq.denonport;
+    document.getElementById('ezbeq-avrip').value = config.ezbeq.avrip;
     document.getElementById('ezbeq-dryrun').checked = config.ezbeq.dryrun;
     document.getElementById('ezbeq-enabletvbeq').checked = config.ezbeq.enabletvbeq;
     document.getElementById('ezbeq-notifyendpointname').value = config.ezbeq.notifyendpointname;
@@ -20,6 +19,7 @@ function populateFields(config) {
     document.getElementById('ezbeq-stopplexifmismatch').checked = config.ezbeq.stopplexifmismatch;
     document.getElementById('ezbeq-url').value = config.ezbeq.url;
     document.getElementById('ezbeq-useavrcodecsearch').checked = config.ezbeq.useavrcodecsearch;
+    document.getElementById('ezbeq-avrbrand').value = config.ezbeq.avrbrand;
 
 
     // HomeAssistant
@@ -79,8 +79,7 @@ function buildFinalConfig() {
     const ezbeqConfig = {
         "adjustmastervolumewithprofile": document.getElementById('ezbeq-adjustmastervolumewithprofile').checked,
         "enabled": document.getElementById('ezbeq-enabled').checked,
-        "denonip": document.getElementById('ezbeq-denonip').value,
-        "denonport": document.getElementById('ezbeq-denonport').value,
+        "avrip": document.getElementById('ezbeq-avrip').value,
         "dryrun": document.getElementById('ezbeq-dryrun').checked,
         "enabletvbeq": document.getElementById('ezbeq-enabletvbeq').checked,
         "notifyendpointname": document.getElementById('ezbeq-notifyendpointname').value,
@@ -90,6 +89,7 @@ function buildFinalConfig() {
         "slots": slotsArray,
         "stopplexifmismatch": document.getElementById('ezbeq-stopplexifmismatch').checked,
         "url": document.getElementById('ezbeq-url').value,
+        "avrbrand": document.getElementById('ezbeq-avrbrand').value,
         "useavrcodecsearch": document.getElementById('ezbeq-useavrcodecsearch').checked
     };
     const homeAssistantConfig = {

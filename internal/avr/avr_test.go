@@ -6,7 +6,7 @@ import (
 )
 
 func setupAvrTest() AVRClient {
-	return GetAVRClient("denon", "192.168.88.40", "23")
+	return GetAVRClient("denon", "192.168.88.40")
 }
 func TestAvrGetAudioMode(t *testing.T) {
 	c := setupAvrTest()

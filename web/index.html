@@ -51,24 +51,6 @@
                         name="ezbeq.adjustmastervolumewithprofile" checked>
                 </div>
                 <div>
-                    <label for="ezbeq-denonip">Denon AVR IP address
-                        <span class="description">
-                            IP Address for your AVR - "x.x.x.x"
-                        </span>
-                    </label>
-
-                    <input type="text" id="ezbeq-denonip" name="ezbeq.denonip">
-                </div>
-                <div>
-                    <label for="ezbeq-denonport">Denon AVR Port
-                        <span class="description">
-                            Port for your AVR (23)
-                        </span>
-                    </label>
-
-                    <input type="text" id="ezbeq-denonport" name="ezbeq.denonport">
-                </div>
-                <div>
                     <label for="ezbeq-dryrun">Dryrun
                         <span class="description">
                             Keep EzBEQ in dryrun mode
@@ -155,16 +137,33 @@
                 <div>
                     <label for="ezbeq-useavrcodecsearch">Use AVR For Codec Lookup
                         <span class="description">
-                            Use a supported AVR to get the codec instead of Plex metadata. More accurate, but slower
+                            Use a supported AVR to get the codec instead of Plex metadata. Could be more accurate.
                         </span>
                     </label>
 
                     <input type="checkbox" id="ezbeq-useavrcodecsearch" name="ezbeq.useavrcodecsearch">
                 </div>
+                <div>
+                    <label for="ezbeq-avrbrand">Source
+                        <span class="description">
+                            supported AVR brands - Currently only supports "denon" for all Denon and Marantz
+                        </span>
+                    </label>
+                    <!-- <input type="text" id="signal-source" name="signal.source"> -->
+                    <select id="ezbeq-avrbrand" name="ezbeq.avrbrand">
+                        <option value="denon">JVC</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="ezbeq-avrip">AVR IP address
+                        <span class="description">
+                            IP Address for your AVR - "x.x.x.x"
+                        </span>
+                    </label>
+
+                    <input type="text" id="ezbeq-avrip" name="ezbeq.avrip">
+                </div>
             </div>
-            <!-- HomeAssistant Section -->
-            <!-- HomeAssistant Section -->
-            <!-- HomeAssistant Section -->
             <!-- HomeAssistant Section -->
             <h2>HomeAssistant</h2>
             <div>

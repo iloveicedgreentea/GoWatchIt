@@ -9,10 +9,10 @@ type AVRClient interface {
 }
 
 // GetAVRClient returns a new instance of an AVRClient based on a brand like denon
-func GetAVRClient(brand, url, port string) AVRClient {
+func GetAVRClient(brand, url string) AVRClient {
     switch brand {
     case "denon":
-        return &DenonClient{ServerURL: url, Port: port, TelClient: telnet.StandardCaller}
+        return &DenonClient{ServerURL: url, Port: "23", TelClient: telnet.StandardCaller}
     // Add cases for other brands
     default:
         return nil
