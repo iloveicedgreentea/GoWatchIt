@@ -3,7 +3,7 @@ package handlers
 import (
 	"strings"
 
-	"github.com/iloveicedgreentea/go-plex/internal/denon"
+	"github.com/iloveicedgreentea/go-plex/internal/avr"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
 )
 
@@ -11,18 +11,7 @@ import (
 // I notice it tends to do it RANDOMLY and it is annoying as hell
 // so I want to get notified when it happens
 
-// TODO: add optional thing for it to tell plex to stop playing and start the stream again
-// TODO: make test
-func isExpectedCodecPlaying(c *denon.DenonClient, p *plex.PlexClient, uuid string, denonCodec string) (string, bool) {
-	plexPlaying, err := p.GetCodecFromSession(uuid)
-	if err != nil {
-		log.Errorf("Error getting plex audio stream: %s", err)
-		return "", false
-	}
 
-	// compare the two
-	return plexPlaying, mapDenonToBeq(denonCodec) != plex.MapPlexToBeqAudioCodec(plexPlaying, "")
-}
 
 // TODO: map denon to beq
 // TODO: test

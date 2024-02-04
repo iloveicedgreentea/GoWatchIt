@@ -42,7 +42,19 @@ func NewClient(url, port string, machineID string, clientIP string) *JellyfinCli
 		ClientIP:  clientIP,
 	}
 }
+func (c *JellyfinClient) DoPlaybackAction(action string) error {
+    // Implement the action logic specific to Jellyfin
+    return nil
+}
+func (c *JellyfinClient) GetPlexMovieDb(payload interface{}) string {
+    // Implement the action logic specific to Jellyfin
+    return ""
+}
 
+// TODO: finish
+func (c *JellyfinClient) GetAudioCodec(payload interface{}) (string, error) {
+	return "", nil
+}
 // generic function to make a request
 func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadCloser, error) {
 	u := url.URL{
@@ -60,6 +72,8 @@ func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadClo
 	// add auth
 	// url encoded header value
 	r.Header.Add("Authorization", fmt.Sprintf("MediaBrowser Token=\"%v\"", config.GetString("jellyfin.apitoken")))
+	// support emby also
+	r.Header.Add("X-Emby-Token", fmt.Sprintf("%v", config.GetString("jellyfin.apitoken")))
 	// make request
 	resp, err := c.HTTPClient.Do(&r)
 	if err != nil {
@@ -75,7 +89,7 @@ func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadClo
 
 // TODO: is paused
 
-func  (c *JellyfinClient) GetMetadata(userID, itemID string) (metadata models.JellyfinMetadata, err error) {
+func (c *JellyfinClient) GetMetadata(userID, itemID string) (metadata models.JellyfinMetadata, err error) {
 	// take the itemID and get the codec
 	endpoint := fmt.Sprintf("/Users/%s/Items/%s", userID, itemID)
 	r, err := c.makeRequest(endpoint, "get")
@@ -102,16 +116,17 @@ func  (c *JellyfinClient) GetMetadata(userID, itemID string) (metadata models.Je
 }
 
 // get the codec of a media file returns the codec and the display title e.g eac3, Dolby Digital+
-func (c *JellyfinClient) GetCodec(payload models.JellyfinMetadata) (codec, displayTitle string, err error) {
+func (c *JellyfinClient) GetCodec(payload models.JellyfinMetadata) (codec, displayTitle, codecProfile string, err error) {
 	// get the audio stream
 	for _, stream := range payload.MediaStreams {
 		if stream.Type == "Audio" {
-			log.Debugf("Codec: %#v", stream)
-			return stream.Codec, stream.DisplayTitle, nil
+			// TODO: get profile in additoin to codec? diplsay title too
+			log.Debugf("Audio stream: %#v", stream)
+			return stream.Codec, stream.DisplayTitle, stream.Profile, nil
 		}
 	}
 
-	return "", "", errors.New("no audio stream found")
+	return "", "", "", errors.New("no audio stream found")
 }
 
 func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition string) {
@@ -146,4 +161,105 @@ func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition st
 	default:
 		return ""
 	}
+}
+
+func insensitiveContains(s string, sub string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
+}
+
+func containsDDP(s string) bool {
+	//English (EAC3 5.1) -> dd+ atmos?
+	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
+	// may not always be the case but easier to assume so
+	ddPlusNames := []string{"ddp", "eac3", "e-ac3", "dd+"}
+	for _, name := range ddPlusNames {
+		if insensitiveContains(strings.ToLower(s), name) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func MapJFToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
+	log.Debugf("Codecs from jellyfin received: %v, %v", codecTitle, codecExtendTitle)
+
+	// Titles are more likely to have atmos so check it first
+
+	// Atmos logic
+	atmosFlag := insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecTitle, "Atmos")
+
+	// check if contains DDP
+	ddpFlag := containsDDP(codecTitle) || containsDDP(codecExtendTitle)
+
+	log.Debugf("Atmos: %v - DD+: %v", atmosFlag, ddpFlag)
+	// if true and false, then Atmos
+	if atmosFlag && !ddpFlag {
+		return "Atmos"
+	}
+
+	// if true and true, DD+ Atmos
+	if atmosFlag && ddpFlag {
+		return "DD+ Atmos"
+	}
+
+	// Assume eac-3 5.1 is dd+ atmos since almost all metadata says so
+	if strings.Contains(codecExtendTitle, "5.1") && ddpFlag {
+		return "DD+ Atmos"
+	}
+
+	// if not atmos and DD+, return DD+
+	if !atmosFlag && ddpFlag {
+		return "DD+"
+	}
+
+	// if False and false, then check others
+	switch {
+	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata. This will get confirmed later
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
+		return "AtmosMaybe"
+	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
+		return "AtmosMaybe"
+	// DTS:X
+	case insensitiveContains(codecExtendTitle, "DTS:X") || insensitiveContains(codecExtendTitle, "DTS-X"):
+		return "DTS-X"
+	// DTS MA 7.1 containers but not DTS:X codecs
+	case insensitiveContains(codecTitle, "DTS-HD MA 7.1") && !insensitiveContains(codecExtendTitle, "DTS:X") && !insensitiveContains(codecExtendTitle, "DTS-X"):
+		return "DTS-HD MA 7.1"
+	// DTS HA MA 5.1
+	case insensitiveContains(codecExtendTitle, "DTS-HD MA 5.1") || insensitiveContains(codecTitle, "DTS-HD MA 5.1"):
+		return "DTS-HD MA 5.1"
+	case insensitiveContains(codecTitle, "DTS") && insensitiveContains(codecExtendTitle, "DTS-HD MA") && insensitiveContains(codecExtendTitle, "5.1"):
+		return "DTS-HD MA 5.1"
+	// DTS 5.1
+	case insensitiveContains(codecTitle, "DTS 5.1"):
+		return "DTS 5.1"
+	// TrueHD 5.1
+	case insensitiveContains(codecTitle, "TRUEHD 5.1"):
+		return "TrueHD 5.1"
+	// TrueHD 6.1
+	case insensitiveContains(codecTitle, "TRUEHD 6.1"):
+		return "TrueHD 6.1"
+	// DTS HRA
+	case insensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
+		return "DTS-HD HR 7.1"
+	case insensitiveContains(codecTitle, "DTS-HD HRA 5.1"):
+		return "DTS-HD HR 5.1"
+	// LPCM
+	case insensitiveContains(codecTitle, "LPCM 5.1"):
+		return "LPCM 5.1"
+	case insensitiveContains(codecTitle, "LPCM 7.1"):
+		return "LPCM 7.1"
+	case insensitiveContains(codecTitle, "LPCM 2.0"):
+		return "LPCM 2.0"
+	case insensitiveContains(codecTitle, "AAC Stereo"):
+		return "AAC 2.0"
+	case insensitiveContains(codecTitle, "AC3") && insensitiveContains(codecExtendTitle, "5.1"):
+		return "AC3 5.1"
+	// case insensitiveContains(codecTitle, "AC3 5.1") || insensitiveContains(codecTitle, "EAC3 5.1"):
+	// 	return "AC3 5.1"
+	default:
+		return "Empty"
+	}
+
 }

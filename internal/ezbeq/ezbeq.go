@@ -282,7 +282,7 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
-	if !config.GetBool("beq.enabled") {
+	if !config.GetBool("ezbeq.enabled") {
 		log.Debug("BEQ is disabled, skipping")
 		return nil
 	}
@@ -385,7 +385,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 
 // UnloadBeqProfile will unload all profiles from all devices
 func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
-	if !config.GetBool("beq.enabled") {
+	if !config.GetBool("ezbeq.enabled") {
 		log.Debug("BEQ is disabled, skipping")
 		return nil
 	}

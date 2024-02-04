@@ -12,7 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
-	"github.com/iloveicedgreentea/go-plex/internal/denon"
+	"github.com/iloveicedgreentea/go-plex/internal/avr"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
@@ -145,32 +145,7 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 	}
 }
 
-// readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
-	var err error
-	var isSignal bool
 
-	for i := 0; i < waitTime; i++ {
-		isSignal, err = haClient.ReadAttributes(haClient.EntityName, attrResp, entType)
-		if isSignal {
-			log.Debug("HDMI sync complete")
-			return isSignal, nil
-		}
-		if err != nil {
-			log.Errorf("Error reading envy attributes: %v", err)
-			return false, err
-		}
-		// otherwise continue
-		time.Sleep(1 * time.Second)
-	}
-	if err != nil {
-		log.Errorf("Error reading envy attributes: %v", err)
-		return false, err
-	}
-
-	return false, err
-
-}
 
 // interfaceRemote sends the cmd to your desired script to stop or play
 func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
@@ -187,109 +162,14 @@ func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 
 }
 
-// playbackInteface is an interface to support various forms of playback
-func playbackInteface(action string, h *homeassistant.HomeAssistantClient, p *plex.PlexClient) error {
-	if config.GetBool("plex.enabled") {
-		return p.DoPlaybackAction(action)
-	} else {
-		return interfaceRemote(action, h)
-	}
-}
 
-// TODO: test this
-// waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
-func waitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, plexClient *plex.PlexClient) {
-	if !config.GetBool("signal.enabled") {
-		*skipActions = false
-		wg.Done()
-		return
-	}
-
-	log.Debug("Running HDMI sync wait")
-	defer func() {
-		// play item no matter what
-		err := playbackInteface("play", haClient, plexClient)
-		if err != nil {
-			log.Errorf("Error playing plex: %v", err)
-			return
-		}
-
-		// continue processing webhooks when done
-		*skipActions = false
-		wg.Done()
-	}()
-
-	signalSource := config.GetString("signal.source")
-	var err error
-	var signal bool
-
-	// pause plex
-	log.Debug("pausing plex")
-	err = playbackInteface("pause", haClient, plexClient)
-	if err != nil {
-		log.Errorf("Error pausing plex: %v", err)
-		return
-	}
-
-	switch signalSource {
-	case "envy":
-		// read envy attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAEnvyResponse{}, haClient)
-	case "jvc":
-		// read jvc attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAjvcResponse{}, haClient)
-	case "sensor":
-		signal, err = readAttrAndWait(30, "binary_sensor", &models.HABinaryResponse{}, haClient)
-	default:
-		// TODO: maybe use a 15 sec delay?
-		log.Debug("using seconds for hdmi sync")
-		sec, err := strconv.Atoi(signalSource)
-		if err != nil {
-			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
-			return
-		}
-		time.Sleep(time.Duration(sec) * time.Second)
-
-	}
-
-	log.Debugf("HDMI Signal value is %v", signal)
-	if err != nil {
-		log.Errorf("error getting HDMI signal: %v", err)
-	}
-
-}
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useDenonCodec bool, data models.MediaContainer, skipActions *bool) {
-	wg := &sync.WaitGroup{}
-
-	// stop processing webhooks
-	*skipActions = true
-	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
-	if err != nil {
-		log.Error(err)
-	}
-	go changeLight("off")
-	// go changeAspect(client, payload, wg)
-	go changeMasterVolume(m.MediaType)
-
-	// if not using denoncodec, do this in background
-	if !useDenonCodec {
-		wg.Add(1)
-		// sets skipActions to false on completion
-		go waitForHDMISync(wg, skipActions, haClient, client)
-	}
-
-	// always unload in case something is loaded from movie for tv
-	err = beqClient.UnloadBeqProfile(m)
-	if err != nil {
-		log.Errorf("Error unloading beq on startup!! : %v", err)
-		return
-	}
-
+func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *avr.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
+	
 	// slower but more accurate
 	// TODO: abstract library this for any AVR
-	if useDenonCodec {
+	if useAvrCodec {
 		// TODO: make below a function
 		// wait for sync
 		wg.Add(1)
@@ -465,7 +345,7 @@ func checkUUID(clientUUID string, filterConfig string) bool {
 }
 
 // based on event type, determine what to do
-func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *denon.DenonClient, useDenonCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
+func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -516,7 +396,8 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	case "media.play":
 		log.Debug("Event Router: media.play received")
 		// TODO: add lights and stuff here to do async, not blocked by other functions
-		mediaPlay(plexClient, beqClient, haClient, denonClient, payload, model, useDenonCodec, data, skipActions)
+		wg := &sync.WaitGroup{}
+		commonPlay(beqClient, haClient, denonClient, payload, model, useAvrCodec, data, skipActions, wg)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
 		mediaStop(beqClient, haClient, payload, model)
@@ -605,27 +486,6 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 
 // }
 
-// trigger HA for MV change per type
-func changeMasterVolume(mediaType string) {
-	if config.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && config.GetBool("homeAssistant.enabled") {
-		log.Debug("changeMasterVolume: Changing volume")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicVolume"))
-		if err != nil {
-			log.Error()
-		}
-	}
-}
-
-// trigger HA for light change given entity and desired state
-func changeLight(state string) {
-	if config.GetBool("homeAssistant.triggerLightsOnEvent") && config.GetBool("homeAssistant.enabled") {
-		log.Debug("changeLight: Changing light")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topicLights"))
-		if err != nil {
-			log.Errorf("Error changing light: %v", err)
-		}
-	}
-}
 
 // entry point for background tasks
 func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
@@ -636,8 +496,8 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 	var err error
 	var deviceNames []string
 	var model *models.SearchRequest
-	var denonClient *denon.DenonClient
-	var useDenonCodec bool
+	var avrClient avr.AVRClient
+	var useAvrCodec bool
 
 	// Server Info
 	plexClient := plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"), config.GetString("plex.playerMachineIdentifier"), config.GetString("plex.playerIP"))
@@ -681,8 +541,10 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 	}
 	if config.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")
-		denonClient = denon.NewClient(config.GetString("ezbeq.DenonIP"), config.GetString("ezbeq.DenonPort"))
-		useDenonCodec = true
+		avrClient = avr.GetAVRClient(config.GetString("ezbeq.avrurl"))
+		if avrClient != nil {
+			useAvrCodec = true
+		}
 	}
 
 	// pointer so it can be modified by mediaPlay at will and be shared
@@ -694,7 +556,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 		log.Debugf("Current length of plexChan in PlexWorker: %d", len(plexChan))
 		// determine what to do
 		log.Debug("Sending new payload to eventRouter")
-		eventRouter(plexClient, beqClient, haClient, denonClient, useDenonCodec, i, model, skipActions)
+		eventRouter(plexClient, beqClient, haClient, avrClient, useAvrCodec, i, model, skipActions)
 		log.Debug("eventRouter done processing payload")
 	}
 

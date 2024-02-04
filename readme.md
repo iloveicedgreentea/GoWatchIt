@@ -40,6 +40,7 @@
 Players Supported:
 * Plex 
 * Jellyfin (experimental)
+* Emby (no support or testing)
 
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
@@ -56,6 +57,7 @@ Other cool stuff:
 * Built in support for Home Assistant and Minidsp
 
 > ℹ Jellyfin support is coming soon®
+
 
 This application is primarily focused on Plex and HomeAssistant but I plan on adding support for other sources in the future. 
 
@@ -93,7 +95,7 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 You must use the [official Jellyfin Webhooks plugin](https://github.com/jellyfin/jellyfin-plugin-webhook/tree/master) to send webhooks to this application.
 
 1) Create a Generic webhook (NOT GenericForm)
-2) Add http://(your-server-ip):9999/jellyfinwebook as the url
+2) Add http://(your-server-ip):9999/jellyfinwebhook as the url
 3) Types:
   * PlaybackStart
   * PlaybackProgress (needed for pause)
@@ -126,16 +128,16 @@ Configure the webhook in whatever way you want but it *must* include the followi
 1) Navigate to the dashboard
 2) Click on“API Keys” under “Advanced” 
 3) Click “Create”
-4) Store the API securely 
+4) Add API Key to the application config
 
-#### Configure 
+### Emby
 
+Emby support is added by coincidence due to Jellyfin support (its the same API codebase). I have not tested it and do not plan to. Configure it the same way as Jellyfin and it might work but I cannot guarantee it.
 
 ### Non-Docker Setup
 I don't recommend this as it is more work and you will need to set up systemd or something to keep it running. I don't provide support for this method but if you know what you are doing, it is very easy to build the binary and run it.
 
 TLDR: `make build`
-
 
 ## Usage
 

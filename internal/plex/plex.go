@@ -264,25 +264,31 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 }
 
 // get the type of audio codec for BEQ purpose like atmos, dts-x, etc
-func (c *PlexClient) GetAudioCodec(data models.MediaContainer) (string, error) {
+func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	var plexAudioCodec string
 	// loop over streams, find the FIRST stream with ID = 2 (this is primary audio track) and read that val
 	// loop instead of index because of edge case with two or more video streams
-	for _, val := range data.Video.Media.Part.Stream {
-		if val.StreamType == "2" {
-			log.Debugf("Found codecs: %s, %s", val.DisplayTitle, val.ExtendedDisplayTitle)
-			return MapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
+	if mc, ok := data.(models.MediaContainer); ok {
+		for _, val := range mc.Video.Media.Part.Stream {
+			if val.StreamType == "2" {
+				log.Debugf("Found codecs: %s, %s", val.DisplayTitle, val.ExtendedDisplayTitle)
+				return MapPlexToBeqAudioCodec(val.DisplayTitle, val.ExtendedDisplayTitle), nil
+			}
 		}
-	}
 
-	if plexAudioCodec == "" {
-		log.Error("did not find codec from plex metadata")
-		log.Error("Dumping stream data")
-		log.Error(data.Video.Media.Part.Stream)
-		return "", errors.New("no codec found")
+		if plexAudioCodec == "" {
+			log.Error("did not find codec from plex metadata")
+			log.Error("Dumping stream data")
+			log.Error(mc.Video.Media.Part.Stream)
+			return "", errors.New("no codec found")
+		}
+	} else {
+		return "", errors.New("invalid data type")
 	}
-
 	return plexAudioCodec, nil
+}
+func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
+    return ""
 }
 
 // remove garbage from imdb string and convert to float64

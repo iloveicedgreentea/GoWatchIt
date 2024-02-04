@@ -58,7 +58,7 @@ type JellyfinMetadata struct {
 	// RunTimeTicks                 int              `json:"RunTimeTicks"`
 	// PlayAccess                   string           `json:"PlayAccess"`
 	AspectRatio                  string           `json:"AspectRatio"`
-	// ProductionYear               int              `json:"ProductionYear"`
+	ProductionYear               int              `json:"ProductionYear"`
 	// IsPlaceHolder                bool             `json:"IsPlaceHolder"`
 	// Number                       string           `json:"Number"`
 	// ChannelNumber                string           `json:"ChannelNumber"`
