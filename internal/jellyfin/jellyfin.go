@@ -12,6 +12,7 @@ import (
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/common"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -163,9 +164,7 @@ func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition st
 	}
 }
 
-func insensitiveContains(s string, sub string) bool {
-	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
-}
+
 
 func containsDDP(s string) bool {
 	//English (EAC3 5.1) -> dd+ atmos?
@@ -173,7 +172,7 @@ func containsDDP(s string) bool {
 	// may not always be the case but easier to assume so
 	ddPlusNames := []string{"ddp", "eac3", "e-ac3", "dd+"}
 	for _, name := range ddPlusNames {
-		if insensitiveContains(strings.ToLower(s), name) {
+		if common.InsensitiveContains(strings.ToLower(s), name) {
 			return true
 		}
 	}
@@ -187,7 +186,7 @@ func MapJFToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// Titles are more likely to have atmos so check it first
 
 	// Atmos logic
-	atmosFlag := insensitiveContains(codecExtendTitle, "Atmos") || insensitiveContains(codecTitle, "Atmos")
+	atmosFlag := common.InsensitiveContains(codecExtendTitle, "Atmos") || common.InsensitiveContains(codecTitle, "Atmos")
 
 	// check if contains DDP
 	ddpFlag := containsDDP(codecTitle) || containsDDP(codecExtendTitle)
@@ -216,47 +215,47 @@ func MapJFToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 	// if False and false, then check others
 	switch {
 	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata. This will get confirmed later
-	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
+	case common.InsensitiveContains(codecTitle, "TRUEHD 7.1") && common.InsensitiveContains(codecExtendTitle, "TrueHD 7.1"):
 		return "AtmosMaybe"
-	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "Surround 7.1"):
+	case common.InsensitiveContains(codecTitle, "TRUEHD 7.1") && common.InsensitiveContains(codecExtendTitle, "Surround 7.1"):
 		return "AtmosMaybe"
 	// DTS:X
-	case insensitiveContains(codecExtendTitle, "DTS:X") || insensitiveContains(codecExtendTitle, "DTS-X"):
+	case common.InsensitiveContains(codecExtendTitle, "DTS:X") || common.InsensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-X"
 	// DTS MA 7.1 containers but not DTS:X codecs
-	case insensitiveContains(codecTitle, "DTS-HD MA 7.1") && !insensitiveContains(codecExtendTitle, "DTS:X") && !insensitiveContains(codecExtendTitle, "DTS-X"):
+	case common.InsensitiveContains(codecTitle, "DTS-HD MA 7.1") && !common.InsensitiveContains(codecExtendTitle, "DTS:X") && !common.InsensitiveContains(codecExtendTitle, "DTS-X"):
 		return "DTS-HD MA 7.1"
 	// DTS HA MA 5.1
-	case insensitiveContains(codecExtendTitle, "DTS-HD MA 5.1") || insensitiveContains(codecTitle, "DTS-HD MA 5.1"):
+	case common.InsensitiveContains(codecExtendTitle, "DTS-HD MA 5.1") || common.InsensitiveContains(codecTitle, "DTS-HD MA 5.1"):
 		return "DTS-HD MA 5.1"
-	case insensitiveContains(codecTitle, "DTS") && insensitiveContains(codecExtendTitle, "DTS-HD MA") && insensitiveContains(codecExtendTitle, "5.1"):
+	case common.InsensitiveContains(codecTitle, "DTS") && common.InsensitiveContains(codecExtendTitle, "DTS-HD MA") && common.InsensitiveContains(codecExtendTitle, "5.1"):
 		return "DTS-HD MA 5.1"
 	// DTS 5.1
-	case insensitiveContains(codecTitle, "DTS 5.1"):
+	case common.InsensitiveContains(codecTitle, "DTS 5.1"):
 		return "DTS 5.1"
 	// TrueHD 5.1
-	case insensitiveContains(codecTitle, "TRUEHD 5.1"):
+	case common.InsensitiveContains(codecTitle, "TRUEHD 5.1"):
 		return "TrueHD 5.1"
 	// TrueHD 6.1
-	case insensitiveContains(codecTitle, "TRUEHD 6.1"):
+	case common.InsensitiveContains(codecTitle, "TRUEHD 6.1"):
 		return "TrueHD 6.1"
 	// DTS HRA
-	case insensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
+	case common.InsensitiveContains(codecTitle, "DTS-HD HRA 7.1"):
 		return "DTS-HD HR 7.1"
-	case insensitiveContains(codecTitle, "DTS-HD HRA 5.1"):
+	case common.InsensitiveContains(codecTitle, "DTS-HD HRA 5.1"):
 		return "DTS-HD HR 5.1"
 	// LPCM
-	case insensitiveContains(codecTitle, "LPCM 5.1"):
+	case common.InsensitiveContains(codecTitle, "LPCM 5.1"):
 		return "LPCM 5.1"
-	case insensitiveContains(codecTitle, "LPCM 7.1"):
+	case common.InsensitiveContains(codecTitle, "LPCM 7.1"):
 		return "LPCM 7.1"
-	case insensitiveContains(codecTitle, "LPCM 2.0"):
+	case common.InsensitiveContains(codecTitle, "LPCM 2.0"):
 		return "LPCM 2.0"
-	case insensitiveContains(codecTitle, "AAC Stereo"):
+	case common.InsensitiveContains(codecTitle, "AAC Stereo"):
 		return "AAC 2.0"
-	case insensitiveContains(codecTitle, "AC3") && insensitiveContains(codecExtendTitle, "5.1"):
+	case common.InsensitiveContains(codecTitle, "AC3") && common.InsensitiveContains(codecExtendTitle, "5.1"):
 		return "AC3 5.1"
-	// case insensitiveContains(codecTitle, "AC3 5.1") || insensitiveContains(codecTitle, "EAC3 5.1"):
+	// case common.InsensitiveContains(codecTitle, "AC3 5.1") || common.InsensitiveContains(codecTitle, "EAC3 5.1"):
 	// 	return "AC3 5.1"
 	default:
 		return "Empty"

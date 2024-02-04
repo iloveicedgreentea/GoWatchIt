@@ -10,7 +10,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
-	"github.com/iloveicedgreentea/go-plex/internal/jellyfin"
+	// "github.com/iloveicedgreentea/go-plex/internal/jellyfin"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
@@ -39,8 +39,9 @@ func InitializeTestDependencies() TestDeps {
 func InitializeMediaClient(payload interface{}) Client {
 	switch p := payload.(type) {
 	case models.JellyfinWebhook:
+		return nil
 		// Initialize and return a Jellyfin client
-		return jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"), config.GetString(""), config.GetString("")) // Replace with the actual constructor function
+		// return jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"), config.GetString(""), config.GetString("")) // Replace with the actual constructor function
 	case models.PlexWebhookPayload:
 		// Initialize and return a Plex client
 		return plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"), config.GetString("plex.playermachineidentifier"), config.GetString("plex.playerip")) // Replace with the actual constructor function

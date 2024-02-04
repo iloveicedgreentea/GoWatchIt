@@ -167,7 +167,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 		// check if the expected codec is playing
 		// TODO: test this
-		expectedCodec, err := common.IsExpectedCodecPlaying(avrClient, m.Codec)
+		expectedCodec, err := common.IsExpectedCodecPlayingAVR(avrClient, m.Codec)
 		if err != nil {
 			log.Errorf("Error checking if expected codec is playing: %v", err)
 		}
@@ -227,6 +227,8 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	wg.Wait()
 	log.Debug("goroutines complete")
 }
+
+
 
 // resume is only after pausing as long as the media item is still active
 func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
