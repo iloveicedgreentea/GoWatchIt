@@ -21,9 +21,10 @@ func TestAvrGetAudioMode(t *testing.T) {
 
 }
 func TestAvrGetAudioModeFail(t *testing.T) {
+	original := config.GetString("ezbeq.avrbrand")
 	config.Set("ezbeq.avrbrand", "")
 	c := setupAvrTest()
 
 	assert.Nil(t, c)
-
+	config.Set("ezbeq.avrbrand", original)
 }

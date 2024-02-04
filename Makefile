@@ -5,13 +5,19 @@ build:
 
 test:
 	# @go vet
+	@unset LOG_LEVEL && cd internal/avr && go test -v
+	@unset LOG_LEVEL && cd internal/common && go test -v
 	@unset LOG_LEVEL && cd internal/config && go test -v
+	@unset LOG_LEVEL && cd internal/ezbeq && go test -v
 	@unset LOG_LEVEL && cd internal/handlers && go test -v
 	@unset LOG_LEVEL && cd internal/homeassistant && go test -v
-	@unset LOG_LEVEL && cd internal/denon && go test -v
-	@unset LOG_LEVEL && cd internal/plex && go test -v
+	@unset LOG_LEVEL && cd internal/jellyfin && go test -v
+	@unset LOG_LEVEL && cd internal/logger && go test -v
 	@unset LOG_LEVEL && cd internal/mqtt && go test -v
-	@unset LOG_LEVEL && cd internal/ezbeq && go test -v
+	@unset LOG_LEVEL && cd internal/plex && go test -v
+	@unset LOG_LEVEL && cd models && go test -v
+	@unset LOG_LEVEL && cd api && go test -v
+	@unset LOG_LEVEL && cd cmd && go test -v
 docker-build:
 	docker buildx build --load --tag plex-webhook-automation-local .
 docker-push:

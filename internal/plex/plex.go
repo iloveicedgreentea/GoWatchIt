@@ -266,8 +266,11 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 // get the type of audio codec for BEQ purpose like atmos, dts-x, etc
 func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	var plexAudioCodec string
+	// TODO: get metadata from webhook payload
+	
 	// loop over streams, find the FIRST stream with ID = 2 (this is primary audio track) and read that val
 	// loop instead of index because of edge case with two or more video streams
+	log.Debugf("Data type: %T", data)
 	if mc, ok := data.(models.MediaContainer); ok {
 		for _, val := range mc.Video.Media.Part.Stream {
 			if val.StreamType == "2" {

@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
+	// "strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +19,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
 	"github.com/iloveicedgreentea/go-plex/models"
+	"github.com/iloveicedgreentea/go-plex/internal/common"
 	"golang.org/x/exp/slices"
 )
 
@@ -27,27 +28,6 @@ const movieItemTitle = "movie"
 
 var log = logger.GetLogger()
 
-func decodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
-	var pwhPayload models.PlexWebhookPayload
-
-	err := json.Unmarshal([]byte(payload[0]), &pwhPayload)
-	if err != nil {
-		var unmarshalTypeError *json.UnmarshalTypeError
-
-		switch {
-		// unmarshall error
-		case errors.As(err, &unmarshalTypeError):
-			msg := fmt.Sprintf("Request has an invalid value in %q field at position %d", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			return pwhPayload, http.StatusBadRequest, errors.New(msg)
-
-		default:
-			return pwhPayload, http.StatusInternalServerError, err
-		}
-	}
-
-	log.Debugf("decodeWebhook: Received event: %s", pwhPayload.Event)
-	return pwhPayload, 0, nil
-}
 
 // Sends the payload to the channel for background processing
 func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
@@ -60,7 +40,7 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 	payload, hasPayload := c.Request.MultipartForm.Value["payload"]
 	if hasPayload {
 		log.Debug("decoding payload")
-		decodedPayload, statusCode, err := decodeWebhook(payload)
+		decodedPayload, statusCode, err := common.DecodeWebhook(payload)
 		if err != nil {
 			log.Error(err)
 			c.JSON(statusCode, gin.H{"error": err.Error()})
@@ -106,7 +86,7 @@ func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistant
 	if err != nil {
 		log.Error(err)
 	}
-	go changeLight("on")
+	go common.ChangeLight("on")
 
 	err = beqClient.UnloadBeqProfile(m)
 	if err != nil {
@@ -129,7 +109,7 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 			log.Error(err)
 		}
 
-		go changeLight("on")
+		go common.ChangeLight("on")
 
 		err = beqClient.UnloadBeqProfile(m)
 		if err != nil {
@@ -165,33 +145,37 @@ func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 
 
 // play is both the "resume" button and play
-func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient *avr.DenonClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
-	
+func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
+	var err error
 	// slower but more accurate
 	// TODO: abstract library this for any AVR
 	if useAvrCodec {
 		// TODO: make below a function
 		// wait for sync
 		wg.Add(1)
-		waitForHDMISync(wg, skipActions, haClient, client)
+		common.WaitForHDMISync(wg, skipActions, haClient, client)
 		// denon needs time to show mutli ch in as atmos
 		// TODO: test this
 		time.Sleep(5 * time.Second)
 
 		// get the codec from avr
-		m.Codec, err = denonClient.GetCodec()
+		m.Codec, err = avrClient.GetCodec()
 		if err != nil {
 			log.Errorf("error getting codec from denon, can't continue: %s", err)
 			return
 		}
 
 		// check if the expected codec is playing
-		expectedCodec, isExpectedPlaying := isExpectedCodecPlaying(denonClient, client, payload.Player.UUID, m.Codec)
-		if !isExpectedPlaying {
+		// TODO: test this
+		expectedCodec, err := common.IsExpectedCodecPlaying(avrClient, m.Codec)
+		if err != nil {
+			log.Errorf("Error checking if expected codec is playing: %v", err)
+		}
+		if !expectedCodec {
 			// if enabled, stop playing
 			if config.GetBool("ezbeq.stopPlexIfMismatch") {
 				log.Debug("Stopping plex because codec is not playing")
-				err := playbackInteface("stop", haClient, client)
+				err := common.PlaybackInterface("stop", client)
 				if err != nil {
 					log.Errorf("Error stopping plex: %v", err)
 				}
@@ -199,7 +183,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 			log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
 			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-				err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %s", m.Codec, expectedCodec), config.GetString("ezbeq.notifyEndpointName"))
+				err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %v", m.Codec, expectedCodec), config.GetString("ezbeq.notifyEndpointName"))
 				if err != nil {
 					log.Error(err)
 				}
@@ -253,7 +237,7 @@ func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssista
 		if err != nil {
 			log.Error(err)
 		}
-		go changeLight("off")
+		go common.ChangeLight("off")
 		// Changing on resume is disabled because its annoying if you changed it since playing
 		// go changeMasterVolume(vip, mediaType)
 
@@ -344,8 +328,9 @@ func checkUUID(clientUUID string, filterConfig string) bool {
 	return true
 }
 
+//TODO! make a generic eventRouter but route to implementation specific functions instead of making generic play functions
 // based on event type, determine what to do
-func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, denonClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
+func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -397,7 +382,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 		log.Debug("Event Router: media.play received")
 		// TODO: add lights and stuff here to do async, not blocked by other functions
 		wg := &sync.WaitGroup{}
-		commonPlay(beqClient, haClient, denonClient, payload, model, useAvrCodec, data, skipActions, wg)
+		mediaPlay(plexClient, beqClient, haClient, avrClient, payload, model, useAvrCodec, data, skipActions, wg)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
 		mediaStop(beqClient, haClient, payload, model)

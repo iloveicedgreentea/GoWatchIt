@@ -11,6 +11,8 @@ type AVRClient interface {
 
 // GetAVRClient returns a new instance of an AVRClient based on a brand like denon
 func GetAVRClient(url string) AVRClient {
+    
+    log.Debug(config.GetString("ezbeq.avrbrand"))
     switch config.GetString("ezbeq.avrbrand") {
     case "denon":
         log.Debug("Creating Denon AVR client")

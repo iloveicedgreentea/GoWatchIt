@@ -2,6 +2,8 @@ package avr
 
 import (
 	"testing"
+
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,4 +29,9 @@ func TestGetAudioMode(t *testing.T) {
 	t.Log(mode)
 	assert.NotEmpty(t, mode)
 
+}
+
+func TestNewClient(t *testing.T) {
+	c := GetAVRClient(config.GetString("ezbeq.avrUrl"))
+	assert.NotNil(t, c)
 }
