@@ -2,27 +2,13 @@
 SHELL := /bin/bash
 build: 
 	cd cmd && go build -o ../build/server
-
 test:
-	# @go vet
-	@unset LOG_LEVEL && cd internal/avr && go test -v
-	@unset LOG_LEVEL && cd internal/common && go test -v
-	@unset LOG_LEVEL && cd internal/config && go test -v
-	@unset LOG_LEVEL && cd internal/ezbeq && go test -v
-	@unset LOG_LEVEL && cd internal/handlers && go test -v
-	@unset LOG_LEVEL && cd internal/homeassistant && go test -v
-	@unset LOG_LEVEL && cd internal/jellyfin && go test -v
-	@unset LOG_LEVEL && cd internal/logger && go test -v
-	@unset LOG_LEVEL && cd internal/mqtt && go test -v
-	@unset LOG_LEVEL && cd internal/plex && go test -v
-	@unset LOG_LEVEL && cd models && go test -v
-	@unset LOG_LEVEL && cd api && go test -v
-	@unset LOG_LEVEL && cd cmd && go test -v
+	./test.sh
 docker-build:
-	docker buildx build --load --tag plex-webhook-automation-local .
+	docker buildx build --load --tag gowatchit-local .
 docker-push:
-	docker buildx build --push --platform linux/amd64 --tag ghcr.io/iloveicedgreentea/plex-webhook-automation:test . 
+	docker buildx build --push --platform linux/amd64 --tag ghcr.io/iloveicedgreentea/gowatchit:test . 
 docker-run:
-	docker run -p 9999:9999 -e SUPER_DEBUG=false -e LOG_FILE=false -e LOG_LEVEL=debug -v $(shell pwd)/docker/data:/data plex-webhook-automation-local
+	LOG_FILE=false LOG_LEVEL=debug docker-compose up
 run: build
 	LOG_FILE=false LOG_LEVEL=debug ./build/server

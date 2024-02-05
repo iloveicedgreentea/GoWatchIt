@@ -3,6 +3,7 @@ build
 *config.json
 media.*.priv*
 docker/data
+coverage.*
 
 # Binaries for programs and plugins
 *.exe
