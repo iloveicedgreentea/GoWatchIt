@@ -78,13 +78,14 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 > ℹ  If you are using Jellyfin, read the Jellyfin specific instructions below
 
 1) Deploy the latest version `ghcr.io/iloveicedgreentea/gowatchit:latest` to your preferred Docker environment
+    * a docker-compose example is provided in the repo
 2) You must mount a volume to `/data`
 3) Configure the application via web ui -> `http://(your-server-ip):9999`
 4) Set up your player with the instructions below
 
 ### Plex Specifics
 1) get your player UUID(s) from `https://plex.tv/devices.xml` while logged in
-2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
+2) Set up Plex to send webhooks to your server IP, port 9999, and the handler endpoint of `/plexwebhook`
     * e.g `(your-server-ip):9999/plexwebhook`
 3) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
 4) Add UUID(s) and user filters to the application config

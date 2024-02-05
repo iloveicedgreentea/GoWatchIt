@@ -1,5 +1,4 @@
 function populateFields(config) {
-    document.getElementById('listenport').value = config.main.listenport;
     // .checked or .value for each kind for each item in HTML
 
     // EZBeq
@@ -105,10 +104,6 @@ function buildFinalConfig() {
         "stopscriptname": document.getElementById('homeassistant-stopscriptname').value
     };
 
-    const mainConfig = {
-        "listenport": document.getElementById('listenport').value
-    };
-
     const mqttConfig = {
         "enabled": document.getElementById('mqtt-enabled').checked,
         "url": document.getElementById('mqtt-url').value,
@@ -149,7 +144,6 @@ function buildFinalConfig() {
     const finalConfig = {
         "ezbeq": ezbeqConfig,
         "homeassistant": homeAssistantConfig,
-        "main": mainConfig,
         "mqtt": mqttConfig,
         "plex": plexConfig,
         "jellyfin": jellyfinConfig,
