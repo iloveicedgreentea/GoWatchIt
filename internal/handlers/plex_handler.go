@@ -252,6 +252,8 @@ func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssista
 		}
 		// get the tmdb id to match with ezbeq catalog
 		m.TMDB = getPlexMovieDb(payload)
+		// TODO: if it was restarted, codec data is lost
+		// get the codec
 		// load beq with cache
 		err = beqClient.LoadBeqProfile(m)
 		if err != nil {

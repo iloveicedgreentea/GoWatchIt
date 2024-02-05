@@ -41,7 +41,7 @@ func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodT
 	var req *http.Request
 	var err error
 
-	log.Debugf("Using method %s", methodType)
+	// log.Debugf("Using method %s", methodType)
 	// bodyReader := bytes.NewReader(jsonBody)
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
 	if len(payload) == 0 {

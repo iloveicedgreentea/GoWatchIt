@@ -144,14 +144,14 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	var req *http.Request
 	var err error
 
-	log.Debugf("Using method %s", methodType)
+	// log.Debugf("Using method %s", methodType)
 	switch methodType {
 	case http.MethodPut:
 		setHeader = true
 	case http.MethodPatch:
 		setHeader = true
 	}
-	log.Debugf("Header is set to %v", setHeader)
+	// log.Debugf("Header is set to %v", setHeader)
 
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
@@ -168,8 +168,8 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	log.Debugf("Using url %s", req.URL)
-	log.Debugf("Headers from req %v", req.Header)
+	// log.Debugf("Using url %s", req.URL)
+	// log.Debugf("Headers from req %v", req.Header)
 	// simple retry
 	res, err := c.makeCallWithRetry(req, 5, endpoint)
 
