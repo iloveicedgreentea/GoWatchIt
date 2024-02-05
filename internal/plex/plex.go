@@ -160,7 +160,6 @@ func (c *PlexClient) GetMediaData(libraryKey string) (models.MediaContainer, err
 	if err != nil {
 		return models.MediaContainer{}, err
 	}
-
 	return data, nil
 }
 

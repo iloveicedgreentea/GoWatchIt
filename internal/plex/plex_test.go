@@ -42,7 +42,7 @@ func TestGetMediaData(t *testing.T) {
 	c := NewClient(serverUrl, serverPrt, "", "")
 
 	// no time to die
-	med, err := c.GetMediaData("/library/metadata/7278")
+	med, err := c.GetMediaData("/library/metadata/58791")
 	assert.NoError(t, err)
 
 	code, err := c.GetAudioCodec(med)

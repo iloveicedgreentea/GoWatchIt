@@ -188,6 +188,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 		}
 
 	} else {
+		log.Debug("Using plex to get codec")
 		m.Codec, err = client.GetAudioCodec(data)
 		if err != nil {
 			log.Errorf("error getting codec from plex, can't continue: %s", err)
