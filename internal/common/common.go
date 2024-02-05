@@ -9,9 +9,10 @@ import (
 
 	"github.com/iloveicedgreentea/go-plex/internal/avr"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+
 	// "github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
-	
+
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 
 	// "github.com/iloveicedgreentea/go-plex/internal/plex"
@@ -155,7 +156,6 @@ func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttr
 
 }
 
-
 // common function for all supported players
 // TODO: add generic plex/jf client
 // func commonPlay(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, mediaClient Client, avrClient avr.AVRClient, payload interface{}, m *models.SearchRequest, skipActions *bool, wg *sync.WaitGroup) {
@@ -249,7 +249,7 @@ func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttr
 // 			}
 // 		}
 // 	} else {
-		
+
 // 		m.Codec, err = mediaClient.GetAudioCodec(payload)
 // 		if err != nil {
 // 			log.Errorf("error getting codec frin client, can't continue: %s", err)

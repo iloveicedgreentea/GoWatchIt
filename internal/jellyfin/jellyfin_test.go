@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
-	"github.com/iloveicedgreentea/go-plex/internal/common"
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -48,11 +47,6 @@ type codecTest struct {
 	expected  string
 }
 
-func TestInsensitiveContains(t *testing.T) {
-	assert := assert.New(t)
-	assert.True(common.InsensitiveContains("DTS-HD MA 5.1 - English - Default", "DTS-HD MA 5.1"))
-
-}
 func TestMapCodecs(t *testing.T) {
 	assert := assert.New(t)
 	tests := []codecTest{

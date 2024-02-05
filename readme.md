@@ -12,8 +12,8 @@
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-CC_Custom-blue" alt="License MIT" />
   </a>
-  <a href="https://github.com/iloveicedgreentea/plex-webhook-automation/actions">
-    <img src="https://github.com/iloveicedgreentea/plex-webhook-automation/workflows/Docker/badge.svg" alt="CI Status" />
+  <a href="https://github.com/iloveicedgreentea/gowatchit/actions">
+    <img src="https://github.com/iloveicedgreentea/gowatchit/workflows/Docker/badge.svg" alt="CI Status" />
   </a>
   <a href="https://www.avsforum.com/threads/gowatchit-beq-ezbeq-plex-webhook-automation-tool-official-thread.3264800/">
     <img src="https://img.shields.io/website-up-down-green-red/http/shields.io.svg" alt="Website" />
@@ -77,7 +77,7 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
 > ℹ  If you are using Jellyfin, read the Jellyfin specific instructions below
 
-1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
+1) Deploy the latest version `ghcr.io/iloveicedgreentea/gowatchit:latest` to your preferred Docker environment
 2) You must mount a volume to `/data`
 3) Configure the application via web ui -> `http://(your-server-ip):9999`
 4) Set up your player with the instructions below

@@ -1,0 +1,16 @@
+version: '3.8' 
+
+services:
+  plex-webhook-automation:
+    image: ghcr.io/iloveicedgreentea/gowatchit:latest
+    ports:
+      - '9999:9999' 
+    environment: #
+      SUPER_DEBUG: 'false'
+      LOG_LEVEL: 'info'
+    volumes:
+      - data_volume:/data 
+
+volumes:
+  data_volume: 
+    driver: local 

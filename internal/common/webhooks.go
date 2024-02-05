@@ -8,6 +8,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
+// TODO: test this if not already
 func DecodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 	var pwhPayload models.PlexWebhookPayload
 
@@ -32,11 +33,11 @@ func DecodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 
 
 // only used for tests
-func decodeJfWebhook(data []byte) (out models.JellyfinWebhook, err error) {
-	err = json.Unmarshal(data, &out)
-	if err != nil {
-		log.Errorf("Error decoding payload: %v", err)
-	}
+// func decodeJfWebhook(data []byte) (out models.JellyfinWebhook, err error) {
+// 	err = json.Unmarshal(data, &out)
+// 	if err != nil {
+// 		log.Errorf("Error decoding payload: %v", err)
+// 	}
 
-	return out, err
-}
+// 	return out, err
+// }
