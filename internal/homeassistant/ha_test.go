@@ -49,7 +49,7 @@ func TestNotification(t *testing.T) {
 	haClient := testSetup()
 
 	// trigger light and switch
-	err := haClient.SendNotification("test from go-plex", config.GetString("ezbeq.notifyEndpointName"))
+	err := haClient.SendNotification("test from go-plex")
 	assert.NoError(t, err)
 }
 func TestReadAttributes(t *testing.T) {

@@ -92,7 +92,7 @@ func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistant
 	if err != nil {
 		log.Error(err)
 		if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-			err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err), config.GetString("ezbeq.notifyEndpointName"))
+			err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err))
 			if err != nil {
 				log.Error()
 			}
@@ -115,7 +115,7 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 		if err != nil {
 			log.Error(err)
 			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-				err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err), config.GetString("ezbeq.notifyEndpointName"))
+				err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err))
 				if err != nil {
 					log.Error()
 				}
@@ -180,7 +180,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 			log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
 			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-				err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %v", m.Codec, expectedCodec), config.GetString("ezbeq.notifyEndpointName"))
+				err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %v", m.Codec, expectedCodec))
 				if err != nil {
 					log.Error(err)
 				}
@@ -214,7 +214,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 	// send notification of it loaded
 	if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-		err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), config.GetString("ezbeq.notifyEndpointName"))
+		err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec))
 		if err != nil {
 			log.Error()
 		}
@@ -261,7 +261,7 @@ func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssista
 
 		// send notification of it loaded
 		if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-			err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec), config.GetString("ezbeq.notifyEndpointName"))
+			err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, m.Codec))
 			if err != nil {
 				log.Error()
 			}
