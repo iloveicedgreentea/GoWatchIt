@@ -46,9 +46,9 @@ func IsExpectedCodecPlaying(codec, expectedCodec string) (bool, error) {
 
 // trigger HA for MV change per type
 func ChangeMasterVolume(mediaType string) {
-	if config.GetBool("homeAssistant.triggerAvrMasterVolumeChangeOnEvent") && config.GetBool("homeAssistant.enabled") {
+	if config.GetBool("homeassistant.triggeravrmastervolumechangeonevent") && config.GetBool("homeassistant.enabled") {
 		log.Debug("changeMasterVolume: Changing volume")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicVolume"))
+		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicvolume"))
 		if err != nil {
 			log.Error()
 		}
@@ -57,9 +57,9 @@ func ChangeMasterVolume(mediaType string) {
 
 // trigger HA for light change given entity and desired state
 func ChangeLight(state string) {
-	if config.GetBool("homeAssistant.triggerLightsOnEvent") && config.GetBool("homeAssistant.enabled") {
+	if config.GetBool("homeassistant.triggerlightsonevent") && config.GetBool("homeassistant.enabled") {
 		log.Debug("changeLight: Changing light")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topicLights"))
+		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topiclights"))
 		if err != nil {
 			log.Errorf("Error changing light: %v", err)
 		}

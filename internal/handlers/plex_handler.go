@@ -5,21 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
 	// "strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/avr"
+	"github.com/iloveicedgreentea/go-plex/internal/common"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/internal/plex"
 	"github.com/iloveicedgreentea/go-plex/models"
-	"github.com/iloveicedgreentea/go-plex/internal/common"
 	"golang.org/x/exp/slices"
 )
 
@@ -27,7 +28,6 @@ const showItemTitle = "episode"
 const movieItemTitle = "movie"
 
 var log = logger.GetLogger()
-
 
 // Sends the payload to the channel for background processing
 func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
@@ -125,8 +125,6 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 	}
 }
 
-
-
 // interfaceRemote sends the cmd to your desired script to stop or play
 func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 	switch cmd {
@@ -142,10 +140,9 @@ func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 
 }
 
-
-
 // play is both the "resume" button and play
 func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
+	go common.ChangeLight("off")
 	var err error
 	// slower but more accurate
 	// TODO: abstract library this for any AVR
@@ -227,8 +224,6 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	wg.Wait()
 	log.Debug("goroutines complete")
 }
-
-
 
 // resume is only after pausing as long as the media item is still active
 func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
@@ -330,7 +325,7 @@ func checkUUID(clientUUID string, filterConfig string) bool {
 	return true
 }
 
-//TODO! make a generic eventRouter but route to implementation specific functions instead of making generic play functions
+// TODO! make a generic eventRouter but route to implementation specific functions instead of making generic play functions
 // based on event type, determine what to do
 func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
@@ -472,7 +467,6 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 // 	}
 
 // }
-
 
 // entry point for background tasks
 func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
