@@ -353,7 +353,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 	}
 
 	if m.DryrunMode {
-		return fmt.Errorf("BEQ Dry run msg - Would load title %s -- codec %s -- edition: %s, ezbeq entry ID %s", catalog.SortTitle, m.Codec, catalog.Edition, m.EntryID)
+		return fmt.Errorf("BEQ Dry run msg - Would load title %s -- codec %s -- edition: %s, ezbeq entry ID %s - author %s", catalog.Title, m.Codec, catalog.Edition, m.EntryID, catalog.Author)
 	}
 
 	// build payload
@@ -392,7 +392,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), fmt.Sprintf("%s: Codec: %s, Author: %s", catalog.SortTitle, m.Codec, catalog.Author))
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), fmt.Sprintf("%s: %s by %s", catalog.Title, m.Codec, catalog.Author))
 }
 
 // UnloadBeqProfile will unload all profiles from all devices

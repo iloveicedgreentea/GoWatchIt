@@ -41,3 +41,4 @@ Modify UUID filter to accept comma for multiple
 * various speedups
 * remove listen port config
 * improve search by using tmdb 
+* add author name to mqtt topic and logs
