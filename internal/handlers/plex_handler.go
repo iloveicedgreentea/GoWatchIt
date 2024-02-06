@@ -143,6 +143,7 @@ func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
 // play is both the "resume" button and play
 func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
 	go common.ChangeLight("off")
+	go common.ChangeMasterVolume(m.MediaType)
 	var err error
 	// slower but more accurate
 	// TODO: abstract library this for any AVR
