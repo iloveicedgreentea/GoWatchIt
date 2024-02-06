@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/iloveicedgreentea/go-plex/internal/config"
 )
 
 // TestMuteCmds send commands to minidsp
@@ -371,6 +371,51 @@ func TestUrlEncode(t *testing.T) {
 	assert.Equal(t, "DTS-HD+MA+7.1", s)
 }
 
+func TestHasAuthor(t *testing.T) {
+	assert := assert.New(t)
+	type testStruct struct {
+		author string
+		expected bool
+	}
+	tt := []testStruct{
+		{
+			author: "aron7awol",
+			expected: true,
+		},
+		{
+			author: "None",
+			expected: false,
+		},
+		{
+			author: " ",
+			expected: false,
+		},
+		{
+			author: "",
+			expected: false,
+		},
+		{
+			author: "none",
+			expected: false,
+		},
+		{
+			author: "aron7awol, mobe1969",
+			expected: true,
+		},
+	}
+	for _, tc := range tt {
+		tc := tc
+		s := hasAuthor(tc.author)
+		assert.Equal(tc.expected, s)
+	}
+}
+
+func TestBuildAuthorWhitelist(t *testing.T) {
+
+	s := buildAuthorWhitelist("aron7awol, mobe1969", "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345")
+	assert.Equal(t, "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345&authors=aron7awol&authors=mobe1969", s)
+}
+
 func TestSearchCatalog(t *testing.T) {
 	assert := assert.New(t)
 
@@ -458,6 +503,32 @@ func TestSearchCatalog(t *testing.T) {
 			},
 			expectedEdition: "",
 			expectedDigest:  "73a1eef9ce33abba7df0a9d2b4cec41254f6a521d521e104fa3cd2e7297c26d9",
+		},
+		{
+			// return 7.1 version with mutliple authors
+			m: models.SearchRequest{
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "mobe1969, aron7awol",
+				Edition:         "",
+			},
+			expectedEdition: "",
+			expectedDigest:  "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedMvAdjust: -3.5,
+		},
+		{
+			// return 7.1 version with mutliple authors
+			m: models.SearchRequest{
+				TMDB:            "429351",
+				Year:            2018,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "aron7awol,mobe1969",
+				Edition:         "",
+			},
+			expectedEdition: "",
+			expectedDigest:  "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedMvAdjust: -3.5,
 		},
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing

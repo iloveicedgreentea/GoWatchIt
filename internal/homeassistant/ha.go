@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -40,7 +41,7 @@ func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodT
 	var req *http.Request
 	var err error
 
-	log.Debugf("Using method %s", methodType)
+	// log.Debugf("Using method %s", methodType)
 	// bodyReader := bytes.NewReader(jsonBody)
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
 	if len(payload) == 0 {
@@ -108,7 +109,7 @@ func (c *HomeAssistantClient) SwitchLight(entityType string, entityName string, 
 	return err
 }
 
-func (c *HomeAssistantClient) SendNotification(msg string, endpointName string) error {
+func (c *HomeAssistantClient) SendNotification(msg string) error {
 	// trigger script
 	scriptData := models.HomeAssistantNotificationReq{
 		Message: msg,
@@ -118,7 +119,7 @@ func (c *HomeAssistantClient) SendNotification(msg string, endpointName string) 
 	if err != nil {
 		return err
 	}
-	endpoint := fmt.Sprintf("/api/services/notify/%s", endpointName)
+	endpoint := fmt.Sprintf("/api/services/notify/%s", config.GetString("ezbeq.notifyEndpointName"))
 	_, err = c.doRequest(endpoint, jsonPayload, http.MethodPost)
 	return err
 }

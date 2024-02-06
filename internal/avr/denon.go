@@ -1,4 +1,4 @@
-package denon
+package avr
 
 import (
 	"bytes"
@@ -12,20 +12,14 @@ import (
 
 var log = logger.GetLogger()
 
+
+// DenonClient is a client for Denon AVRs
 type DenonClient struct {
 	ServerURL string
 	Port      string
 	TelClient telnet.Caller
 }
 
-// return a new instance of a plex client
-func NewClient(url, port string) *DenonClient {
-	return &DenonClient{
-		ServerURL: url,
-		Port:      port,
-		TelClient: telnet.StandardCaller,
-	}
-}
 
 // make a request to denon via telnet
 func (c *DenonClient) makeReq(command string) (string, error) {

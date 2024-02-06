@@ -25,6 +25,7 @@ type BeqCatalog struct {
 	MvAdjust   float64  `json:"mvAdjust"`
 	Edition    string   `json:"edition"`
 	MovieDbID  string   `json:"theMovieDB"`
+	Author	   string   `json:"author"`
 }
 
 type BeqDevices struct {

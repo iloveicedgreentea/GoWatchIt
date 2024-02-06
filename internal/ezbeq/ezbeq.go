@@ -121,7 +121,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 
 	}
 
-	return mqtt.PublishWrapper("topicMinidspMuteStatus", fmt.Sprintf("%v", status))
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicMinidspMuteStatus"), fmt.Sprintf("%v", status))
 }
 
 // MakeCommand sends the command of payload
@@ -144,14 +144,14 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	var req *http.Request
 	var err error
 
-	log.Debugf("Using method %s", methodType)
+	// log.Debugf("Using method %s", methodType)
 	switch methodType {
 	case http.MethodPut:
 		setHeader = true
 	case http.MethodPatch:
 		setHeader = true
 	}
-	log.Debugf("Header is set to %v", setHeader)
+	// log.Debugf("Header is set to %v", setHeader)
 
 	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
@@ -168,8 +168,8 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	log.Debugf("Using url %s", req.URL)
-	log.Debugf("Headers from req %v", req.Header)
+	// log.Debugf("Using url %s", req.URL)
+	// log.Debugf("Headers from req %v", req.Header)
 	// simple retry
 	res, err := c.makeCallWithRetry(req, 5, endpoint)
 
@@ -220,19 +220,30 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 	return resp, err
 }
 
+// authorCompare returns true if there is an author
+func hasAuthor(s string) bool {
+	hasAuthor := strings.ToLower(strings.TrimSpace(s))
+	return hasAuthor != "none" && hasAuthor != ""
+}
+
+// buildAuthorWhitelist returns a string of authors to search for
+func buildAuthorWhitelist(preferredAuthors string, endpoint string) string {
+	authors := strings.Split(preferredAuthors, ",")
+	for _, v := range authors {
+		endpoint += fmt.Sprintf("&authors=%s", strings.TrimSpace(v))
+	}
+	return endpoint
+}
+
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
 	code := urlEncode(m.Codec)
-	var endpoint string
-	// done this way to make it easier to add future authors
-	// TODO: make this a whitelist, I think the API already does this but not sure
-	switch m.PreferredAuthor {
-	case "None", "none", "":
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d", code, m.Year)
-	default:
-		// TODO: make test for different authors, make sure it acts as a whitelist
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, m.Year, urlEncode(m.PreferredAuthor))
+	endpoint := fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
+
+	// this is an author whitelist for each non-empty author append it to search
+	if hasAuthor(m.PreferredAuthor) {
+		endpoint = buildAuthorWhitelist(m.PreferredAuthor, endpoint)
 	}
 	log.Debugf("sending ezbeq search request to %s", endpoint)
 
@@ -254,6 +265,7 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
+				log.Infof("Found a match in catalog from author %s", val.Author)
 				return val, nil
 			} else {
 				log.Error("Found a match but editions did not match entry. Not loading")
@@ -380,7 +392,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper("topicBeqCurrentProfile", catalog.SortTitle)
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), fmt.Sprintf("%s: Codec: %s, Author: %s", catalog.SortTitle, m.Codec, catalog.Author))
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
@@ -405,5 +417,5 @@ func (c *BeqClient) UnloadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper("topicBeqCurrentProfile", "")
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), "")
 }

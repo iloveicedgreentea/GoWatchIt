@@ -12,8 +12,8 @@
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-CC_Custom-blue" alt="License MIT" />
   </a>
-  <a href="https://github.com/iloveicedgreentea/plex-webhook-automation/actions">
-    <img src="https://github.com/iloveicedgreentea/plex-webhook-automation/workflows/Docker/badge.svg" alt="CI Status" />
+  <a href="https://github.com/iloveicedgreentea/gowatchit/actions">
+    <img src="https://github.com/iloveicedgreentea/gowatchit/workflows/Docker/badge.svg" alt="CI Status" />
   </a>
   <a href="https://www.avsforum.com/threads/gowatchit-beq-ezbeq-plex-webhook-automation-tool-official-thread.3264800/">
     <img src="https://img.shields.io/website-up-down-green-red/http/shields.io.svg" alt="Website" />
@@ -39,7 +39,8 @@
 
 Players Supported:
 * Plex 
-* Jellyfin (experimental) via [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-plugin-webhooks)
+* Jellyfin (experimental)
+* Emby (no support or testing)
 
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
@@ -56,6 +57,7 @@ Other cool stuff:
 * Built in support for Home Assistant and Minidsp
 
 > ℹ Jellyfin support is coming soon®
+
 
 This application is primarily focused on Plex and HomeAssistant but I plan on adding support for other sources in the future. 
 
@@ -75,14 +77,15 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
 > ℹ  If you are using Jellyfin, read the Jellyfin specific instructions below
 
-1) Deploy the latest version `ghcr.io/iloveicedgreentea/plex-webhook-automation:latest`. I recommend running this in an orchestrator like Unraid, Docker-Compose, etc
+1) Deploy the latest version `ghcr.io/iloveicedgreentea/gowatchit:latest` to your preferred Docker environment
+    * a docker-compose example is provided in the repo
 2) You must mount a volume to `/data`
-3) Configure the application via web ui -> `http://(you-server-ip):9999`
+3) Configure the application via web ui -> `http://(your-server-ip):9999`
 4) Set up your player with the instructions below
 
 ### Plex Specifics
 1) get your player UUID(s) from `https://plex.tv/devices.xml` while logged in
-2) Set up Plex to send webhooks to your server IP, `listenPort`, and the handler endpoint of `/plexwebhook`
+2) Set up Plex to send webhooks to your server IP, port 9999, and the handler endpoint of `/plexwebhook`
     * e.g `(your-server-ip):9999/plexwebhook`
 3) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
 4) Add UUID(s) and user filters to the application config
@@ -90,25 +93,52 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 
 ### Jellyfin Specifics
 
-You must use [Jellyfin Webhooks plugin](https://github.com/shemanaev/jellyfin-plugin-webhooks) to send webhooks to this application. It is not built in like Plex.
+You must use the [official Jellyfin Webhooks plugin](https://github.com/jellyfin/jellyfin-plugin-webhook/tree/master) to send webhooks to this application.
 
-You must configure it to send Plex-style webhooks.
+1) Create a Generic webhook (NOT GenericForm)
+2) Add http://(your-server-ip):9999/jellyfinwebhook as the url
+3) Types:
+  * PlaybackStart
+  * PlaybackProgress (needed for pause)
+  * PlaybackStopped
+4) You can optionally add a user filter
+5) Item types: Movies, Episodes
 
+Configure the webhook in whatever way you want but it *must* include the following:
+
+```json
+{
+  "DeviceId": "{{DeviceId}}",
+  "DeviceName": "{{DeviceName}}",
+  "ClientName": "{{ClientName}}",
+  "UserId": "{{UserId}}",
+  "ItemId": "{{ItemId}}",
+  "ItemType": "{{ItemType}}",
+  "NotificationType": "{{NotificationType}}",
+  "Year": "{{Year}}",
+{{#if_equals NotificationType 'PlaybackStop'}}
+    "PlayedToCompletion": "{{PlayedToCompletion}}"
+{{/if_equals}}
+{{#if_equals NotificationType 'PlaybackProgress'}}
+    "IsPaused": "{{IsPaused}}"
+{{/if_equals}}
+}
+```
 #### Generate API Key
 
 1) Navigate to the dashboard
 2) Click on“API Keys” under “Advanced” 
 3) Click “Create”
-4) Store the API securely 
+4) Add API Key to the application config
 
-#### Configure 
+### Emby
 
+Emby support is added by coincidence due to Jellyfin support (its the same API codebase). I have not tested it and do not plan to. Configure it the same way as Jellyfin and it might work but I cannot guarantee it.
 
 ### Non-Docker Setup
 I don't recommend this as it is more work and you will need to set up systemd or something to keep it running. I don't provide support for this method but if you know what you are doing, it is very easy to build the binary and run it.
 
 TLDR: `make build`
-
 
 ## Usage
 

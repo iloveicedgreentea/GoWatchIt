@@ -73,6 +73,7 @@ func init() {
 	})
 	// hot reload for config
 	v.WatchConfig()
+	log.Debugf("Config loaded from %s", v.ConfigFileUsed())
 }
 
 func Set(key string, value interface{}) {

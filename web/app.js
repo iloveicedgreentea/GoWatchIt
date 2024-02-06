@@ -1,12 +1,10 @@
 function populateFields(config) {
-    document.getElementById('listenport').value = config.main.listenport;
     // .checked or .value for each kind for each item in HTML
 
     // EZBeq
     document.getElementById('ezbeq-adjustmastervolumewithprofile').checked = config.ezbeq.adjustmastervolumewithprofile;
     document.getElementById('ezbeq-enabled').checked = config.ezbeq.enabled;
-    document.getElementById('ezbeq-denonip').value = config.ezbeq.denonip;
-    document.getElementById('ezbeq-denonport').value = config.ezbeq.denonport;
+    document.getElementById('ezbeq-avrip').value = config.ezbeq.avrip;
     document.getElementById('ezbeq-dryrun').checked = config.ezbeq.dryrun;
     document.getElementById('ezbeq-enabletvbeq').checked = config.ezbeq.enabletvbeq;
     document.getElementById('ezbeq-notifyendpointname').value = config.ezbeq.notifyendpointname;
@@ -20,6 +18,7 @@ function populateFields(config) {
     document.getElementById('ezbeq-stopplexifmismatch').checked = config.ezbeq.stopplexifmismatch;
     document.getElementById('ezbeq-url').value = config.ezbeq.url;
     document.getElementById('ezbeq-useavrcodecsearch').checked = config.ezbeq.useavrcodecsearch;
+    document.getElementById('ezbeq-avrbrand').value = config.ezbeq.avrbrand;
 
 
     // HomeAssistant
@@ -27,7 +26,6 @@ function populateFields(config) {
     document.getElementById('homeassistant-url').value = config.homeassistant.url;
     document.getElementById('homeassistant-port').value = config.homeassistant.port;
     document.getElementById('homeassistant-token').value = config.homeassistant.token;
-    document.getElementById('homeassistant-triggeraspectratiochangeonevent').checked = config.homeassistant.triggeraspectratiochangeonevent;
     document.getElementById('homeassistant-triggerlightsonevent').checked = config.homeassistant.triggerlightsonevent;
     document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked = config.homeassistant.triggeravrmastervolumechangeonevent;
     document.getElementById('homeassistant-remoteentityname').value = config.homeassistant.remoteentityname;
@@ -42,7 +40,6 @@ function populateFields(config) {
     document.getElementById('mqtt-password').value = config.mqtt.password;
     document.getElementById('mqtt-topiclights').value = config.mqtt.topiclights;
     document.getElementById('mqtt-topicvolume').value = config.mqtt.topicvolume;
-    document.getElementById('mqtt-topicaspectratio').value = config.mqtt.topicaspectratio;
     document.getElementById('mqtt-topicbeqcurrentprofile').value = config.mqtt.topicbeqcurrentprofile;
     document.getElementById('mqtt-topicminidspmutestatus').value = config.mqtt.topicminidspmutestatus;
     document.getElementById('mqtt-topicplayingstatus').value = config.mqtt.topicplayingstatus;
@@ -56,6 +53,15 @@ function populateFields(config) {
     document.getElementById('plex-playermachineidentifier').value = config.plex.playermachineidentifier;
     document.getElementById('plex-playerip').value = config.plex.playerip;
     document.getElementById('plex-enabletrailersupport').checked = config.plex.enabletrailersupport;
+    // jellyfin
+    document.getElementById('jellyfin-enabled').checked = config.jellyfin.enabled;
+    document.getElementById('jellyfin-url').value = config.jellyfin.url;
+    document.getElementById('jellyfin-port').value = config.jellyfin.port;
+    document.getElementById('jellyfin-ownernamefilter').value = config.jellyfin.ownernamefilter;
+    document.getElementById('jellyfin-deviceuuidfilter').value = config.jellyfin.deviceuuidfilter;
+    document.getElementById('jellyfin-playermachineidentifier').value = config.jellyfin.playermachineidentifier;
+    document.getElementById('jellyfin-userID').value = config.jellyfin.userID;
+    document.getElementById('jellyfin-apiToken').value = config.jellyfin.apiToken;
 
     // Signal
     document.getElementById('signal-enabled').checked = config.signal.enabled;
@@ -72,8 +78,7 @@ function buildFinalConfig() {
     const ezbeqConfig = {
         "adjustmastervolumewithprofile": document.getElementById('ezbeq-adjustmastervolumewithprofile').checked,
         "enabled": document.getElementById('ezbeq-enabled').checked,
-        "denonip": document.getElementById('ezbeq-denonip').value,
-        "denonport": document.getElementById('ezbeq-denonport').value,
+        "avrip": document.getElementById('ezbeq-avrip').value,
         "dryrun": document.getElementById('ezbeq-dryrun').checked,
         "enabletvbeq": document.getElementById('ezbeq-enabletvbeq').checked,
         "notifyendpointname": document.getElementById('ezbeq-notifyendpointname').value,
@@ -83,6 +88,7 @@ function buildFinalConfig() {
         "slots": slotsArray,
         "stopplexifmismatch": document.getElementById('ezbeq-stopplexifmismatch').checked,
         "url": document.getElementById('ezbeq-url').value,
+        "avrbrand": document.getElementById('ezbeq-avrbrand').value,
         "useavrcodecsearch": document.getElementById('ezbeq-useavrcodecsearch').checked
     };
     const homeAssistantConfig = {
@@ -90,17 +96,12 @@ function buildFinalConfig() {
         "url": document.getElementById('homeassistant-url').value,
         "port": document.getElementById('homeassistant-port').value,
         "token": document.getElementById('homeassistant-token').value,
-        "triggeraspectratiochangeonevent": document.getElementById('homeassistant-triggeraspectratiochangeonevent').checked,
         "triggerlightsonevent": document.getElementById('homeassistant-triggerlightsonevent').checked,
         "triggeravrmastervolumechangeonevent": document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked,
         "remoteentityname": document.getElementById('homeassistant-remoteentityname').value,
         "playscriptname": document.getElementById('homeassistant-playscriptname').value,
         "pausescriptname": document.getElementById('homeassistant-pausescriptname').value,
         "stopscriptname": document.getElementById('homeassistant-stopscriptname').value
-    };
-
-    const mainConfig = {
-        "listenport": document.getElementById('listenport').value
     };
 
     const mqttConfig = {
@@ -110,7 +111,6 @@ function buildFinalConfig() {
         "password": document.getElementById('mqtt-password').value,
         "topiclights": document.getElementById('mqtt-topiclights').value,
         "topicvolume": document.getElementById('mqtt-topicvolume').value,
-        "topicaspectratio": document.getElementById('mqtt-topicaspectratio').value,
         "topicbeqcurrentprofile": document.getElementById('mqtt-topicbeqcurrentprofile').value,
         "topicminidspmutestatus": document.getElementById('mqtt-topicminidspmutestatus').value,
         "topicplayingstatus": document.getElementById('mqtt-topicplayingstatus').value
@@ -126,6 +126,16 @@ function buildFinalConfig() {
         "playerip": document.getElementById('plex-playerip').value,
         "enabletrailersupport": document.getElementById('plex-enabletrailersupport').checked
     };
+    const jellyfinConfig = {
+        "enabled": document.getElementById('jellyfin-enabled').checked,
+        "url": document.getElementById('jellyfin-url').value,
+        "port": document.getElementById('jellyfin-port').value,
+        "ownernamefilter": document.getElementById('jellyfin-ownernamefilter').value,
+        "deviceuuidfilter": document.getElementById('jellyfin-deviceuuidfilter').value,
+        "playermachineidentifier": document.getElementById('jellyfin-playermachineidentifier').value,
+        "userID": document.getElementById('jellyfin-userID').value,
+        "apiToken": document.getElementById('jellyfin-apiToken').value
+    };
     const signalConfig = {
         "enabled": document.getElementById('signal-enabled').checked,
         "source": document.getElementById('signal-source').value
@@ -134,9 +144,9 @@ function buildFinalConfig() {
     const finalConfig = {
         "ezbeq": ezbeqConfig,
         "homeassistant": homeAssistantConfig,
-        "main": mainConfig,
         "mqtt": mqttConfig,
         "plex": plexConfig,
+        "jellyfin": jellyfinConfig,
         "signal": signalConfig
     };
 

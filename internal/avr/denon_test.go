@@ -1,12 +1,17 @@
-package denon
+package avr
 
 import (
 	"testing"
+
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupTest() *DenonClient {
-	return NewClient("192.168.88.40", "23")
+	return &DenonClient{
+		ServerURL: "192.168.88.40",
+		Port: "23",
+	}
 }
 func TestMakeReq(t *testing.T) {
 	c := setupTest()
@@ -24,4 +29,9 @@ func TestGetAudioMode(t *testing.T) {
 	t.Log(mode)
 	assert.NotEmpty(t, mode)
 
+}
+
+func TestNewClient(t *testing.T) {
+	c := GetAVRClient(config.GetString("ezbeq.avrUrl"))
+	assert.NotNil(t, c)
 }

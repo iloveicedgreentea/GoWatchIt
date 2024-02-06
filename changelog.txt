@@ -34,3 +34,10 @@ Modify UUID filter to accept comma for multiple
 * add /logs endpoint
 * add prelim jellyfin support
 * new name/logo
+
+2-1-24
+* Preferred authors is a comma delimited whitelist
+* fix cache on resume
+* various speedups
+* remove listen port config
+* improve search by using tmdb 
