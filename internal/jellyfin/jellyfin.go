@@ -54,6 +54,8 @@ func (c *JellyfinClient) GetPlexMovieDb(payload interface{}) string {
 
 // TODO: finish
 func (c *JellyfinClient) GetAudioCodec(payload interface{}) (string, error) {
+	// codec, title, profile, err := c.GetCodec(payload.(models.JellyfinMetadata))
+	// TODO: parse the response and map this to the beq codec standards
 	return "", nil
 }
 // generic function to make a request
