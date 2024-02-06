@@ -229,10 +229,10 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 	// TODO: make this a whitelist, I think the API already does this but not sure
 	switch m.PreferredAuthor {
 	case "None", "none", "":
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d", code, m.Year)
+		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
 	default:
 		// TODO: make test for different authors, make sure it acts as a whitelist
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s", code, m.Year, urlEncode(m.PreferredAuthor))
+		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s&tmdbid=%s", code, m.Year, urlEncode(m.PreferredAuthor), m.TMDB)
 	}
 	log.Debugf("sending ezbeq search request to %s", endpoint)
 
