@@ -290,7 +290,7 @@ func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	return plexAudioCodec, nil
 }
 func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
-    return ""
+	return ""
 }
 
 // remove garbage from imdb string and convert to float64
@@ -532,9 +532,9 @@ func imdbStoFloat64(s string) (r float64) {
 // 		}
 // 	}
 
-// 	// return aspect ratio
-// 	return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
-// }
+//		// return aspect ratio
+//		return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
+//	}
 func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	// Construct the URL with url.URL
 	u := &url.URL{

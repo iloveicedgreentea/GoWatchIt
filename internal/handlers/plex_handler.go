@@ -227,7 +227,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 }
 
 // resume is only after pausing as long as the media item is still active
-func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
+func mediaResume(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, data models.MediaContainer, skipActions *bool) {
 	if !*skipActions {
 		// mediaType string, codec string, edition string
 		// trigger lights
@@ -252,9 +252,21 @@ func mediaResume(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssista
 		}
 		// get the tmdb id to match with ezbeq catalog
 		m.TMDB = getPlexMovieDb(payload)
-		// TODO: if it was restarted, codec data is lost
-		// get the codec
-		// load beq with cache
+		// if the server was restarted, cached data is lost
+		if m.Codec == "" {
+			log.Warn("No codec found in cache on resume. Was server restarted? Getting new codec")
+			log.Debug("Using plex to get codec because its not cached")
+			m.Codec, err = client.GetAudioCodec(data)
+			if err != nil {
+				log.Errorf("error getting codec from plex, can't continue: %s", err)
+				return
+			}
+		}
+		if m.Codec == "" {
+			log.Error("No codec found after trying to resume")
+			return
+		}
+
 		err = beqClient.LoadBeqProfile(m)
 		if err != nil {
 			log.Error(err)
@@ -392,7 +404,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	// Pressing the 'resume' button in plex is media.play
 	case "media.resume":
 		log.Debug("Event Router: media.resume received")
-		mediaResume(beqClient, haClient, payload, model, skipActions)
+		mediaResume(plexClient, beqClient, haClient, payload, model, data, skipActions)
 	case "media.scrobble":
 		log.Debug("Scrobble received")
 		mediaScrobble()
