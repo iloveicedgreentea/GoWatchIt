@@ -171,7 +171,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	// log.Debugf("Using url %s", req.URL)
 	// log.Debugf("Headers from req %v", req.Header)
 	// simple retry
-	res, err := c.makeCallWithRetry(req, 5, endpoint)
+	res, err := c.makeCallWithRetry(req, 20, endpoint)
 
 	return res, err
 }
@@ -188,6 +188,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		res, err = c.HTTPClient.Do(req)
 		if err != nil {
 			log.Debugf("Error with request - Retrying %v", err)
+			time.Sleep(time.Second * 2)
 			continue
 		}
 		defer res.Body.Close()
@@ -195,6 +196,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		resp, err = io.ReadAll(res.Body)
 		if err != nil {
 			log.Debugf("Reading body failed - Retrying %v", err)
+			time.Sleep(time.Second * 2)
 			continue
 		}
 
@@ -213,6 +215,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 			log.Debug(string(resp), status)
 			log.Debug("Retrying request...")
 			err = fmt.Errorf("error in response: %v", res.Status)
+			time.Sleep(time.Second * 2)
 			continue
 		}
 	}
