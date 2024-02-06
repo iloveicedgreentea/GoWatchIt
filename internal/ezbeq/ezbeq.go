@@ -265,6 +265,7 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
+				log.Infof("Found a match in catalog from author %s", val.Author)
 				return val, nil
 			} else {
 				log.Error("Found a match but editions did not match entry. Not loading")
@@ -391,7 +392,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), catalog.SortTitle)
+	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), fmt.Sprintf("%s: Codec: %s, Author: %s", catalog.SortTitle, m.Codec, catalog.Author))
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
