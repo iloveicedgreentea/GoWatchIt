@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
-	"github.com/iloveicedgreentea/go-plex/internal/config"
 )
 
 var log = logger.GetLogger()
@@ -220,19 +220,30 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 	return resp, err
 }
 
+// authorCompare returns true if there is an author
+func hasAuthor(s string) bool {
+	hasAuthor := strings.ToLower(strings.TrimSpace(s))
+	return hasAuthor != "none" && hasAuthor != ""
+}
+
+// buildAuthorWhitelist returns a string of authors to search for
+func buildAuthorWhitelist(preferredAuthors string, endpoint string) string {
+	authors := strings.Split(preferredAuthors, ",")
+	for _, v := range authors {
+		endpoint += fmt.Sprintf("&authors=%s", strings.TrimSpace(v))
+	}
+	return endpoint
+}
+
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
 	code := urlEncode(m.Codec)
-	var endpoint string
-	// done this way to make it easier to add future authors
-	// TODO: make this a whitelist, I think the API already does this but not sure
-	switch m.PreferredAuthor {
-	case "None", "none", "":
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
-	default:
-		// TODO: make test for different authors, make sure it acts as a whitelist
-		endpoint = fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&authors=%s&tmdbid=%s", code, m.Year, urlEncode(m.PreferredAuthor), m.TMDB)
+	endpoint := fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
+
+	// this is an author whitelist for each non-empty author append it to search
+	if hasAuthor(m.PreferredAuthor) {
+		endpoint = buildAuthorWhitelist(m.PreferredAuthor, endpoint)
 	}
 	log.Debugf("sending ezbeq search request to %s", endpoint)
 
