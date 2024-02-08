@@ -2,6 +2,12 @@ package models
 
 import "time"
 
+type JellyfinExternalLookup struct {
+	Name            string `json:"Name"`
+	Key             string `json:"Key"`
+	Type            string `json:"Type"`
+	URLFormatString string `json:"UrlFormatString"`
+}
 type JellyfinWebhook struct {
 	DeviceID           string `json:"DeviceId"`
 	DeviceName         string `json:"DeviceName"`

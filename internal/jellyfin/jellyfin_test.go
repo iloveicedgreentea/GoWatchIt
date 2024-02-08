@@ -193,3 +193,12 @@ func TestMapCodecs(t *testing.T) {
 		assert.Equal(test.expected, s, "Test failed for %v, got %s", test, s)
 	}
 }
+
+func TestGetTMDB(t *testing.T) {
+	c := testSetup()
+	metadata, err := c.GetMetadata(config.GetString("jellyfin.userID"), "1efb0048dd138e93771ab59ab85c03f1")
+	assert.NoError(t, err)
+	tmdb, err := c.GetJfTMDB(metadata)
+	assert.NoError(t, err)
+	assert.Equal(t, "56292", tmdb)
+}

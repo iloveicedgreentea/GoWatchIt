@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"net/http"
 	"net/url"
 	"strings"
@@ -171,6 +172,25 @@ func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition st
 	}
 }
 
+// GetJfTMDB extracts the tmdb id of a given itemID because its not returned directly in the metadata for some reason
+func (c *JellyfinClient) GetJfTMDB(payload models.JellyfinMetadata) (string, error) {
+	urls := payload.ExternalUrls
+	for _, u := range urls {
+		if u.Name == "TheMovieDb" {
+			s := strings.Replace(u.URL, "https://www.themoviedb.org/", "", -1)
+			// extract the numbers
+			re, err := regexp.Compile(`\d+$`)
+			if err != nil {
+				return "", err
+			}
+			return re.FindString(s), nil
+		}
+	}
+
+	return "", errors.New("no tmdb id found")
+}
+
+
 // containsDDP looks for typical DD+ audio codec names
 func containsDDP(s string) bool {
 	//English (EAC3 5.1) -> dd+ atmos?
@@ -232,10 +252,10 @@ func MapJFToBeqAudioCodec(codec, displayTitle, profile, layout string) string {
 		return "DD+ Atmos"
 	}
 
-	// Assume eac-3 5.1 or 7.1 is dd+ atmos since it usually is
-	// TODO: validate this assumption
+	// Assume eac-3 5.1 or 7.1 is dd+ atmos since it usually is e.x the old guard is "English - Dolby Digital+ - 5.1 - Default" except its actually atmos over dd+5.1
+	// without AVR check this is just not granular enough
 	if (strings.Contains(displayTitle, "5.1") || strings.Contains(displayTitle, "7.1")) && ddpFlag {
-		return "DD+ Atmos"
+		return "DD+ Atmos" // TODO: make this DD+ AtmosMaybe and try both like above
 	}
 
 	// if not atmos and DD+, return DD+

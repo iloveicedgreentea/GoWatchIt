@@ -24,8 +24,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const showItemTitle = "episode"
-const movieItemTitle = "movie"
+const showItemTitle = "Episode"
+const movieItemTitle = "Movie"
 
 var log = logger.GetLogger()
 
