@@ -27,13 +27,15 @@ func ProcessJfWebhook(jfChan chan<- models.JellyfinWebhook, c *gin.Context) {
 	read, err := io.ReadAll(r)
 	if err != nil {
 		log.Errorf("Error reading request body: %v", err)
+		return
 	}
 
-	// log.Debugf("ProcessJfWebhook Request: %v", string(read))
 	var payload models.JellyfinWebhook
 	err = json.Unmarshal(read, &payload)
 	if err != nil {
 		log.Errorf("Error decoding payload: %v", err)
+		log.Debugf("ProcessJfWebhook Request: %v", string(read))
+		return
 	}
 	log.Debugf("Payload: %#v", payload)
 	// respond to request with 200
@@ -48,7 +50,7 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	clientUUID := payload.ClientName
 	// ensure the client matches so it doesnt trigger from unwanted clients
 
-	if !checkUUID(clientUUID, config.GetString("plex.deviceUUIDFilter")) {
+	if !checkUUID(clientUUID, config.GetString("jellyfin.deviceUUIDFilter")) {
 		log.Infof("Got a webhook but Client UUID '%s' does not match enabled filter", clientUUID)
 		return
 	}
@@ -61,6 +63,7 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	metadata, err := jfClient.GetMetadata(payload.UserID, payload.ItemID)
 	if err != nil {
 		log.Errorf("Error getting metadata from jellyfin API: %v", err)
+		return
 	}
 
 	log.Debugf("Processing media type: %s", metadata.Type)
@@ -116,26 +119,25 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	switch payload.NotificationType {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
 	case "PlaybackStart":
-		log.Debug("Event Router: media.play received")
+		// TODO: test start/resume/pause
 		jfMediaPlay(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
 	case "PlaybackStop":
-		log.Debug("Event Router: media.stop received")
 		jfMediaStop(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
 	// really annoyingly jellyfin doesnt send a pause or resume event only progress every X seconds with a isPaused flag
 	// TODO: support pause resume without running resume on every playbackprogress
-	// case "PlaybackProgress":
-	// 	log.Debug("Event Router: PlaybackProgress received")
-	// 	if payload.IsPaused == "true" {
-	// 		mediaPause(beqClient, haClient, payload, model, skipActions)
-	// 	} else {
-	// 		mediaResume()
-	// 	}
+	case "PlaybackProgress":
+		if payload.IsPaused == "true" {
+			jfMediaPause(beqClient, haClient, payload, model, skipActions)
+		} else {
+			jfMediaResume(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
+		}
 	default:
 		log.Warnf("Received unsupported webhook event. Nothing to do: %s", payload.NotificationType)
 	}
 }
 
 func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, useDenonCodec bool, data models.JellyfinMetadata, skipActions *bool) {
+	log.Debug("Processing media play event")
 	wg := &sync.WaitGroup{}
 
 	// stop processing webhooks
@@ -172,8 +174,12 @@ func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, ha
 
 	m.TMDB, err = client.GetJfTMDB(data)
 	if err != nil {
-		log.Errorf("Error getting TMDB data from metadata: %v", err)
-		return
+		if config.GetBool("jellyfin.skiptmdb") {
+			log.Warn("TMDB data not found. TMDB is allowed to be skipped")
+		} else {
+			log.Errorf("Error getting TMDB data from metadata: %v", err)
+			return
+		}
 	}
 	err = beqClient.LoadBeqProfile(m)
 	if err != nil {
@@ -196,15 +202,118 @@ func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, ha
 }
 
 func jfMediaStop(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, useDenonCodec bool, data models.JellyfinMetadata, skipActions *bool) {
-	return
-	// TODO: implement
+	log.Debug("Processing media stop event")
+	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
+	if err != nil {
+		log.Error(err)
+	}
+	go common.ChangeLight("on")
+
+	err = beqClient.UnloadBeqProfile(m)
+	if err != nil {
+		log.Error(err)
+		if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+			err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err))
+			if err != nil {
+				log.Error()
+			}
+		}
+	}
+	log.Info("BEQ profile unloaded")
+}
+
+func jfMediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, skipActions *bool) {
+	log.Debug("Processing media pause event")
+	if !*skipActions {
+		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
+		if err != nil {
+			log.Error(err)
+		}
+
+		go common.ChangeLight("on")
+
+		err = beqClient.UnloadBeqProfile(m)
+		if err != nil {
+			log.Error(err)
+			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+				err := haClient.SendNotification(fmt.Sprintf("Error UNLOADING profile: %v -- Unsafe to play movies!", err))
+				if err != nil {
+					log.Error()
+				}
+			}
+		}
+		log.Info("BEQ profile unloaded")
+	}
+}
+func jfMediaResume(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, useDenonCodec bool, data models.JellyfinMetadata, skipActions *bool) {
+	log.Debug("Processing media resume event")
+	if !*skipActions {
+		// mediaType string, codec string, edition string
+		// trigger lights
+		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
+		if err != nil {
+			log.Error(err)
+		}
+		go common.ChangeLight("off")
+		// Changing on resume is disabled because its annoying if you changed it since playing
+		// go changeMasterVolume(vip, mediaType)
+
+		// allow skipping search to save time
+		// always unload in case something is loaded from movie for tv
+		err = beqClient.UnloadBeqProfile(m)
+		if err != nil {
+			log.Errorf("Error on startup - unloading beq %v", err)
+		}
+		if data.Type == showItemTitle {
+			if !config.GetBool("ezbeq.enableTvBeq") {
+				return
+			}
+		}
+		// get the tmdb id to match with ezbeq catalog
+		m.TMDB, err = client.GetJfTMDB(data)
+		if err != nil {
+			log.Errorf("Error getting TMDB data from metadata: %v", err)
+			return
+		}
+		// if the server was restarted, cached data is lost
+		if m.Codec == "" {
+			log.Warn("No codec found in cache on resume. Was server restarted? Getting new codec")
+			log.Debug("Using jellyfin to get codec because its not cached")
+			m.Codec, err = client.GetAudioCodec(data)
+			if err != nil {
+				log.Errorf("error getting codec from jellyfin, can't continue: %s", err)
+				return
+			}
+		}
+		if m.Codec == "" {
+			log.Error("No codec found after trying to resume")
+			return
+		}
+
+		err = beqClient.LoadBeqProfile(m)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		log.Info("BEQ profile loaded")
+
+		// send notification of it loaded
+		if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+			err := haClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%s) // Codec %s", data.OriginalTitle, payload.Year, m.Codec))
+			if err != nil {
+				log.Error()
+			}
+		}
+	}
 }
 
 // // entry point for background tasks
 func JellyfinWorker(jfChan <-chan models.JellyfinWebhook, readyChan chan<- bool) {
-	readyChan <- true
-
-	log.Info("JellyfinWorker started")
+	if !config.GetBool("jellyfin.enabled") {
+		log.Debug("Jellyfin is disabled")
+		readyChan <- true
+		return
+	}
 
 	// Server Info
 	jellyfinClient := jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"), config.GetString("jellyfin.playerMachineIdentifier"), config.GetString("jellyfin.playerIP"))

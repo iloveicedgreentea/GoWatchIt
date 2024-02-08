@@ -95,8 +95,6 @@ func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadClo
 	return resp.Body, err
 }
 
-// TODO: is paused
-
 // GetMetadata returns the metadata for a given itemID
 func (c *JellyfinClient) GetMetadata(userID, itemID string) (metadata models.JellyfinMetadata, err error) {
 	// take the itemID and get the codec
@@ -175,6 +173,7 @@ func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition st
 // GetJfTMDB extracts the tmdb id of a given itemID because its not returned directly in the metadata for some reason
 func (c *JellyfinClient) GetJfTMDB(payload models.JellyfinMetadata) (string, error) {
 	urls := payload.ExternalUrls
+	log.Debugf("External urls: %#v", urls)
 	for _, u := range urls {
 		if u.Name == "TheMovieDb" {
 			s := strings.Replace(u.URL, "https://www.themoviedb.org/", "", -1)

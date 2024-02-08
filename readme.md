@@ -104,7 +104,7 @@ You must use the [official Jellyfin Webhooks plugin](https://github.com/jellyfin
 4) You can optionally add a user filter
 5) Item types: Movies, Episodes
 
-Configure the webhook in whatever way you want but it *must* include the following:
+Configure the webhook in whatever way you want but it *must* include the following and in this order:
 
 ```json
 {
@@ -115,13 +115,13 @@ Configure the webhook in whatever way you want but it *must* include the followi
   "ItemId": "{{ItemId}}",
   "ItemType": "{{ItemType}}",
   "NotificationType": "{{NotificationType}}",
-  "Year": "{{Year}}",
 {{#if_equals NotificationType 'PlaybackStop'}}
-    "PlayedToCompletion": "{{PlayedToCompletion}}"
+    "PlayedToCompletion": "{{PlayedToCompletion}}",
 {{/if_equals}}
 {{#if_equals NotificationType 'PlaybackProgress'}}
-    "IsPaused": "{{IsPaused}}"
+    "IsPaused": "{{IsPaused}}",
 {{/if_equals}}
+  "Year": "{{Year}}"
 }
 ```
 #### Generate API Key

@@ -486,6 +486,11 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 
 // entry point for background tasks
 func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
+	if !config.GetBool("plex.enabled") {
+		log.Debug("Plex is disabled")
+		readyChan <- true
+		return
+	}
 	log.Info("PlexWorker started")
 
 	var beqClient *ezbeq.BeqClient
