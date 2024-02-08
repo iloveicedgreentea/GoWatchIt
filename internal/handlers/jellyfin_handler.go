@@ -60,16 +60,16 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	var editionName string
 	var codec string
 
-	metadata, err := jfClient.GetMetadata(payload.UserID, payload.ItemID)
+	data, err = jfClient.GetMetadata(payload.UserID, payload.ItemID)
 	if err != nil {
 		log.Errorf("Error getting metadata from jellyfin API: %v", err)
 		return
 	}
 
-	log.Debugf("Processing media type: %s", metadata.Type)
+	log.Debugf("Processing media type: %s", data.Type)
 
 	// get the edition name
-	editionName = jfClient.GetEdition(metadata)
+	editionName = jfClient.GetEdition(data)
 	log.Debugf("Event Router: Found edition: %s", editionName)
 
 	// mutate with data from JF
@@ -79,7 +79,7 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 		return
 	}
 	model.Year = year
-	model.MediaType = metadata.Type
+	model.MediaType = data.Type
 	model.Edition = editionName
 	// this should be updated with every event
 	model.EntryID = beqClient.CurrentProfile
@@ -100,7 +100,7 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 			codec = mapDenonToBeq(codec)
 		} else {
 			log.Error("Error getting AVR client. Trying to poll jellyfin")
-			codec, err = jfClient.GetAudioCodec(metadata)
+			codec, err = jfClient.GetAudioCodec(data)
 			if err != nil {
 				log.Errorf("Error getting codec from jellyfin: %v", err)
 				return
@@ -108,7 +108,7 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 		}
 	} else {
 		// return the normalized codec
-		codec, err = jfClient.GetAudioCodec(metadata)
+		codec, err = jfClient.GetAudioCodec(data)
 		if err != nil {
 			log.Errorf("Error getting codec from jellyfin: %v", err)
 		}

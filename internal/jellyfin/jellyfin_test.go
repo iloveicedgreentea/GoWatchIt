@@ -47,11 +47,17 @@ func TestGetEdition(t *testing.T) {
 func TestPrintCodec(t *testing.T) {
 	// make client
 	c := testSetup()
-	m, err := getMetadata("1efb0048dd138e93771ab59ab85c03f1")
+	m, err := getMetadata("1a1831da4f875cc5df09507fb49d2877")
 	assert.NoError(t, err)
 	codec, err := c.GetAudioCodec(m)
 	assert.NoError(t, err)
 	t.Log(codec)
+}
+func TestPrintMetadata(t *testing.T) {
+	// make client
+	m, err := getMetadata("1a1831da4f875cc5df09507fb49d2877")
+	assert.NoError(t, err)
+	t.Log(m.OriginalTitle)
 }
 
 type codecTest struct {

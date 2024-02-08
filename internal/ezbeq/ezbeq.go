@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/common"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
@@ -129,7 +128,6 @@ func (c *BeqClient) MuteCommand(status bool) error {
 func (c *BeqClient) MakeCommand(payload []byte) error {
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s", v.Name)
-		log.Debugf("ezbeq: Using endpoint %s", endpoint)
 		_, err := c.makeReq(endpoint, payload, http.MethodPatch)
 		if err != nil {
 			return err
@@ -239,10 +237,6 @@ func buildAuthorWhitelist(preferredAuthors string, endpoint string) string {
 	return endpoint
 }
 
-func checkNameForSearch(searchTitle, MatchTitle string) bool {
-	return common.InsensitiveContains(searchTitle, MatchTitle)
-}
-
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
@@ -270,20 +264,21 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 	for _, val := range payload {
 		// if skipping TMDB, set the IDs to match
 		if config.GetBool("jellyfin.skiptmdb") {
-			log.Debug("Skipping TMDB search")
+			if m.Title == "" {
+				return models.BeqCatalog{}, errors.New("title is blank, can't skip TMDB")
+			}
+			log.Debug("Skipping TMDB for search")
 			val.MovieDbID = m.TMDB
+			if !strings.EqualFold(val.Title, m.Title) {
+				log.Debugf("%s did not match with title %s", val.Title, m.Title)
+				continue
+			}
+			log.Debugf("%s matched with title %s", val.Title, m.Title)
 		}
-		log.Debugf("Beq results: Title: %v -- Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
+		// log.Debugf("Beq results: Title: %v // Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
-			// if tmdb is skipped, the title has to match
-			if config.GetBool("jellyfin.skiptmdb") {
-				log.Debug("Using title compare for search")
-				if !checkNameForSearch(val.Title, m.Title) {
-					log.Errorf("Title %s did not match %s", val.Title, m.Title)
-					return models.BeqCatalog{}, errors.New("beq profile was not found in catalog")
-				}
-			}
+			// log.Debugf("%s matched with codec %s, checking further", val.Title, val.AudioTypes[0])
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
 				log.Infof("Found a match in catalog from author %s", val.Author)
@@ -401,8 +396,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 	// write payload to each device
 	for _, v := range m.Devices {
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
-		log.Debugf("json payload %v", string(jsonPayload))
-		log.Debugf("using endpoint %s", endpoint)
 		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
 			log.Debugf("json payload %v", string(jsonPayload))

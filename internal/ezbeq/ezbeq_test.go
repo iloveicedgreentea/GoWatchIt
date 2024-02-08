@@ -1,7 +1,7 @@
 package ezbeq
 
 import (
-	// "strings"
+	"strings"
 	"fmt"
 	"testing"
 
@@ -681,4 +681,8 @@ func TestLoadProfile(t *testing.T) {
 		assert.NoError(err)
 	}
 
+}
+
+func TestTitleCom(t *testing.T) {
+	assert.True(t, strings.EqualFold("American Sniper", ""))
 }
