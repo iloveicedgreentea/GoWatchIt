@@ -13,6 +13,7 @@ type SearchRequest struct {
 	MediaType       string
 	Devices         []string
 	Slots           []int
+	Title           string
 }
 
 type BeqCatalog struct {
@@ -25,7 +26,7 @@ type BeqCatalog struct {
 	MvAdjust   float64  `json:"mvAdjust"`
 	Edition    string   `json:"edition"`
 	MovieDbID  string   `json:"theMovieDB"`
-	Author	   string   `json:"author"`
+	Author     string   `json:"author"`
 }
 
 type BeqDevices struct {

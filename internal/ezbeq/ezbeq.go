@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iloveicedgreentea/go-plex/internal/common"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
@@ -238,6 +239,10 @@ func buildAuthorWhitelist(preferredAuthors string, endpoint string) string {
 	return endpoint
 }
 
+func checkNameForSearch(searchTitle, MatchTitle string) bool {
+	return common.InsensitiveContains(searchTitle, MatchTitle)
+}
+
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
 	// url encode because of spaces and stuff
@@ -263,15 +268,28 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 
 	// search through results and find match
 	for _, val := range payload {
+		// if skipping TMDB, set the IDs to match
+		if config.GetBool("jellyfin.skiptmdb") {
+			log.Debug("Skipping TMDB search")
+			val.MovieDbID = m.TMDB
+		}
 		log.Debugf("Beq results: Title: %v -- Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
+			// if tmdb is skipped, the title has to match
+			if config.GetBool("jellyfin.skiptmdb") {
+				log.Debug("Using title compare for search")
+				if !checkNameForSearch(val.Title, m.Title) {
+					log.Errorf("Title %s did not match %s", val.Title, m.Title)
+					return models.BeqCatalog{}, errors.New("beq profile was not found in catalog")
+				}
+			}
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
 				log.Infof("Found a match in catalog from author %s", val.Author)
 				return val, nil
 			} else {
-				log.Error("Found a match but editions did not match entry. Not loading")
+				log.Errorf("Found a potential match but editions did not match entry. Not loading")
 			}
 		}
 	}
@@ -302,9 +320,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 		return nil
 	}
 
-	if m.TMDB == "" {
-		return errors.New("tmdb is empty. Can't find a match")
-	}
 	log.Debugf("beq payload is %#v", m)
 
 	// if no devices provided, error
@@ -322,6 +337,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 
 	// skip searching when resuming for speed
 	if !m.SkipSearch {
+		// TODO: do the same for DD+ atmos
 		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
 		if m.Codec == "AtmosMaybe" {
 			m.Codec = "TrueHD 7.1"

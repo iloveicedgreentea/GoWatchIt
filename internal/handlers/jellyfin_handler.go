@@ -115,6 +115,7 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	}
 	// add codec
 	model.Codec = codec
+	model.Title = data.OriginalTitle // TODO: check this
 
 	switch payload.NotificationType {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
