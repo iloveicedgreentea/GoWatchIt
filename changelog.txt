@@ -40,5 +40,7 @@ Modify UUID filter to accept comma for multiple
 * fix cache on resume
 * various speedups
 * remove listen port config
-* improve search by using tmdb 
+* improve search by filtering tmdb 
 * add author name to mqtt topic and logs
+* add option to skip TMDB for jellyfin, seems to be necessary because their metadata is super unreliable
+* Implement start/stop support for jellyfin
