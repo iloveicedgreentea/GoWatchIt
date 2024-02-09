@@ -253,15 +253,15 @@ func MapJFToBeqAudioCodec(codec, displayTitle, profile, layout string) string {
 
 	// Assume eac-3 5.1 or 7.1 is dd+ atmos since it usually is e.x the old guard is "English - Dolby Digital+ - 5.1 - Default" except its actually atmos over dd+5.1
 	// without AVR check this is just not granular enough
-	if (strings.Contains(displayTitle, "5.1") || strings.Contains(displayTitle, "7.1")) && ddpFlag {
-		return "DD+ Atmos" // TODO: make this DD+ AtmosMaybe and try both like above
-	}
-
-	// if not atmos and DD+, return DD+
+	// this will attempt DD+ Atmos, then DD+ 5.1, and then DD+
 	if !atmosFlag && ddpFlag {
-		return "DD+"
+		if common.InsensitiveContains(layout, "5.1") {
+			return "DD+Atmos5.1Maybe"
+		}
+		if common.InsensitiveContains(layout, "7.1") {
+			return "DD+Atmos7.1Maybe"
+		}
 	}
-
 	switch {
 	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata. This will get confirmed later
 	// most non-atmos 7.1 titles are actually dts-hd 7.1

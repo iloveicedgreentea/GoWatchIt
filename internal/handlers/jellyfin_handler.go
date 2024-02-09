@@ -115,7 +115,8 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	}
 	// add codec
 	model.Codec = codec
-	model.Title = data.OriginalTitle // TODO: check this
+	// add title
+	model.Title = data.OriginalTitle
 
 	switch payload.NotificationType {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
@@ -165,7 +166,6 @@ func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, ha
 		return
 	}
 
-	// TODO: check if beq is enabled
 	// if its a show and you dont want beq enabled, exit
 	if data.Type == showItemTitle {
 		if !config.GetBool("ezbeq.enableTvBeq") {
@@ -350,7 +350,6 @@ func JellyfinWorker(jfChan <-chan models.JellyfinWebhook, readyChan chan<- bool)
 		Slots:      config.GetIntSlice("ezbeq.slots"),
 		// try to skip by default
 		SkipSearch: true,
-		// TODO: make this a whitelist
 		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 	}
 
