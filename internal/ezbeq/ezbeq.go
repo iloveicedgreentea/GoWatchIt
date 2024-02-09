@@ -275,10 +275,18 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 			}
 			log.Debugf("%s matched with title %s", val.Title, m.Title)
 		}
-		// log.Debugf("Beq results: Title: %v // Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
+		log.Debugf("Beq results: Title: %v // Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
-		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
-			// log.Debugf("%s matched with codec %s, checking further", val.Title, val.AudioTypes[0])
+		var audioMatch bool
+		// rationale here is some BEQ entries have multiple audio types in one entry
+		for _, v := range val.AudioTypes {
+			if strings.EqualFold(v, m.Codec) {
+				audioMatch = true
+				break
+			}
+		}
+		if val.MovieDbID == m.TMDB && val.Year == m.Year && audioMatch {
+			log.Debugf("%s matched with codecs %v, checking further", val.Title, val.AudioTypes)
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
 				log.Infof("Found a match in catalog from author %s", val.Author)
@@ -332,7 +340,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 
 	// skip searching when resuming for speed
 	if !m.SkipSearch {
-		// TODO: do the same for DD+ atmos
 		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
 		if m.Codec == "AtmosMaybe" {
 			m.Codec = "TrueHD 7.1"
@@ -342,6 +349,37 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 				catalog, err = c.searchCatalog(m)
 				if err != nil {
 					return err
+				}
+			}
+			// most metadata contains DD+5.1 or something but its actually DD+ Atmos, so try a few options
+		} else if m.Codec == "DD+Atmos5.1Maybe" {
+			m.Codec = "DD+ Atmos"
+			catalog, err = c.searchCatalog(m)
+			// else try DD+ 5.1
+			if err != nil {
+				m.Codec = "DD+ 5.1"
+				catalog, err = c.searchCatalog(m)
+				if err != nil {
+					m.Codec = "DD+"
+					catalog, err = c.searchCatalog(m)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		} else if m.Codec == "DD+Atmos7.1Maybe" {
+			m.Codec = "DD+ Atmos"
+			catalog, err = c.searchCatalog(m)
+			// else try DD+ 7.1
+			if err != nil {
+				m.Codec = "DD+ 7.1"
+				catalog, err = c.searchCatalog(m)
+				if err != nil {
+					m.Codec = "DD+"
+					catalog, err = c.searchCatalog(m)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		} else {
