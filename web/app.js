@@ -55,13 +55,14 @@ function populateFields(config) {
     document.getElementById('plex-enabletrailersupport').checked = config.plex.enabletrailersupport;
     // jellyfin
     document.getElementById('jellyfin-enabled').checked = config.jellyfin.enabled;
+    document.getElementById('jellyfin-skiptmdb').checked = config.jellyfin.skiptmdb;
     document.getElementById('jellyfin-url').value = config.jellyfin.url;
     document.getElementById('jellyfin-port').value = config.jellyfin.port;
     document.getElementById('jellyfin-ownernamefilter').value = config.jellyfin.ownernamefilter;
     document.getElementById('jellyfin-deviceuuidfilter').value = config.jellyfin.deviceuuidfilter;
     document.getElementById('jellyfin-playermachineidentifier').value = config.jellyfin.playermachineidentifier;
-    document.getElementById('jellyfin-userID').value = config.jellyfin.userID;
-    document.getElementById('jellyfin-apiToken').value = config.jellyfin.apiToken;
+    document.getElementById('jellyfin-userid').value = config.jellyfin.userid;
+    document.getElementById('jellyfin-apitoken').value = config.jellyfin.apitoken;
 
     // Signal
     document.getElementById('signal-enabled').checked = config.signal.enabled;
@@ -128,13 +129,14 @@ function buildFinalConfig() {
     };
     const jellyfinConfig = {
         "enabled": document.getElementById('jellyfin-enabled').checked,
+        "skiptmdb": document.getElementById('jellyfin-skiptmdb').checked,
         "url": document.getElementById('jellyfin-url').value,
         "port": document.getElementById('jellyfin-port').value,
         "ownernamefilter": document.getElementById('jellyfin-ownernamefilter').value,
         "deviceuuidfilter": document.getElementById('jellyfin-deviceuuidfilter').value,
         "playermachineidentifier": document.getElementById('jellyfin-playermachineidentifier').value,
-        "userID": document.getElementById('jellyfin-userID').value,
-        "apiToken": document.getElementById('jellyfin-apiToken').value
+        "userid": document.getElementById('jellyfin-userid').value,
+        "apitoken": document.getElementById('jellyfin-apitoken').value
     };
     const signalConfig = {
         "enabled": document.getElementById('signal-enabled').checked,

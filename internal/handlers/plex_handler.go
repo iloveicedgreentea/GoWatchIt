@@ -24,8 +24,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const showItemTitle = "episode"
-const movieItemTitle = "movie"
+const showItemTitle = "Episode"
+const movieItemTitle = "Movie"
 
 var log = logger.GetLogger()
 
@@ -198,7 +198,6 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	}
 
 	log.Debugf("Found codec: %s", m.Codec)
-	// TODO: check if beq is enabled
 	// if its a show and you dont want beq enabled, exit
 	if payload.Metadata.Type == showItemTitle {
 		if !config.GetBool("ezbeq.enableTvBeq") {
@@ -341,7 +340,6 @@ func checkUUID(clientUUID string, filterConfig string) bool {
 	return true
 }
 
-// TODO! make a generic eventRouter but route to implementation specific functions instead of making generic play functions
 // based on event type, determine what to do
 func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
@@ -393,7 +391,6 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	// play means a new file was started
 	case "media.play":
 		log.Debug("Event Router: media.play received")
-		// TODO: add lights and stuff here to do async, not blocked by other functions
 		wg := &sync.WaitGroup{}
 		mediaPlay(plexClient, beqClient, haClient, avrClient, payload, model, useAvrCodec, data, skipActions, wg)
 	case "media.stop":
@@ -486,6 +483,11 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 
 // entry point for background tasks
 func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
+	if !config.GetBool("plex.enabled") {
+		log.Debug("Plex is disabled")
+		readyChan <- true
+		return
+	}
 	log.Info("PlexWorker started")
 
 	var beqClient *ezbeq.BeqClient
@@ -522,7 +524,6 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 		Slots:      config.GetIntSlice("ezbeq.slots"),
 		// try to skip by default
 		SkipSearch: true,
-		// TODO: make this a whitelist
 		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 	}
 

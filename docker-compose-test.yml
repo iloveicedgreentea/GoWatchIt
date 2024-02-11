@@ -1,0 +1,14 @@
+version: '3.8' 
+
+services:
+  plex-webhook-automation:
+    platform: linux/amd64
+    image: gowatchit-local:latest
+    ports:
+      - '9999:9999' 
+    environment: 
+      SUPER_DEBUG: 'false'
+      LOG_LEVEL: 'debug'
+    volumes:
+      - ./docker/data:/data 
+      - ./web:/web

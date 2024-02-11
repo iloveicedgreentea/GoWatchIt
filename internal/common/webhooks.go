@@ -8,7 +8,6 @@ import (
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
-// TODO: test this if not already
 func DecodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 	var pwhPayload models.PlexWebhookPayload
 

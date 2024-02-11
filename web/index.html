@@ -31,7 +31,8 @@
                 <div>
                     <label for="ezbeq-adjustmastervolumewithprofile">Adjust Master Volume With Profile
                         <span class="description">
-                            Most BEQ profiles have a Master Volume adjustment. Most lower the MV but some raise it. I recommend this on because the BEQ is created with MV in mind.
+                            Most BEQ profiles have a Master Volume adjustment. Most lower the MV but some raise it. I
+                            recommend this on because the BEQ is created with MV in mind.
                         </span>
                     </label>
 
@@ -407,7 +408,8 @@
                 <div>
                     <label for="plex-enabletrailersupport">Enable Trailer Support
                         <span class="description">
-                            If you enable trailers before movies, it can process it like turn off lights. No beq obviously. I keep this off so trailers behave like they do in commercial theaters
+                            If you enable trailers before movies, it can process it like turn off lights. No beq
+                            obviously. I keep this off so trailers behave like they do in commercial theaters
                         </span>
                     </label>
 
@@ -427,6 +429,17 @@
                 <input type="checkbox" id="jellyfin-enabled" name="jellyfin.enabled">
             </div>
             <div id="jellyfin-section">
+                <div>
+                    <label for="jellyfin-skiptmdb">Allow Skipping TMDB Check
+                        <span class="description">
+                            Jellyfin doesn't have robust metadata services like Plex so some items can just be entirely
+                            missing TMDB. If checked, BEQ matching will allow skipping TMDB if its not found from
+                            Jellyfin. "it should be fine"
+                        </span>
+                    </label>
+
+                    <input type="checkbox" id="jellyfin-skiptmdb" name="jellyfin.skiptmdb">
+                </div>
                 <div>
                     <label for="jellyfin-url">jellyfin URL
                         <span class="description">
@@ -474,23 +487,23 @@
                     <input type="text" id="jellyfin-playermachineidentifier" name="jellyfin.playermachineidentifier">
                 </div>
                 <div>
-                    <label for="jellyfin-userID">User ID
+                    <label for="jellyfin-userid">User ID
                         <span class="description">
                             The GUID of your user. Get this from your jellyfin profile page -> check the url
-                            e.g http://1.2.3.4:8096/web/index.html#!/myprofile.html?userId=183349739232834923894235 <- this value
-                        </span>
+                            e.g http://1.2.3.4:8096/web/index.html#!/myprofile.html?userId=183349739232834923894235 <-
+                                this value </span>
                     </label>
-                    <input type="text" id="jellyfin-userID" name="jellyfin.userID">
+                    <input type="text" id="jellyfin-userid" name="jellyfin.userid">
                 </div>
 
                 <div>
-                    <label for="jellyfin-apiToken">API Token
+                    <label for="jellyfin-apitoken">API Token
                         <span class="description">
                             The Jellyfin API token from Dashboard -> Admin -> API Keys
                         </span>
                     </label>
 
-                    <input type="text" id="jellyfin-apiToken" name="jellyfin.apiToken">
+                    <input type="text" id="jellyfin-apitoken" name="jellyfin.apitoken">
                 </div>
 
             </div>

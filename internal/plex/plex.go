@@ -144,8 +144,6 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 		log.Debug("Session not found, waiting 2 seconds")
 		time.Sleep(time.Second * 2)
 	}
-	// TODO: fallback, use webhook data?
-
 	return "", fmt.Errorf("error getting codec. no session found with uuid %s", uuid)
 }
 
@@ -205,17 +203,18 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "DD+ Atmos"
 	}
 
-	// Assume eac-3 5.1 is dd+ atmos since almost all metadata says so
-	if strings.Contains(codecExtendTitle, "5.1") && ddpFlag {
-		return "DD+ Atmos"
-	}
-
-	// if not atmos and DD+, return DD+
+	// if not atmos and DD+, check later for DD+ Atmos, DD+ 7.1/5.1
 	if !atmosFlag && ddpFlag {
-		return "DD+"
+		if insensitiveContains(codecTitle, "5.1") {
+			return "DD+Atmos5.1Maybe"
+		}
+		if insensitiveContains(codecTitle, "7.1") {
+			return "DD+Atmos7.1Maybe"
+		}
 	}
 
 	// if False and false, then check others
+	// TODO: simplify this like with jellyfin
 	switch {
 	// There are very few truehd 7.1 titles and many atmos titles have wrong metadata. This will get confirmed later
 	case insensitiveContains(codecTitle, "TRUEHD 7.1") && insensitiveContains(codecExtendTitle, "TrueHD 7.1"):
@@ -265,8 +264,6 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 // get the type of audio codec for BEQ purpose like atmos, dts-x, etc
 func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	var plexAudioCodec string
-	// TODO: get metadata from webhook payload
-	
 	// loop over streams, find the FIRST stream with ID = 2 (this is primary audio track) and read that val
 	// loop instead of index because of edge case with two or more video streams
 	log.Debugf("Data type: %T", data)

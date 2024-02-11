@@ -128,7 +128,6 @@ func (c *BeqClient) MuteCommand(status bool) error {
 func (c *BeqClient) MakeCommand(payload []byte) error {
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s", v.Name)
-		log.Debugf("ezbeq: Using endpoint %s", endpoint)
 		_, err := c.makeReq(endpoint, payload, http.MethodPatch)
 		if err != nil {
 			return err
@@ -171,7 +170,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	// log.Debugf("Using url %s", req.URL)
 	// log.Debugf("Headers from req %v", req.Header)
 	// simple retry
-	res, err := c.makeCallWithRetry(req, 5, endpoint)
+	res, err := c.makeCallWithRetry(req, 20, endpoint)
 
 	return res, err
 }
@@ -188,6 +187,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		res, err = c.HTTPClient.Do(req)
 		if err != nil {
 			log.Debugf("Error with request - Retrying %v", err)
+			time.Sleep(time.Second * 2)
 			continue
 		}
 		defer res.Body.Close()
@@ -195,6 +195,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 		resp, err = io.ReadAll(res.Body)
 		if err != nil {
 			log.Debugf("Reading body failed - Retrying %v", err)
+			time.Sleep(time.Second * 2)
 			continue
 		}
 
@@ -213,6 +214,7 @@ func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoin
 			log.Debug(string(resp), status)
 			log.Debug("Retrying request...")
 			err = fmt.Errorf("error in response: %v", res.Status)
+			time.Sleep(time.Second * 2)
 			continue
 		}
 	}
@@ -260,15 +262,37 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 
 	// search through results and find match
 	for _, val := range payload {
-		log.Debugf("Beq results: Title: %v -- Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
+		// if skipping TMDB, set the IDs to match
+		if config.GetBool("jellyfin.skiptmdb") {
+			if m.Title == "" {
+				return models.BeqCatalog{}, errors.New("title is blank, can't skip TMDB")
+			}
+			log.Debug("Skipping TMDB for search")
+			val.MovieDbID = m.TMDB
+			if !strings.EqualFold(val.Title, m.Title) {
+				log.Debugf("%s did not match with title %s", val.Title, m.Title)
+				continue
+			}
+			log.Debugf("%s matched with title %s", val.Title, m.Title)
+		}
+		log.Debugf("Beq results: Title: %v // Codec %v, ID: %v", val.Title, val.AudioTypes, val.ID)
 		// if we find a match, return it. Much easier to match on tmdb since plex provides it also
-		if val.MovieDbID == m.TMDB && val.Year == m.Year && val.AudioTypes[0] == m.Codec {
+		var audioMatch bool
+		// rationale here is some BEQ entries have multiple audio types in one entry
+		for _, v := range val.AudioTypes {
+			if strings.EqualFold(v, m.Codec) {
+				audioMatch = true
+				break
+			}
+		}
+		if val.MovieDbID == m.TMDB && val.Year == m.Year && audioMatch {
+			log.Debugf("%s matched with codecs %v, checking further", val.Title, val.AudioTypes)
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
 				log.Infof("Found a match in catalog from author %s", val.Author)
 				return val, nil
 			} else {
-				log.Error("Found a match but editions did not match entry. Not loading")
+				log.Errorf("Found a potential match but editions did not match entry. Not loading")
 			}
 		}
 	}
@@ -299,9 +323,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 		return nil
 	}
 
-	if m.TMDB == "" {
-		return errors.New("tmdb is empty. Can't find a match")
-	}
 	log.Debugf("beq payload is %#v", m)
 
 	// if no devices provided, error
@@ -328,6 +349,37 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 				catalog, err = c.searchCatalog(m)
 				if err != nil {
 					return err
+				}
+			}
+			// most metadata contains DD+5.1 or something but its actually DD+ Atmos, so try a few options
+		} else if m.Codec == "DD+Atmos5.1Maybe" {
+			m.Codec = "DD+ Atmos"
+			catalog, err = c.searchCatalog(m)
+			// else try DD+ 5.1
+			if err != nil {
+				m.Codec = "DD+ 5.1"
+				catalog, err = c.searchCatalog(m)
+				if err != nil {
+					m.Codec = "DD+"
+					catalog, err = c.searchCatalog(m)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		} else if m.Codec == "DD+Atmos7.1Maybe" {
+			m.Codec = "DD+ Atmos"
+			catalog, err = c.searchCatalog(m)
+			// else try DD+ 7.1
+			if err != nil {
+				m.Codec = "DD+ 7.1"
+				catalog, err = c.searchCatalog(m)
+				if err != nil {
+					m.Codec = "DD+"
+					catalog, err = c.searchCatalog(m)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		} else {
@@ -382,8 +434,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 	// write payload to each device
 	for _, v := range m.Devices {
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
-		log.Debugf("json payload %v", string(jsonPayload))
-		log.Debugf("using endpoint %s", endpoint)
 		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
 			log.Debugf("json payload %v", string(jsonPayload))
