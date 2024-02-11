@@ -76,7 +76,6 @@ func main() {
 	r.GET("/health", handlers.ProcessHealthcheckWebhookGin)
 
 	// Add plex webhook handler
-	// TODO: split out non plex specific stuff into a library
 	r.POST("/plexwebhook", func(c *gin.Context) {
 		handlers.ProcessWebhook(plexChan, c)
 	})
@@ -92,11 +91,11 @@ func main() {
 	r.POST("/save-config", api.SaveConfig)
 	// TODO: add generic webhook endpoint, maybe mqtt?
 
-	// TODO implement signal checking, error chan, etc
 	/*
 		###############################
 		block until workers get ready
 		############################## */
+	log.Info("Waiting for workers to be ready...")
 	<-plexReady
 	<-minidspReady
 	<-jfReady

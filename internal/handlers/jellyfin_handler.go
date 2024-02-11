@@ -126,13 +126,13 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	case "PlaybackStop":
 		jfMediaStop(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
 	// really annoyingly jellyfin doesnt send a pause or resume event only progress every X seconds with a isPaused flag
-	// TODO: support pause resume without running resume on every playbackprogress
-	case "PlaybackProgress":
-		if payload.IsPaused == "true" {
-			jfMediaPause(beqClient, haClient, payload, model, skipActions)
-		} else {
-			jfMediaResume(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
-		}
+	// Jellyfin playback progress is way too buggy to support and makes absolutely no sense anyway
+	// case "PlaybackProgress":
+	// 	if payload.IsPaused == "true" {
+	// 		jfMediaPause(beqClient, haClient, payload, model, skipActions)
+	// 	} else {
+	// 		jfMediaResume(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
+	// 	}
 	default:
 		log.Warnf("Received unsupported webhook event. Nothing to do: %s", payload.NotificationType)
 	}

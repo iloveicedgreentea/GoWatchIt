@@ -39,8 +39,8 @@
 
 Players Supported:
 * Plex 
-* Jellyfin (experimental)
-* Emby (no support or testing)
+* Jellyfin (no support given, but tested)
+* Emby (may work due to jellyfin support, no support given and not tested)
 
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
@@ -56,18 +56,13 @@ Other cool stuff:
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * Built in support for Home Assistant and Minidsp
 
-> ℹ Jellyfin support is coming soon®
-
-
-This application is primarily focused on Plex and HomeAssistant but I plan on adding support for other sources in the future. 
-
 ## Setup
 > ⚠️ ⚠️ *Warning: You should really set a compressor on your minidsp for safety as outlined in the [BEQ forum post](https://www.avsforum.com/threads/bass-eq-for-filtered-movies.2995212/). I am not responsible for any damage* ⚠️ ⚠️
 ### Prerequisites
 > ℹ  It is assumed you have the following tools working. Refer to their respective guides for installation help.
 * MQTT Broker (Optional)
 * Home Assistant (Optional)
-* Plex or Jellyfin (still experimental)
+* Plex or Jellyfin
 * ezBEQ
 * Minidsp (other DSPs may work but I have not tested them. If ezBEQ supports it, it should be work)
 
@@ -99,10 +94,11 @@ You must use the [official Jellyfin Webhooks plugin](https://github.com/jellyfin
 2) Add http://(your-server-ip):9999/jellyfinwebhook as the url
 3) Types:
   * PlaybackStart
-  * PlaybackProgress (needed for pause)
   * PlaybackStopped
 4) You can optionally add a user filter
 5) Item types: Movies, Episodes
+
+*note: playbackProgress is not supported because it is way too buggy and unreliable*
 
 Configure the webhook in whatever way you want but it *must* include the following and in this order:
 
@@ -245,13 +241,10 @@ mode: queued
 max: 10
 ```
 
-
 ### Handlers
 `/plexwebhook`
-This endpoint is where you should tell Plex to send webhooks to. It automatically processes them. No further action is needed. This handler does most of the work - Loading BEQ,  lights, volume, etc
 
 `/jellyfin` 
-Coming soon
 
 `/minidspwebhook`
 This endpoint accepts commands used by minidsp-rs which are performed by EZbeq. Here is how to trigger it with Home Assistant
@@ -281,7 +274,7 @@ One use case is to mute the subs at night. You can use the time integration to t
 ### Config
 The only supported way to configure this is via the web UI. You can dump the current config via the `/config` endpoint.
 
-### Authentication
+### Plex Authentication
 You must whitelist your server IP in "List of IP addresses and networks that are allowed without auth"
 
 Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I may eventually implement their auth flow but it is not a priority.
@@ -305,9 +298,11 @@ If enabled, it will also send a notification to Home Assistant via Notify so you
 For safety, the application tries to unload the profile when it loads up each time in case it crashed or was killed previously, and will unload before playing anything so it doesn't start playing something with the wrong profile. 
 
 ### Matching
-The application will search the catalog and match based on codec (Atmos, DTS-X, etc), title, year, and edition. I have tested with multiple titles and everything matched as expected.
+The application will search the catalog and match based on codec (Atmos, DTS-X, etc), title, year, TMDB, and edition. I have tested with multiple titles and everything matched as expected.
 
 > ⚠️ *If you get an incorrect match, please open a github issue with the full log output and expected codec and title*
+
+Jellyfin may have some issues matching as I have found it will sometimes just not return a TMDB. This has nothing to do with me. Jellyfin is generally just quite buggy. There is a configuration option that you should probably enable in the Jellyfin section which lets you skip TMDB matching. It will instead use the title name which could be prone to false negatives. 
 
 ### Editions
 
