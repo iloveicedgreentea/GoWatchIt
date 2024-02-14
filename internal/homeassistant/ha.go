@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"strings"
 
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
@@ -119,7 +120,9 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 	if err != nil {
 		return err
 	}
-	endpoint := fmt.Sprintf("/api/services/notify/%s", config.GetString("ezbeq.notifyEndpointName"))
+	//  remove notify. if present
+	name := strings.ReplaceAll(config.GetString("ezbeq.notifyEndpointName"), "notify.", "")
+	endpoint := fmt.Sprintf("/api/services/notify/%s", name)
 	_, err = c.doRequest(endpoint, jsonPayload, http.MethodPost)
 	return err
 }
