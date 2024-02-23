@@ -62,11 +62,11 @@ func TestReadAttributes(t *testing.T) {
 		entType string
 	}
 	tt := []testStruct{
-		{
-			entName: "nz7",
-			test:    &models.HAjvcResponse{},
-			entType: "remote",
-		},
+		// {
+		// 	entName: "nz7",
+		// 	test:    &models.HAjvcResponse{},
+		// 	entType: "remote",
+		// },
 		{
 			entName: "envy",
 			test:    &models.HAEnvyResponse{},

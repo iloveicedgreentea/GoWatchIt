@@ -28,7 +28,7 @@ function populateFields(config) {
     document.getElementById('homeassistant-token').value = config.homeassistant.token;
     document.getElementById('homeassistant-triggerlightsonevent').checked = config.homeassistant.triggerlightsonevent;
     document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked = config.homeassistant.triggeravrmastervolumechangeonevent;
-    document.getElementById('homeassistant-remoteentityname').value = config.homeassistant.remoteentityname;
+    // document.getElementById('homeassistant-remoteentityname').value = config.homeassistant.remoteentityname;
     document.getElementById('homeassistant-playscriptname').value = config.homeassistant.playscriptname;
     document.getElementById('homeassistant-pausescriptname').value = config.homeassistant.pausescriptname;
     document.getElementById('homeassistant-stopscriptname').value = config.homeassistant.stopscriptname;
@@ -50,8 +50,6 @@ function populateFields(config) {
     document.getElementById('plex-port').value = config.plex.port;
     document.getElementById('plex-ownernamefilter').value = config.plex.ownernamefilter;
     document.getElementById('plex-deviceuuidfilter').value = config.plex.deviceuuidfilter;
-    document.getElementById('plex-playermachineidentifier').value = config.plex.playermachineidentifier;
-    document.getElementById('plex-playerip').value = config.plex.playerip;
     document.getElementById('plex-enabletrailersupport').checked = config.plex.enabletrailersupport;
     // jellyfin
     document.getElementById('jellyfin-enabled').checked = config.jellyfin.enabled;
@@ -60,13 +58,16 @@ function populateFields(config) {
     document.getElementById('jellyfin-port').value = config.jellyfin.port;
     document.getElementById('jellyfin-ownernamefilter').value = config.jellyfin.ownernamefilter;
     document.getElementById('jellyfin-deviceuuidfilter').value = config.jellyfin.deviceuuidfilter;
-    document.getElementById('jellyfin-playermachineidentifier').value = config.jellyfin.playermachineidentifier;
     document.getElementById('jellyfin-userid').value = config.jellyfin.userid;
     document.getElementById('jellyfin-apitoken').value = config.jellyfin.apitoken;
 
     // Signal
     document.getElementById('signal-enabled').checked = config.signal.enabled;
     document.getElementById('signal-source').value = config.signal.source;
+    document.getElementById('signal-time').value = config.signal.time;
+    document.getElementById('signal-envy').value = config.signal.envy;
+    document.getElementById('signal-playermachineidentifier').value = config.signal.playermachineidentifier;
+    document.getElementById('signal-playerip').value = config.signal.playerip;
 }
 
 function buildFinalConfig() {
@@ -99,7 +100,7 @@ function buildFinalConfig() {
         "token": document.getElementById('homeassistant-token').value,
         "triggerlightsonevent": document.getElementById('homeassistant-triggerlightsonevent').checked,
         "triggeravrmastervolumechangeonevent": document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked,
-        "remoteentityname": document.getElementById('homeassistant-remoteentityname').value,
+        // "remoteentityname": document.getElementById('homeassistant-remoteentityname').value,
         "playscriptname": document.getElementById('homeassistant-playscriptname').value,
         "pausescriptname": document.getElementById('homeassistant-pausescriptname').value,
         "stopscriptname": document.getElementById('homeassistant-stopscriptname').value
@@ -123,8 +124,6 @@ function buildFinalConfig() {
         "port": document.getElementById('plex-port').value,
         "ownernamefilter": document.getElementById('plex-ownernamefilter').value,
         "deviceuuidfilter": document.getElementById('plex-deviceuuidfilter').value,
-        "playermachineidentifier": document.getElementById('plex-playermachineidentifier').value,
-        "playerip": document.getElementById('plex-playerip').value,
         "enabletrailersupport": document.getElementById('plex-enabletrailersupport').checked
     };
     const jellyfinConfig = {
@@ -134,13 +133,16 @@ function buildFinalConfig() {
         "port": document.getElementById('jellyfin-port').value,
         "ownernamefilter": document.getElementById('jellyfin-ownernamefilter').value,
         "deviceuuidfilter": document.getElementById('jellyfin-deviceuuidfilter').value,
-        "playermachineidentifier": document.getElementById('jellyfin-playermachineidentifier').value,
         "userid": document.getElementById('jellyfin-userid').value,
         "apitoken": document.getElementById('jellyfin-apitoken').value
     };
     const signalConfig = {
         "enabled": document.getElementById('signal-enabled').checked,
-        "source": document.getElementById('signal-source').value
+        "source": document.getElementById('signal-source').value,
+        "time": document.getElementById('signal-time').value = config.signal.time,
+        "envy": document.getElementById('signal-envy').value = config.signal.envy,
+        "playermachineidentifier": document.getElementById('signal-playermachineidentifier').value,
+        "playerip": document.getElementById('signal-playerip').value
     };
     // Build the final config JSON
     const finalConfig = {

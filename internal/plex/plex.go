@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
@@ -18,7 +18,7 @@ import (
 var log = logger.GetLogger()
 
 // Stuff to interface directly with Plex
-// of course their api is undocumented and worst of all, in xml. I had to piece it together reading various unofficial API implementations
+// of course their api is undocumented and worst of all, in xml. I had to piece it together reading various unofficial API implementations or trial and error
 
 type PlexClient struct {
 	ServerURL  string
@@ -31,15 +31,13 @@ type PlexClient struct {
 }
 
 // return a new instance of a plex client
-func NewClient(url, port string, machineID string, clientIP string) *PlexClient {
+func NewClient(url, port string) *PlexClient {
 	return &PlexClient{
 		ServerURL: url,
 		Port:      port,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
-		MachineID: machineID,
-		ClientIP:  clientIP,
 	}
 }
 
@@ -75,22 +73,6 @@ func parseSessionMediaContainer(payload []byte) (models.SessionMediaContainer, e
 	return data, nil
 }
 
-// pass the path (/library/123) to the plex server
-func (c *PlexClient) getPlexReq(path string) ([]byte, error) {
-	res, err := c.HTTPClient.Get(fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, path))
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	return data, err
-}
-
 func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 	// Get session object
 	var data models.SessionMediaContainer
@@ -98,7 +80,7 @@ func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 
 	// loop until not empty for 30s
 	for i := 0; i < 30; i++ {
-		res, err := c.getPlexReq("/status/sessions")
+		res, err := c.makePlexReq("/status/sessions")
 		if err != nil {
 			return models.SessionMediaContainer{}, err
 		}
@@ -149,7 +131,7 @@ func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 
 // send a request to Plex to get data about something
 func (c *PlexClient) GetMediaData(libraryKey string) (models.MediaContainer, error) {
-	res, err := c.getPlexReq(libraryKey)
+	res, err := c.makePlexReq(libraryKey)
 	if err != nil {
 		return models.MediaContainer{}, err
 	}
@@ -255,6 +237,8 @@ func MapPlexToBeqAudioCodec(codecTitle, codecExtendTitle string) string {
 		return "AAC 2.0"
 	case insensitiveContains(codecTitle, "AC3 5.1") || insensitiveContains(codecTitle, "EAC3 5.1"):
 		return "AC3 5.1"
+	case insensitiveContains(codecTitle, "EAC3") || insensitiveContains(codecExtendTitle, "EAC3"):
+		return "DD+"
 	default:
 		return "Empty"
 	}
@@ -286,274 +270,48 @@ func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	}
 	return plexAudioCodec, nil
 }
+// TODO: rename
+// GetPlexMovieDb is used because of the Client interface
 func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
 	return ""
 }
 
-// remove garbage from imdb string and convert to float64
-func imdbStoFloat64(s string) (r float64) {
-	// remove spaces
-	// remove stuff after " : 1" and return the first part e.g 2.39
-	// return it as float64 so we can do math
-	log.Debugf("Plex: converting imdb string: %s", s)
-	splitStr := strings.Split(s, ":")
-	// first index of split string without spaces
-	big := strings.TrimSpace(splitStr[0])
-	// convert it to float
-	firstVal, err := strconv.ParseFloat(big, 64)
-	if err != nil {
-		return r
-	}
-	// if the first number is larger than 3, its almost definitely something like 16:9
-	// basically if its "16:9"
-	if firstVal > 3 {
-		// get the second value, "9" as float
-		little, err := strconv.ParseFloat(strings.TrimSpace(splitStr[1]), 64)
-		if err != nil {
-			return r
-		}
-		// get the ratio, so 1.78 for 16:9
-		r = firstVal / little
-	} else {
-		// set the comparison to the first value, like 2.39
-		r = firstVal
-	}
-
-	log.Debugf("Plex: Converted val: %v", r)
-	if err != nil {
-		log.Error(err)
-		log.Debugf("Plex: Length of input is %v", len(s))
-		return r
-	}
-	// there is an edge case where annoyingly imdb will list 16:9 instead of 1.78:1
-	if r > 3 && r <= 16 {
-		r = 1.78
-	}
-	// for those crazy people who film in 4:3
-	if r > 3 && r <= 4 {
-		r = 1.33
-	}
-	// just in case something has 17:9
-	if r > 16 && r <= 17 {
-		r = 1.85
-	}
-
-	return r
-}
-
-// http request to the tech info page
-// func getImdbTechInfo(titleID string, client *http.Client) ([]soup.Root, error) {
-// 	// use our slow client
-// 	resp, err := soup.GetWithClient(fmt.Sprintf("https://www.imdb.com/title/%s/technical", titleID), client)
-
-// 	if err != nil {
-// 		return []soup.Root{}, err
-// 	}
-// 	if len(resp) == 0 {
-// 		return []soup.Root{}, errors.New("soup response was empty")
-// 	}
-// 	log.Debug("Done getting soup response")
-// 	docs := soup.HTMLParse(resp)
-
-// 	// the page uses tr/td to display the info
-// 	techSoup := docs.Find("ul", "class", "ipc-metadata-list--base")
-
-// 	// catch nil pointer dereference
-// 	if techSoup.Pointer == nil {
-// 		log.Error("error getting list of technical items from imdb")
-// 		return []soup.Root{}, techSoup.Error
-// 	}
-// 	res := techSoup.FindAll("li", "class", "ipc-metadata-list__item")
-
-// 	return res, nil
-// }
-
-// return the table name given a soup.Root schema
-// func parseImdbTableSchema(input soup.Root) string {
-// 	// 	<li role=\"presentation\" class=\"ipc-metadata-list__item\" data-testid=\"list-item\"><span
-// 	// 	class=\"ipc-metadata-list-item__label\" aria-disabled=\"false\">Color</span>
-// 	// <div class=\"ipc-metadata-list-item__content-container\">
-// 	// 	<ul class=\"ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline
-// 	// 		ipc-metadata-list-item__list-content base\" role=\"presentation\">
-// 	// 		<li role=\"presentation\" class=\"ipc-inline-list__item\"><a
-// 	// 				class=\"ipc-metadata-list-item__list-content-item
-// 	// 				ipc-metadata-list-item__list-content-item--link\" role=\"button\" tabindex=\"0\"
-// 	// 				aria-disabled=\"false\" href=\"/search/title/?colors=color&amp;ref_=ttspec_spec_3\">Color</a>
-// 	// 		</li>
-// 	// 	</ul>
-// 	// </div>
-// 	// </li>
-// 	res := input.Find("span", "class", "ipc-metadata-list-item__label")
-// 	if res.Pointer == nil {
-// 		return "nil"
-// 	}
-// 	return strings.TrimSpace(res.Text())
-// }
-
-// // return the ratios as float64 given a schema of ratios
-// func parseImdbAspectSchema(input []soup.Root) []float64 {
-// 	var aspects []float64
-// 	// get the items as text
-// 	for _, aspect := range input {
-// 		text := aspect.FullText()
-// 		log.Debugf("parsed aspect text: %v", text)
-// 		// split text by newline
-// 		htmlLines := strings.Split(text, " \n")
-// 		// get only the number
-// 		for _, s := range htmlLines {
-// 			// ignore empty strings
-// 			if len(s) >= 8 {
-// 				aspects = append(aspects, imdbStoFloat64(s))
-// 			}
-// 		}
-// 	}
-// 	sort.Float64s(aspects)
-// 	log.Debugf("discovered aspects: %v", aspects)
-// 	return aspects
-// }
-
-// // determine the aspect ratio(s) from a given title
-// func parseImdbTechnicalInfo(titleID string, client *http.Client) (float64, error) {
-// 	log.Debugf("parsing info for %s", titleID)
-// 	var res []soup.Root
-// 	var err error
-// 	// try up to n times, it seems to sometimes return nil from imdb scraping
-// 	for i := 0; i < 5; i++ {
-// 		res, err = getImdbTechInfo(titleID, client)
-// 		if err != nil {
-// 			log.Error(err)
-// 			time.Sleep(time.Second * 1)
-// 			continue
-// 		}
-// 	}
-
-// 	// schema
-// 	// 	<li role="presentation" class="ipc-metadata-list__item" data-testid="list-item"><button
-// 	//         class="ipc-metadata-list-item__label" role="button" tabindex="0" aria-disabled="false">Aspect ratio</button>
-// 	//     <div class="ipc-metadata-list-item__content-container">
-// 	//         <ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--inline ipc-metadata-list-item__list-content base"
-// 	//             role="presentation">
-// 	//             <li role="presentation" class="ipc-inline-list__item"><label
-// 	//                     class="ipc-metadata-list-item__list-content-item" role="button" tabindex="0" aria-disabled="false"
-// 	//                     for="_blank">1.85 : 1</label></li>
-// 	//         </ul>
-// 	//     </div>
-// 	// </li>
-// 	for _, val := range res {
-// 		if val.Pointer == nil {
-// 			return 0, val.Error
-// 		}
-
-// 		tableName := parseImdbTableSchema(val)
-// 		log.Debugf("Table name: %s", tableName)
-// 		// imdb has intentional anti-scraping html
-// 		if tableName == "nil" {
-// 			continue
-// 		}
-// 		// loop through and search until we get to "camera", its after AR so we can exit faster
-// 		if tableName == "Camera" {
-// 			break
-// 		}
-// 		// if its not camera or AR, keep searching
-// 		// if tableName != "Aspect Ratio" {
-// 		// 	continue
-// 		// }
-// 		if tableName == "Aspect ratio" {
-// 			// loop through and find all aspects
-// 			// the second element will be the data
-// 			// find the max ratio and return it - max because I would rather zoom to scope and have 16:9 shots cropped
-// 			// log.Debug(val.HTML())
-// 			// break
-// 			vals := val.FindAll("li", "class", "ipc-inline-list__item")
-// 			aspects := parseImdbAspectSchema(vals)
-// 			// return the maximum value in slice
-// 			if len(aspects) > 1 {
-// 				return aspects[len(aspects)-1], nil
-// 			} else {
-// 				return aspects[0], nil
-// 			}
-
-// 		}
-// 	}
-
-// 	return 0, nil
-// }
-
-// // Prevent IMDB rate limiting
-// type customTransport struct {
-// 	http.RoundTripper
-// }
-
-// func (e *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-// 	defer time.Sleep(time.Second) // don't go too fast or risk being blocked by AWS WAF
-// 	// headers to get around anti-scraping
-// 	r.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
-// 	r.Header.Set("Accept-Language", "en-US,en;q=0.9")
-// 	r.Header.Set("Authority", "m.media-amazon.com")
-// 	r.Header.Set("Cache-Control", "max-age=0")
-// 	r.Header.Set("Sec-Ch-Ua-Mobile", "?0")
-// 	r.Header.Set("Sec-Ch-Ua-Platform", "\"macOS\"")
-// 	r.Header.Set("Sec-Fetch-Dest", "image")
-// 	r.Header.Set("Sec-Fetch-Mode", "no-cors")
-// 	r.Header.Set("Sec-Fetch-Site", "cross-site")
-// 	r.Header.Set("Sec-Fetch-User", "?1")
-// 	r.Header.Set("Referer", "https://www.imdb.com/")
-// 	r.Header.Set("Content-Type", "text/plain;charset=UTF-8")
-// 	r.Header.Set("Origin", "https://www.imdb.com")
-// 	r.Header.Set("X-Imdb-Client-Name", "imdb-ics-tpanswerscta")
-
-// 	return e.RoundTripper.RoundTrip(r)
-// }
-
-// get the aspect ratio like 1.78 (16:9) 1.85 ~17:9 from IMDB
-// func (c *PlexClient) GetAspectRatio(title string, year int, imdbID string) (float64, error) {
-// 	// Plex directly not useful since almost everything is in a 1.78:1 container
-
-// 	// poll IMDB to get title id if its blank
-// 	if imdbID == "" {
-// 		results, err := imdb.SearchTitle(c.ImdbClient, title)
-// 		if err != nil {
-// 			return 0, err
-// 		}
-// 		if len(results) == 0 {
-// 			return 0, errors.New("not found")
-// 		}
-
-// 		// get the title based on name and year match
-// 		for _, result := range results {
-// 			if result.Year == year && strings.Contains(strings.ToLower(result.Name), title) {
-// 				// get technical info
-// 				log.Debugf("found year match: ID %s, Name %s", result.ID, result.Name)
-// 				return parseImdbTechnicalInfo(result.ID, c.ImdbClient)
-// 			}
-// 		}
-// 	}
-
-//		// return aspect ratio
-//		return parseImdbTechnicalInfo(imdbID, c.ImdbClient)
-//	}
 func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	// Construct the URL with url.URL
-	u := &url.URL{
-		Scheme: "http", // or "https" if applicable
-		Host:   fmt.Sprintf("%s:%s", c.ServerURL, c.Port),
-		Path:   path,
-	}
-
+	var u *url.URL
+	
 	// Add query parameters if needed
-	params := url.Values{}
-	params.Add("X-Plex-Client-Identifier", c.MachineID)
-	u.RawQuery = params.Encode()
+	if strings.Contains(path, "playback") {
+		// this MUST use the CLIENT IP and 32500 port not server
+		// god forbid plex makes any documentation for their APIs they dont want you using
+		u = &url.URL{
+			Scheme: "http",
+			Host:   fmt.Sprintf("%s:%s", config.GetString("signal.playerip"), "32500"),
+			Path:   path,
+		}
+		params := url.Values{}
+		// only X-Plex-Target-Client-Identifier MUST be sent and it MUST match the client machine id found in clientIP:32500/resources
+		params.Add("X-Plex-Target-Client-Identifier", config.GetString("signal.playermachineidentifier"))
+		// API docs says these must be sent, but thats not true at all
+		// params.Add("commandID", "0")
+		// params.Add("type", "video")
+		u.RawQuery = params.Encode()
 
-	log.Debugf("using params: %s", u.RawQuery)
-
+		log.Debugf("using params for playback query: %s", u.RawQuery)
+	} else {
+		u = &url.URL{
+			Scheme: "http",
+			Host:   fmt.Sprintf("%s:%s", c.ServerURL, c.Port),
+			Path:   path,
+		}
+	}
 	// Create the request
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("X-Plex-Client-Identifier", c.MachineID)
-
+	// req.Header.Add("X-Plex-Target-Client-Identifier", c.MachineID)
+	log.Debugf("Plex: sending request to %s", u.String())
 	// Execute the request
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -566,15 +324,24 @@ func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	sData := string(data)
+	log.Debugf("Plex response: %s", sData)
 
-	log.Debugf("Plex response: %s", string(data))
+	if strings.Contains(sData, "Bad Request") {
+		return nil, errors.New("bad request when calling plex API")
+	}
+	if strings.Contains(sData, "404") {
+		return nil, errors.New("machine ID not found in Plex API - triple check your machine ID and client IP, then check it twice more")
+	}
 
 	return data, err
 }
 
 // DoPlaybackAction generic func to do playback - play, pause, stop
 func (c *PlexClient) DoPlaybackAction(action string) error {
-	_, err := c.makePlexReq(fmt.Sprintf("/player/playback/%s", action))
+	s := fmt.Sprintf("/player/playback/%s", action)
+	log.Debugf("Plex: sending %s request with %s", action, s)
+	_, err := c.makePlexReq(s)
 
 	return err
 }

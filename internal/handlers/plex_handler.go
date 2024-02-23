@@ -499,7 +499,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 	var useAvrCodec bool
 
 	// Server Info
-	plexClient := plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"), config.GetString("plex.playerMachineIdentifier"), config.GetString("plex.playerIP"))
+	plexClient := plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"))
 
 	log.Info("Started with ezbeq enabled")
 	beqClient, err = ezbeq.NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))

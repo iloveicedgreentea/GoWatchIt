@@ -80,6 +80,7 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 
 ### Plex Specifics
 1) get your player UUID(s) from `https://plex.tv/devices.xml` while logged in
+  * https://plex.tv/devices.xml?X-Plex-Token=xyz [Getting plex token](https://support.plex.tv/articles/206721658-using-plex-tv-resources-information-to-troubleshoot-app-connections/)
 2) Set up Plex to send webhooks to your server IP, port 9999, and the handler endpoint of `/plexwebhook`
     * e.g `(your-server-ip):9999/plexwebhook`
 3) Whitelist your server IP in Plex so it can call the API without authentication. [Docs](https://support.plex.tv/articles/200890058-authentication-for-local-network-access/)
@@ -315,25 +316,25 @@ There is no other reliable way to get the edition. If an edition is not matched,
 If you find repeated match failures because of editions, open a github issue with debug logs of you triggering `media.play`
 
 ### HDMI Sync Automation
-*Coming soon*
 This application supports automatically waiting until HDMI sync is complete. 
 
 Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? Then everyone in your theater makes fun of you and you cry yourself to sleep? This application will prevent that. 
 
-It supports four ways to get this info: my JVC integration, my Envy integration, a generic binary_sensor, or you can pass in seconds to wait.
+It supports two ways to get this info currently: my Envy integration, or you can pass in seconds to wait. Using time is the simplest option. Measure how many seconds it takes from you pressing play to the video signal appearing on your screen. This is the input you use for "time".
 
-If using the first two methods, you just need to install the integration, then set `remoteentityname` to the name of the remote entity. Set `signal.source` to either `jvc` or `envy`.
+Check the configuration UI for details on what to input.
 
-If using a binary_sensor, you need to create an automation which will set the state to `off` when there is NO SIGNAL and `on` when there is. Getting that data is up to you. Set the `signal` config to the name of the binary sensor (e.g signal, if the entity is binary_sensor.signal).
+If using Plex, you MUST get the Player Machine Identifier like so:
 
-If using seconds, provide the number of seconds to wait as a string such as "13" for 13 seconds. You can time how long your sync time is and add it here. It will pause for that amount of time then continue playing.
-
-You also must set `plex.playerMachineIdentifier` and `plex.playerIP`. To get this:
 1) Play something on your desired player (like a shield)
 2) `curl "http://(player IP):32500/resources"`
     * Note this is *NOT THE SERVER IP!* and *only works while something is actively playing*
 3) Copy the `machineIdentifier` value
-4) Add this to that config field exactly as presented
+4) Add this to the Player Machine Identifier field exactly as presented
+5) Add the player IP to the player IP field
+6) Assign your player a static IP via your router or DHCP server
+
+*Jellyfin HDMI sync is not implemented yet*
 
 ### Audio stuff
 Here are some examples of what kind of codec tags Plex will have based on file metadata

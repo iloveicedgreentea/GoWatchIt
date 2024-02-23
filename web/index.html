@@ -212,7 +212,7 @@
                     <input type="checkbox" id="homeassistant-triggeravrmastervolumechangeonevent"
                         name="homeassistant.triggeravrmastervolumechangeonevent">
                 </div>
-                <div>
+                <!-- <div>
                     <label for="homeassistant-remoteentityname">Remote Entity Name
                         <span class="description">
                             Optional if using hdmi sync via an entity. the name of the remote entities, or a binary
@@ -221,7 +221,7 @@
                         </span>
                     </label>
                     <input type="text" id="homeassistant-remoteentityname" name="homeassistant.remoteentityname">
-                </div>
+                </div> -->
 
                 <div>
                     <label for="homeassistant-playscriptname">Play Script Name
@@ -353,10 +353,10 @@
                 <div>
                     <label for="plex-url">Plex URL
                         <span class="description">
-                            URL - "http://x.x.x.x" <- Must have http:// </span>
+                           IP or domain of your plex server </span>
                     </label>
 
-                    <input type="text" id="plex-url" name="plex.url" placeholder="http://x.x.x.x">
+                    <input type="text" id="plex-url" name="plex.url" placeholder="x.x.x.x">
                 </div>
                 <div>
                     <label for="plex-port">Plex port
@@ -387,24 +387,6 @@
                     </label>
                     <input type="text" id="plex-deviceuuidfilter" name="plex.deviceuuidfilter">
                 </div>
-                <div>
-                    <label for="plex-playermachineidentifier">Player Machine Identifier
-                        <span class="description">
-                            Optional if not using hdmi sync get this from "http://(player ip):32500/resources". Required
-                            for pausing/playing plex. Check readme
-                        </span>
-                    </label>
-                    <input type="text" id="plex-playermachineidentifier" name="plex.playermachineidentifier">
-                </div>
-                <div>
-                    <label for="plex-playerip">Player IP
-                        <span class="description">
-                            Optional if not using hdmi sync IP of your CLIENT device (like a shield)
-                        </span>
-                    </label>
-                    <input type="text" id="plex-playerip" name="plex.playerip">
-                </div>
-
                 <div>
                     <label for="plex-enabletrailersupport">Enable Trailer Support
                         <span class="description">
@@ -441,9 +423,9 @@
                     <input type="checkbox" id="jellyfin-skiptmdb" name="jellyfin.skiptmdb">
                 </div>
                 <div>
-                    <label for="jellyfin-url">jellyfin URL
+                    <label for="jellyfin-url">Jellyfin URL
                         <span class="description">
-                            IP or domain nail </span>
+                            IP or domain of your servier </span>
                     </label>
 
                     <input type="text" id="jellyfin-url" name="jellyfin.url" placeholder="x.x.x.x">
@@ -478,15 +460,6 @@
                     <input type="text" id="jellyfin-deviceuuidfilter" name="jellyfin.deviceuuidfilter">
                 </div>
                 <div>
-                    <label for="jellyfin-playermachineidentifier">Player Machine Identifier
-                        <span class="description">
-                            optional if not using hdmi sync get this from "http://(player ip):32500/resources". Required
-                            for pausing/playing jellyfin . check readme
-                        </span>
-                    </label>
-                    <input type="text" id="jellyfin-playermachineidentifier" name="jellyfin.playermachineidentifier">
-                </div>
-                <div>
                     <label for="jellyfin-userid">User ID
                         <span class="description">
                             The GUID of your user. Get this from your jellyfin profile page -> check the url
@@ -495,7 +468,6 @@
                     </label>
                     <input type="text" id="jellyfin-userid" name="jellyfin.userid">
                 </div>
-
                 <div>
                     <label for="jellyfin-apitoken">API Token
                         <span class="description">
@@ -522,17 +494,52 @@
             <div>
                 <label for="signal-source">Source
                     <span class="description">
-                        jvc, envy, or name of the binary sensor (see readme), or you can specify seconds to pause for
-                        like 13
+                        What source to use for HDMI sync info. Either wait X seconds or attributes from a MadVR Envy
                     </span>
                 </label>
-                <input type="text" id="signal-source" name="signal.source">
-                <!-- <select id="signal-source" name="signal.source">
-                    <option value="jvc">JVC</option>
-                    <option value="envy">Envy</option>
-                    <option value="binary_sensor">Binary Sensor</option>
-                    <option value="mqtt">MQTT</option>
-                </select> -->
+                <!-- <input type="text" id="signal-source" name="signal.source"> -->
+                <select id="signal-source" name="signal.source">
+                    <!-- <option value="jvc">JVC</option> -->
+                    <option value="envy">Madvr Envy</option>
+                    <option value="time">Time</option>
+                    <!-- <option value="mqtt">MQTT</option> -->
+                </select>
+            </div>
+            <div>
+                <label for="signal-time">Sync Time
+                    <span class="description">
+                        Time to wait for HDMI sync to finish. In seconds e.g "15". Leave blank if using Madvr Envy
+                    </span>
+                </label>
+
+                <input type="text" id="signal-time" name="signal.time">
+            </div>
+            <div>
+                <label for="signal-envy">Madvr Envy Name
+                    <span class="description">
+                        Entity name of the madvr envy like "envy". Leave blank if using time. NOTE: this doesnt' work
+                        unless your sync time is really long. I recommend using time.
+                    </span>
+                </label>
+
+                <input type="text" id="signal-envy" name="signal.envy">
+            </div>
+            <div>
+                <label for="signal-playermachineidentifier">Player Machine Identifier
+                    <span class="description">
+                        Optional if not using hdmi sync - get this from "http://(player ip):32500/resources". Required
+                        for pausing/playing signal. Check readme
+                    </span>
+                </label>
+                <input type="text" id="signal-playermachineidentifier" name="signal.playermachineidentifier">
+            </div>
+            <div>
+                <label for="signal-playerip">Player IP
+                    <span class="description">
+                        Optional if not using hdmi sync  - IP of your CLIENT device (like a shield)
+                    </span>
+                </label>
+                <input type="text" id="signal-playerip" name="signal.playerip">
             </div>
             <!-- Save Button -->
             <div>

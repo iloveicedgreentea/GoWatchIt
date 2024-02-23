@@ -67,20 +67,20 @@ func ChangeLight(state string) {
 }
 
 // TODO: test this
-// waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
+// waitForHDMISync will pause until the source reports HDMI sync is complete
 func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
 	if !config.GetBool("signal.enabled") {
 		*skipActions = false
 		wg.Done()
 		return
 	}
-
 	log.Debug("Running HDMI sync wait")
+
 	defer func() {
 		// play item no matter what
 		err := PlaybackInterface("play", mediaClient)
 		if err != nil {
-			log.Errorf("Error playing plex: %v", err)
+			log.Errorf("Error playing client: %v", err)
 			return
 		}
 
@@ -89,37 +89,42 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		wg.Done()
 	}()
 
+	// TODO: send pause to Client, wait X seconds, then play
+
 	signalSource := config.GetString("signal.source")
 	var err error
 	var signal bool
 
 	// pause plex
-	log.Debug("pausing plex")
+	log.Debug("pausing client")
 	err = PlaybackInterface("pause", mediaClient)
 	if err != nil {
-		log.Errorf("Error pausing plex: %v", err)
+		log.Errorf("Error pausing client: %v", err)
 		return
 	}
 
+	// check signal source
 	switch signalSource {
 	case "envy":
 		// read envy attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAEnvyResponse{}, haClient)
-	case "jvc":
-		// read jvc attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAjvcResponse{}, haClient)
-	case "sensor":
-		signal, err = readAttrAndWait(30, "binary_sensor", &models.HABinaryResponse{}, haClient)
-	default:
-		// TODO: maybe use a 15 sec delay?
-		log.Debug("using seconds for hdmi sync")
-		sec, err := strconv.Atoi(signalSource)
+		envyName := config.GetString("signal.envy")
+		signal, err = readAttrAndWait(60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
+	case "time":
+		seconds := config.GetString("signal.time")
+		log.Debugf("using %v seconds for hdmi sync", seconds)
+		sec, err := strconv.Atoi(seconds)
 		if err != nil {
 			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
 			return
 		}
 		time.Sleep(time.Duration(sec) * time.Second)
-
+	case "jvc":
+		// read jvc attributes until its not nosignal
+		log.Warn("jvc HDMI sync is not implemented")
+	case "sensor":
+		log.Warn("sensor HDMI sync is not implemented")
+	default:
+		log.Warn("No valid source provided for hdmi sync")
 	}
 
 	log.Debugf("HDMI Signal value is %v", signal)
@@ -130,12 +135,13 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 }
 
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func readAttrAndWait(waitTime int, entType string, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
 
+	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
-		isSignal, err = haClient.ReadAttributes(haClient.EntityName, attrResp, entType)
+		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
