@@ -15,7 +15,7 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/watch.py /watch.py
 
 COPY --from=build /go/bin/app /
-COPY --from=build /go/src/app/web /web
+COPY ./web /web
 EXPOSE 9999
 
 # CMD ["/app"]
