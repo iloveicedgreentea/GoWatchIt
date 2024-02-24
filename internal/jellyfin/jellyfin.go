@@ -164,6 +164,14 @@ func (c *JellyfinClient) GetMetadata(userID, itemID string) (metadata models.Jel
 
 // get the codec of a media file returns the codec and the display title e.g eac3, Dolby Digital+ and profile becuase they are different
 func (c *JellyfinClient) GetCodec(payload models.JellyfinMetadata) (codec, displayTitle, codecProfile, layout string, err error) {
+	// if title contains Atmos, return that
+	for _, m := range payload.MediaSources {
+		for _, m := range m.MediaAttachments {
+			if strings.Contains(strings.ToLower(m.FileName), "atmos") {
+				return "Atmos", "", "", "", nil
+			}
+		}
+	}
 	// get the audio stream
 	for _, stream := range payload.MediaStreams {
 		if stream.Type == "Audio" {

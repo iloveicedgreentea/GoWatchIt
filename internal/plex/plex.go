@@ -252,6 +252,12 @@ func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	// loop instead of index because of edge case with two or more video streams
 	log.Debugf("Data type: %T", data)
 	if mc, ok := data.(models.MediaContainer); ok {
+		// try to get Atmos from file because metadata with Truehd is usually misleading
+		f := mc.Video.Media.Part.File
+		if strings.Contains(strings.ToLower(f), "atmos") {
+			log.Debug("Got atmos codec from filename")
+			return MapPlexToBeqAudioCodec(f, f), nil
+		}
 		for _, val := range mc.Video.Media.Part.Stream {
 			if val.StreamType == "2" {
 				log.Debugf("Found codecs: %s, %s", val.DisplayTitle, val.ExtendedDisplayTitle)
@@ -270,6 +276,7 @@ func (c *PlexClient) GetAudioCodec(data interface{}) (string, error) {
 	}
 	return plexAudioCodec, nil
 }
+
 // TODO: rename
 // GetPlexMovieDb is used because of the Client interface
 func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
@@ -279,7 +286,7 @@ func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
 func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	// Construct the URL with url.URL
 	var u *url.URL
-	
+
 	// Add query parameters if needed
 	if strings.Contains(path, "playback") {
 		// this MUST use the CLIENT IP and 32500 port not server
