@@ -139,8 +139,8 @@ function buildFinalConfig() {
     const signalConfig = {
         "enabled": document.getElementById('signal-enabled').checked,
         "source": document.getElementById('signal-source').value,
-        "time": document.getElementById('signal-time').value = config.signal.time,
-        "envy": document.getElementById('signal-envy').value = config.signal.envy,
+        "time": document.getElementById('signal-time').value,
+        "envy": document.getElementById('signal-envy').value,
         "playermachineidentifier": document.getElementById('signal-playermachineidentifier').value,
         "playerip": document.getElementById('signal-playerip').value
     };
