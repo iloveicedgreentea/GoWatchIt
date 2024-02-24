@@ -121,6 +121,12 @@ Configure the webhook in whatever way you want but it *must* include the followi
   "Year": "{{Year}}"
 }
 ```
+
+You need to also get the DeviceID from Jellyfin. The easiest way to do this is to enable webhooks as above, play something, go to your jellyfin logs, then search for this exact string - \"DeviceId\
+
+
+Add the device ID to the application config and add it under the deviceuuidfilter field. If this is not set, HDMI sync detection will not work.
+
 #### Generate API Key
 
 1) Navigate to the dashboard

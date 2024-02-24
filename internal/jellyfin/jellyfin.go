@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"regexp"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -26,26 +26,67 @@ type JellyfinClient struct {
 	ServerURL  string
 	Port       string
 	HTTPClient http.Client
-	ImdbClient *http.Client
-	MachineID  string
-	ClientIP   string
-	MediaType  string
 }
 
 // return a new instance of a plex client
-func NewClient(url, port string, machineID string, clientIP string) *JellyfinClient {
+func NewClient(url, port string) *JellyfinClient {
 	return &JellyfinClient{
 		ServerURL: url,
 		Port:      port,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
-		MachineID: machineID,
-		ClientIP:  clientIP,
 	}
 }
+
+// Get the active session and return one that matches the machine ID
+func (c *JellyfinClient) getActiveSession() (string, error) {
+	// get the active session
+	endpoint := "/Sessions"
+	r, err := c.makeRequest(endpoint, "get")
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+
+	// returns a list of Session types
+	var sessions []models.JellyfinSession
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+	json.Unmarshal(b, &sessions)
+
+	// find the session with the same machine id
+	machineID := config.GetString("jellyfin.deviceuuidfilter")
+	for _, s := range sessions {
+		log.Debugf("Session %s for ID: %v", s.ID, s.DeviceID)
+		if s.DeviceID == machineID {
+			return s.ID, nil
+		}
+	}
+	return "", errors.New("no active session found")
+}
+
 func (c *JellyfinClient) DoPlaybackAction(action string) error {
 	// Implement the action logic specific to Jellyfin
+	var s string
+	switch action {
+	case "pause":
+		s = "Pause"
+	case "play":
+		s = "UnPause"
+	}
+	sessionID, err := c.getActiveSession()
+	if err != nil {
+		return err
+	}
+	endpoint := fmt.Sprintf("Sessions/%s/Playing/%s", sessionID, s)
+	r, err := c.makeRequest(endpoint, "post")
+	if err != nil {
+		return err
+	}
+	defer r.Close()
 	return nil
 }
 func (c *JellyfinClient) GetPlexMovieDb(payload interface{}) string {
@@ -70,25 +111,24 @@ func (c *JellyfinClient) makeRequest(endpoint string, method string) (io.ReadClo
 		Host:   fmt.Sprintf("%v:%v", c.ServerURL, c.Port),
 		Path:   endpoint,
 	}
-	log.Debugf("Making request to %v", u.String())
-	// create request with auth
-	r := http.Request{
-		Method: strings.ToUpper(method),
-		URL:    &u,
-		Header: http.Header{},
+	r, err := http.NewRequest(strings.ToUpper(method), u.String(), nil)
+	if err != nil {
+		return nil, err
 	}
+	log.Debugf("Making request to %v with method %v", u.String(), r.Method)
 	// add auth
 	// url encoded header value
 	r.Header.Add("Authorization", fmt.Sprintf("MediaBrowser Token=\"%v\"", config.GetString("jellyfin.apitoken")))
 	// support emby also
 	r.Header.Add("X-Emby-Token", fmt.Sprintf("%v", config.GetString("jellyfin.apitoken")))
 	// make request
-	resp, err := c.HTTPClient.Do(&r)
+
+	resp, err := c.HTTPClient.Do(r)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return nil, fmt.Errorf("error making request to %#v: %v", u, resp.Status)
 	}
 
@@ -188,7 +228,6 @@ func (c *JellyfinClient) GetJfTMDB(payload models.JellyfinMetadata) (string, err
 
 	return "", errors.New("no tmdb id found")
 }
-
 
 // containsDDP looks for typical DD+ audio codec names
 func containsDDP(s string) bool {
@@ -294,7 +333,6 @@ func MapJFToBeqAudioCodec(codec, displayTitle, profile, layout string) string {
 			return "DTS-HD HR 5.1"
 		}
 
-	
 	// TrueHD 5.1
 	case common.InsensitiveContains(codec, "truehd") && common.InsensitiveContains(layout, "5.1"):
 		return "TrueHD 5.1"

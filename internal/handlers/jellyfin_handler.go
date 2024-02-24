@@ -122,7 +122,8 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
 	case "PlaybackStart":
 		// TODO: test start/resume/pause
-		jfMediaPlay(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
+		wg := &sync.WaitGroup{}
+		jfMediaPlay(jfClient, beqClient, haClient, payload, model, false, data, skipActions, wg)
 	case "PlaybackStop":
 		jfMediaStop(jfClient, beqClient, haClient, payload, model, false, data, skipActions)
 	// really annoyingly jellyfin doesnt send a pause or resume event only progress every X seconds with a isPaused flag
@@ -138,33 +139,31 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	}
 }
 
-func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, useDenonCodec bool, data models.JellyfinMetadata, skipActions *bool) {
+// TODO: combine these into shared function
+func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, useAvrCodec bool, data models.JellyfinMetadata, skipActions *bool, wg *sync.WaitGroup) {
 	log.Debug("Processing media play event")
-	wg := &sync.WaitGroup{}
 
 	// stop processing webhooks
-	*skipActions = true
-	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
-	if err != nil {
-		log.Error(err)
-	}
+	// TODO: unsure how JF handles play on resume. There is no resume event
 	go common.ChangeLight("off")
 	// go changeAspect(client, payload, wg)
 	go common.ChangeMasterVolume(m.MediaType)
 
 	// if not using denoncodec, do this in background
-	if !useDenonCodec {
-		wg.Add(1)
-		// sets skipActions to false on completion
-		go common.WaitForHDMISync(wg, skipActions, haClient, client)
+	// TODO: support useAvrCodec
+	wg.Add(1)
+	// sets skipActions to false on completion
+	go common.WaitForHDMISync(wg, skipActions, haClient, client)
+	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
+	if err != nil {
+		log.Error(err)
 	}
-
-	// always unload in case something is loaded from movie for tv
 	err = beqClient.UnloadBeqProfile(m)
 	if err != nil {
 		log.Errorf("Error unloading beq on startup!! : %v", err)
 		return
 	}
+	// always unload in case something is loaded from movie for tv
 
 	// if its a show and you dont want beq enabled, exit
 	if data.Type == showItemTitle {
@@ -204,11 +203,12 @@ func jfMediaPlay(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, ha
 
 func jfMediaStop(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, useDenonCodec bool, data models.JellyfinMetadata, skipActions *bool) {
 	log.Debug("Processing media stop event")
+
+	go common.ChangeLight("on")
 	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
 	if err != nil {
 		log.Error(err)
 	}
-	go common.ChangeLight("on")
 
 	err = beqClient.UnloadBeqProfile(m)
 	if err != nil {
@@ -317,7 +317,7 @@ func JellyfinWorker(jfChan <-chan models.JellyfinWebhook, readyChan chan<- bool)
 	}
 
 	// Server Info
-	jellyfinClient := jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"), config.GetString("jellyfin.playerMachineIdentifier"), config.GetString("jellyfin.playerIP"))
+	jellyfinClient := jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"))
 
 	var beqClient *ezbeq.BeqClient
 	var haClient *homeassistant.HomeAssistantClient
@@ -349,7 +349,7 @@ func JellyfinWorker(jfChan <-chan models.JellyfinWebhook, readyChan chan<- bool)
 		Devices:    deviceNames,
 		Slots:      config.GetIntSlice("ezbeq.slots"),
 		// try to skip by default
-		SkipSearch: true,
+		SkipSearch:      true,
 		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 	}
 

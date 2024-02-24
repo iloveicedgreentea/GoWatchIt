@@ -29,6 +29,21 @@ const movieItemTitle = "Movie"
 
 var log = logger.GetLogger()
 
+// interfaceRemote sends the cmd to your desired script to stop or play
+func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
+	switch cmd {
+	case "play":
+		return c.TriggerScript(config.GetString("homeAssistant.playScriptName"))
+	case "pause":
+		return c.TriggerScript(config.GetString("homeAssistant.pauseScriptName"))
+	case "stop":
+		return c.TriggerScript(config.GetString("homeAssistant.stopScriptName"))
+	default:
+		return errors.New("unknown cmd given")
+	}
+
+}
+
 // Sends the payload to the channel for background processing
 func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 	if err := c.Request.ParseMultipartForm(0); err != nil {
@@ -125,33 +140,33 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 	}
 }
 
-// interfaceRemote sends the cmd to your desired script to stop or play
-func interfaceRemote(cmd string, c *homeassistant.HomeAssistantClient) error {
-	switch cmd {
-	case "play":
-		return c.TriggerScript(config.GetString("homeAssistant.playScriptName"))
-	case "pause":
-		return c.TriggerScript(config.GetString("homeAssistant.pauseScriptName"))
-	case "stop":
-		return c.TriggerScript(config.GetString("homeAssistant.stopScriptName"))
-	default:
-		return errors.New("unknown cmd given")
-	}
-
-}
-
-// play is both the "resume" button and play
+// play is both the "resume" UI button and play
 func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
+	var err error
+
+	err = mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
+	if err != nil {
+		log.Error(err)
+	}
+	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
 	go common.ChangeLight("off")
 	go common.ChangeMasterVolume(m.MediaType)
-	var err error
+
+	// optimistically try to hdmi sync. Will return if disabled
+	wg.Add(1)
+	go common.WaitForHDMISync(wg, skipActions, haClient, client)
+
+	err = beqClient.UnloadBeqProfile(m)
+	if err != nil {
+		log.Errorf("error unloading beq during play %v", err)
+	}
 	// slower but more accurate
 	// TODO: abstract library this for any AVR
+	// TODO: is this the best place for this
 	if useAvrCodec {
 		// TODO: make below a function
 		// wait for sync
-		wg.Add(1)
-		common.WaitForHDMISync(wg, skipActions, haClient, client)
+
 		// denon needs time to show mutli ch in as atmos
 		// TODO: test this
 		time.Sleep(5 * time.Second)
@@ -190,6 +205,7 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 
 	} else {
 		log.Debug("Using plex to get codec")
+		// TODO: try session data then fallback to lookup
 		m.Codec, err = client.GetAudioCodec(data)
 		if err != nil {
 			log.Errorf("error getting codec from plex, can't continue: %s", err)
@@ -231,11 +247,11 @@ func mediaResume(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 	if !*skipActions {
 		// mediaType string, codec string, edition string
 		// trigger lights
+		go common.ChangeLight("off")
 		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
 		if err != nil {
 			log.Error(err)
 		}
-		go common.ChangeLight("off")
 		// Changing on resume is disabled because its annoying if you changed it since playing
 		// go changeMasterVolume(vip, mediaType)
 
@@ -284,10 +300,20 @@ func mediaResume(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *
 	}
 }
 
-func mediaScrobble() {
+func mediaScrobble(beqClient *ezbeq.BeqClient, m *models.SearchRequest) {
 	// trigger lights
-	log.Debug("Scrobble received. Not doing anything")
 	// go changeLight(vip, "on")
+	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug("Scrobble received. Unloading profile")
+	// unload beq
+	err = beqClient.UnloadBeqProfile(m)
+	if err != nil {
+		log.Errorf("Error on startup - unloading beq %v", err)
+	}
+
 }
 
 // getEditionName tries to extract the edition from plex or file name. Assumes you have well named files
@@ -386,6 +412,7 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	model.MVAdjust = beqClient.MasterVolume
 
 	log.Debugf("Event Router: Using search model: %#v", model)
+	log.Debugf("skipActions is: %v", *skipActions)
 	switch payload.Event {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.
 	// play means a new file was started
@@ -399,13 +426,13 @@ func eventRouter(plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClie
 	case "media.pause":
 		log.Debug("Event Router: media.pause received")
 		mediaPause(beqClient, haClient, payload, model, skipActions)
-	// Pressing the 'resume' button in plex is media.play
+	// Pressing the 'resume' button in plex UI is media.play
 	case "media.resume":
 		log.Debug("Event Router: media.resume received")
 		mediaResume(plexClient, beqClient, haClient, payload, model, data, skipActions)
 	case "media.scrobble":
 		log.Debug("Scrobble received")
-		mediaScrobble()
+		mediaScrobble(beqClient, model)
 	default:
 		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
@@ -523,7 +550,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 		Devices:    deviceNames,
 		Slots:      config.GetIntSlice("ezbeq.slots"),
 		// try to skip by default
-		SkipSearch: true,
+		SkipSearch:      true,
 		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 	}
 

@@ -10,13 +10,8 @@ import (
 
 	"github.com/iloveicedgreentea/go-plex/internal/avr"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
-
-	// "github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
-
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
-
-	// "github.com/iloveicedgreentea/go-plex/internal/plex"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -67,9 +62,12 @@ func ChangeLight(state string) {
 	}
 }
 
-// TODO: test this
 // waitForHDMISync will pause until the source reports HDMI sync is complete
 func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
+	// if called and disabled, skip
+	// stop processing webhooks because if we call pause, that will fire another one and then we get into a loop
+	*skipActions = true
+
 	if !config.GetBool("signal.enabled") {
 		*skipActions = false
 		wg.Done()
@@ -78,7 +76,7 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	log.Debug("Running HDMI sync wait")
 
 	defer func() {
-		// play item no matter what
+		// play item no matter what happens
 		err := PlaybackInterface("play", mediaClient)
 		if err != nil {
 			log.Errorf("Error playing client: %v", err)
@@ -90,13 +88,11 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		wg.Done()
 	}()
 
-	// TODO: send pause to Client, wait X seconds, then play
-
 	signalSource := config.GetString("signal.source")
 	var err error
 	var signal bool
 
-	// pause plex
+	// pause client
 	log.Debug("pausing client")
 	err = PlaybackInterface("pause", mediaClient)
 	if err != nil {
@@ -120,7 +116,7 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		log.Debugf("using %v seconds for hdmi sync", seconds)
 		sec, err := strconv.Atoi(seconds)
 		if err != nil {
-			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
+			log.Errorf("waitforHDMIsync enabled but no valid source provided. Make sure you have 'time' set as a plain number: %v -- %v", signalSource, err)
 			return
 		}
 		time.Sleep(time.Duration(sec) * time.Second)
@@ -158,7 +154,7 @@ func readAttrAndWait(waitTime int, entType string, entName string, attrResp home
 			return false, err
 		}
 		// otherwise continue
-		time.Sleep(1 * time.Second)
+		time.Sleep(200 * time.Millisecond)
 	}
 	if err != nil {
 		log.Errorf("Error reading envy attributes: %v", err)

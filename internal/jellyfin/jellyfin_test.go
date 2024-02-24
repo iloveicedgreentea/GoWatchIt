@@ -2,6 +2,7 @@ package jellyfin
 
 import (
 	"testing"
+	"time"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/models"
@@ -12,8 +13,6 @@ func testSetup() *JellyfinClient {
 	c := NewClient(
 		config.GetString("jellyfin.url"),
 		config.GetString("jellyfin.port"),
-		"",
-		"",
 	)
 	return c
 }
@@ -21,6 +20,24 @@ func testSetup() *JellyfinClient {
 func getMetadata(itemID string) (models.JellyfinMetadata, error) {
 	c := testSetup()
 	return c.GetMetadata(config.GetString("jellyfin.userID"), itemID)
+}
+
+func TestSessions(t *testing.T) {
+	c := testSetup()
+	session, err := c.getActiveSession()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, session)
+
+}
+func TestPlayback(t *testing.T) {
+	c := testSetup()
+	err := c.DoPlaybackAction("pause")
+	assert.NoError(t, err)
+	time.Sleep(3 * time.Second)
+	// this is how the common interface sends it
+	err = c.DoPlaybackAction("play")
+	assert.NoError(t, err)
+
 }
 func TestGetCodec(t *testing.T) {
 	// make client
@@ -35,12 +52,11 @@ func TestGetCodec(t *testing.T) {
 func TestGetEdition(t *testing.T) {
 	// make client
 	c := testSetup()
-	m, err := getMetadata("0a329b45-1faa-b210-c7b2-3aacd4775b1a")
+	m, err := getMetadata("c0d1af6e3f9775376da583e87bc58e68")
 	assert.NoError(t, err)
 	edition := c.GetEdition(m)
-	// TODO: test with known edition
-	assert.Equal(t, "", edition)
-	t.Logf("%#v", m)
+	assert.Equal(t, "Extended", edition)
+
 }
 
 // used for testing
