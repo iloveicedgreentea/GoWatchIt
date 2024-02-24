@@ -51,6 +51,7 @@ function populateFields(config) {
     document.getElementById('plex-ownernamefilter').value = config.plex.ownernamefilter;
     document.getElementById('plex-deviceuuidfilter').value = config.plex.deviceuuidfilter;
     document.getElementById('plex-enabletrailersupport').checked = config.plex.enabletrailersupport;
+
     // jellyfin
     document.getElementById('jellyfin-enabled').checked = config.jellyfin.enabled;
     document.getElementById('jellyfin-skiptmdb').checked = config.jellyfin.skiptmdb;
