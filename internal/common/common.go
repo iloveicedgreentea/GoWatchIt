@@ -4,6 +4,7 @@ package common
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -106,8 +107,13 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	// check signal source
 	switch signalSource {
 	case "envy":
+		log.Debug("using envy for hdmi sync")
 		// read envy attributes until its not nosignal
 		envyName := config.GetString("signal.envy")
+		// remove remote. if present
+		if strings.Contains(envyName, "remote") {
+			envyName = strings.ReplaceAll(envyName, "remote.", "")
+		}
 		signal, err = readAttrAndWait(60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
 	case "time":
 		seconds := config.GetString("signal.time")
@@ -142,6 +148,7 @@ func readAttrAndWait(waitTime int, entType string, entName string, attrResp home
 	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
 		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
+		log.Debugf("HDMI Signal value is %v", isSignal)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
