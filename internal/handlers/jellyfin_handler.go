@@ -97,7 +97,6 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 			}
 			log.Debugf("Got codec from AVR: %s", codec)
 			// TODO: make generic function that looks at which AVR and maps correctly
-			codec = mapDenonToBeq(codec)
 		} else {
 			log.Error("Error getting AVR client. Trying to poll jellyfin")
 			codec, err = jfClient.GetAudioCodec(data)

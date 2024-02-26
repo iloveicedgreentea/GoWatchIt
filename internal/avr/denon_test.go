@@ -26,8 +26,9 @@ func TestGetAudioMode(t *testing.T) {
 
 	mode, err := c.GetCodec()
 	assert.NoError(t, err)
-	t.Log(mode)
-	assert.NotEmpty(t, mode)
+	t.Logf("avr codec: %s", mode)
+	assert.NotEqual(t, "Empty",mode)
+
 
 }
 

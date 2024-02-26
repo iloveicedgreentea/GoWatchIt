@@ -140,6 +140,56 @@ func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistan
 	}
 }
 
+func checkAvrCodec(client *plex.PlexClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, data models.MediaContainer) (codec string, err error) {
+	// AVRs need time to decode the stream
+	time.Sleep(3 * time.Second)
+
+	// get the codec from avr
+	avrCodec, err := avrClient.GetCodec()
+	if err != nil {
+		log.Errorf("error getting codec from denon, can't continue: %s", err)
+		return codec, err
+	}
+
+	// TODO: try session data then fallback to lookup
+	clientCodec, err := client.GetAudioCodec(data)
+	if err != nil {
+		log.Errorf("error getting codec from plex, can't continue: %s", err)
+		return codec, err
+	}
+	codec = avr.MapDenonToBeq(avrCodec, clientCodec)
+	// check if the expected codec is playing
+	// TODO: check the plex metadata anyway and see if it contains Atmos
+	if strings.Contains(clientCodec, "Atmos") {
+		expectedCodec, err := common.IsAtmosCodecPlaying(codec, "Atmos")
+		// TODO: retry above 5 times becaue it takes time to decode
+
+		if err != nil {
+			log.Errorf("Error checking if expected codec is playing: %v", err)
+		}
+		if !expectedCodec {
+			// if enabled, stop playing
+			if config.GetBool("ezbeq.stopPlexIfMismatch") {
+				log.Debug("Stopping plex because codec is not playing")
+				err := common.PlaybackInterface("stop", client)
+				if err != nil {
+					log.Errorf("Error stopping plex: %v", err)
+				}
+			}
+
+			log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
+			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
+				err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %v", clientCodec, avrCodec))
+				if err != nil {
+					log.Error(err)
+				}
+			}
+		}
+	}
+
+	return codec, err
+}
+
 // play is both the "resume" UI button and play
 func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
 	var err error
@@ -160,49 +210,18 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	if err != nil {
 		log.Errorf("error unloading beq during play %v", err)
 	}
-	// slower but more accurate
-	// TODO: abstract library this for any AVR
-	// TODO: is this the best place for this
+	// slower but more accurate especially with atmos
 	if useAvrCodec {
-		// TODO: make below a function
-		// wait for sync
-
-		// denon needs time to show mutli ch in as atmos
-		// TODO: test this
-		time.Sleep(5 * time.Second)
-
-		// get the codec from avr
-		m.Codec, err = avrClient.GetCodec()
+		m.Codec, err = checkAvrCodec(client, haClient, avrClient, payload, data)
+		// if it failed, get codec data from client
 		if err != nil {
-			log.Errorf("error getting codec from denon, can't continue: %s", err)
-			return
-		}
-
-		// check if the expected codec is playing
-		// TODO: test this
-		expectedCodec, err := common.IsExpectedCodecPlayingAVR(avrClient, m.Codec)
-		if err != nil {
-			log.Errorf("Error checking if expected codec is playing: %v", err)
-		}
-		if !expectedCodec {
-			// if enabled, stop playing
-			if config.GetBool("ezbeq.stopPlexIfMismatch") {
-				log.Debug("Stopping plex because codec is not playing")
-				err := common.PlaybackInterface("stop", client)
-				if err != nil {
-					log.Errorf("Error stopping plex: %v", err)
-				}
-			}
-
-			log.Error("Expected codec is not playing! Please check your AVR and Plex settings!")
-			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-				err := haClient.SendNotification(fmt.Sprintf("Wrong codec is playing. Expected codec %s but got %v", m.Codec, expectedCodec))
-				if err != nil {
-					log.Error(err)
-				}
+			log.Warnf("error getting codec from AVR, falling back to client: %s", err)
+			m.Codec, err = client.GetAudioCodec(data)
+			if err != nil {
+				log.Errorf("error getting codec from plex, can't continue: %s", err)
+				return
 			}
 		}
-
 	} else {
 		log.Debug("Using plex to get codec")
 		// TODO: try session data then fallback to lookup

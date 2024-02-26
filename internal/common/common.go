@@ -8,31 +8,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/avr"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
-// IsExpectedCodecPlaying checks if AVR is playing expectedCodec (mapped and normalized string)
-func IsExpectedCodecPlayingAVR(avrClient avr.AVRClient, expectedCodec string) (bool, error) {
-	// get the codec from avr
-	codec, err := avrClient.GetCodec()
-	if err != nil {
-		log.Errorf("error getting codec from denon, can't continue: %s", err)
-		return false, err
-	}
-
-	if codec == expectedCodec {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-// IsExpectedCodecPlaying checks if codec (mapped and normalized from the player -> eg plex codec name into BEQ name) is playing expectedCodec (mapped and normalized string)
-func IsExpectedCodecPlaying(codec, expectedCodec string) (bool, error) {
+// IsAtmosodecPlaying checks if Atmos (mapped and normalized from the player -> eg plex codec name into BEQ name) is being decoded instead of multi ch in (plex bug I believe)
+func IsAtmosCodecPlaying(codec, expectedCodec string) (bool, error) {
 	if codec == expectedCodec {
 		return true, nil
 	}
