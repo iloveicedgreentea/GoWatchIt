@@ -10,7 +10,7 @@ import (
 func setupTest() *DenonClient {
 	return &DenonClient{
 		ServerURL: "192.168.88.40",
-		Port: "23",
+		Port:      "23",
 	}
 }
 func TestMakeReq(t *testing.T) {
@@ -27,8 +27,7 @@ func TestGetAudioMode(t *testing.T) {
 	mode, err := c.GetCodec()
 	assert.NoError(t, err)
 	t.Logf("avr codec: %s", mode)
-	assert.NotEqual(t, "Empty",mode)
-
+	assert.NotEqual(t, "Empty", mode)
 
 }
 

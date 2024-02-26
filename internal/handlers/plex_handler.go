@@ -199,6 +199,11 @@ func checkAvrCodec(client *plex.PlexClient, haClient *homeassistant.HomeAssistan
 // play is both the "resume" UI button and play
 func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
 	var err error
+	// TODO: add context and cancel
+	
+	// optimistically try to hdmi sync. Will return if disabled
+	wg.Add(1)
+	go common.WaitForHDMISync(wg, skipActions, haClient, client)
 
 	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
 	go common.ChangeLight("off")
@@ -208,10 +213,6 @@ func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *ho
 	if err != nil {
 		log.Error(err)
 	}
-
-	// optimistically try to hdmi sync. Will return if disabled
-	wg.Add(1)
-	go common.WaitForHDMISync(wg, skipActions, haClient, client)
 
 	err = beqClient.UnloadBeqProfile(m)
 	if err != nil {

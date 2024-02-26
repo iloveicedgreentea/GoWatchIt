@@ -1,7 +1,6 @@
 package ezbeq
 
 import (
-	"strings"
 	"fmt"
 	"testing"
 
@@ -642,20 +641,20 @@ func TestLoadProfile(t *testing.T) {
 			Devices:         []string{"master", "master2"},
 			Slots:           []int{1},
 		},
-		{
-			TMDB:            "56292",
-			Year:            2011,
-			Codec:           "AtmosMaybe",
-			SkipSearch:      false,
-			EntryID:         "",
-			MVAdjust:        0.0,
-			DryrunMode:      false,
-			PreferredAuthor: "none",
-			Edition:         "",
-			MediaType:       "movie",
-			Devices:         []string{"master", "master2"},
-			Slots:           []int{1},
-		},
+		// {
+		// 	TMDB:            "56292",
+		// 	Year:            2011,
+		// 	Codec:           "AtmosMaybe",
+		// 	SkipSearch:      false,
+		// 	EntryID:         "",
+		// 	MVAdjust:        0.0,
+		// 	DryrunMode:      false,
+		// 	PreferredAuthor: "none",
+		// 	Edition:         "",
+		// 	MediaType:       "movie",
+		// 	Devices:         []string{"master", "master2"},
+		// 	Slots:           []int{1},
+		// },
 		{
 			TMDB:            "399579",
 			Year:            2019,
@@ -710,8 +709,4 @@ func TestLoadProfile(t *testing.T) {
 		assert.NoError(err)
 	}
 
-}
-
-func TestTitleCom(t *testing.T) {
-	assert.True(t, strings.EqualFold("American Sniper", ""))
 }

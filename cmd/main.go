@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/api"
@@ -11,6 +12,8 @@ import (
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
+
+var log = logger.GetLogger()
 
 // static files are cached which causes issues
 func noCache() gin.HandlerFunc {
@@ -22,22 +25,43 @@ func noCache() gin.HandlerFunc {
 	}
 }
 
+// requestTimingMiddleware captures the duration of each request to time things
+func requestTimingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Start timer
+		startTime := time.Now()
+
+		// Process request
+		c.Next()
+
+		// Calculate duration
+		duration := time.Since(startTime)
+
+		// Log or store the duration
+		// For example, logging the duration:
+		log.Infof("Request %s took %v", c.Request.RequestURI, duration)
+	}
+}
+
 func main() {
 	/*
 		###############################
 		Setups
 		############################## */
 
-	log := logger.GetLogger()
-	log.Info("Starting up...")
-	log.Debug("Starting in debug mode...")
-
-	if os.Getenv("LOG_LEVEL") != "debug" {
+	log.Info("Starting up please wait until the server is ready...")
+	debug := os.Getenv("LOG_LEVEL") == "debug"
+	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
 	// do not cache static files
 	r.Use(noCache())
+	// time requests in debug mode
+	if debug {
+		r.Use(requestTimingMiddleware())
+		log.Debug("Starting in debug mode with timing...")
+	}
 
 	log.Info("Checking if a config exists...")
 	_, err := api.GetConfigPath()
@@ -77,9 +101,11 @@ func main() {
 
 	// Add plex webhook handler
 	r.POST("/plexwebhook", func(c *gin.Context) {
+		log.Debug("plexwebhook received")
 		handlers.ProcessWebhook(plexChan, c)
 	})
 	r.POST("/minidspwebhook", func(c *gin.Context) {
+		log.Debug("minidspwebhook received")
 		handlers.ProcessMinidspWebhook(minidspChan, c)
 	})
 	r.POST("/jellyfinwebhook", func(c *gin.Context) {
