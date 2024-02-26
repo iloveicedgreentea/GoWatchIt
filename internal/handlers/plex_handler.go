@@ -24,8 +24,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const showItemTitle = "Episode"
-const movieItemTitle = "Movie"
+const showItemTitle = "episode"
+const movieItemTitle = "movie"
 
 var log = logger.GetLogger()
 
@@ -64,7 +64,9 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 		clientUUID := decodedPayload.Player.UUID
 		log.Infof("Got a request from UUID: %s", clientUUID)
 
-		log.Debugf("ProcessWebhook:  Media type is: %s", decodedPayload.Metadata.Type)
+		t := strings.ToLower(decodedPayload.Metadata.Type)
+
+		log.Debugf("ProcessWebhook:  Media type is: %s", t)
 		log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
 
 		// check filter for user if not blank
@@ -72,17 +74,20 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 		// only respond to events on a particular account if you share servers and only for movies and shows
 		// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
 		if userID == "" || decodedPayload.Account.Title == userID {
-			if decodedPayload.Metadata.Type == movieItemTitle || decodedPayload.Metadata.Type == showItemTitle {
+			if t == movieItemTitle || t == showItemTitle {
+				log.Debug("adding item to plexChan")
 				select {
 				case plexChan <- decodedPayload:
 					// send succeeded
+					log.Debugf("Added length of plexChan: %d", len(plexChan))
 					c.JSON(http.StatusOK, gin.H{"message": "Payload processed"})
 				case <-time.After(time.Second * 3):
 					log.Error("Send on plexChan timed out")
 					c.JSON(http.StatusTooManyRequests, gin.H{"error": "Send on plexChan timed out"})
 					return
 				}
-				log.Debugf("Added length of plexChan: %d", len(plexChan))
+			} else {
+				log.Debugf("Media type of %s is not supported", t)
 			}
 		} else {
 			// TODO: this seems to be hitting even when the filter matches
@@ -583,6 +588,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 		log.Info("Started with HA enabled")
 		haClient = homeassistant.NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.remoteentityname"))
 	}
+
 	if config.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")
 		avrClient = avr.GetAVRClient(config.GetString("ezbeq.avrurl"))
