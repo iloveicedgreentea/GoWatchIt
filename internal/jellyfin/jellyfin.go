@@ -30,6 +30,7 @@ type JellyfinClient struct {
 
 // return a new instance of a plex client
 func NewClient(url, port string) *JellyfinClient {
+	url = strings.Replace(url, "http://", "", -1)
 	return &JellyfinClient{
 		ServerURL: url,
 		Port:      port,

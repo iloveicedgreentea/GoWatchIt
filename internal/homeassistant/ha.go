@@ -27,6 +27,7 @@ type HomeAssistantClient struct {
 
 // // A client to interface with home assistant
 func NewClient(url, port string, token string, entityName string) *HomeAssistantClient {
+	url = strings.Replace(url, "http://", "", -1)
 	return &HomeAssistantClient{
 		ServerURL:      url,
 		Port:           port,
@@ -41,10 +42,10 @@ func NewClient(url, port string, token string, entityName string) *HomeAssistant
 func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodType string) ([]byte, error) {
 	var req *http.Request
 	var err error
-
+	
 	// log.Debugf("Using method %s", methodType)
 	// bodyReader := bytes.NewReader(jsonBody)
-	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
+	url := fmt.Sprintf("http://%s:%s%s", c.ServerURL, c.Port, endpoint)
 	if len(payload) == 0 {
 		req, err = http.NewRequest(methodType, url, nil)
 	} else {

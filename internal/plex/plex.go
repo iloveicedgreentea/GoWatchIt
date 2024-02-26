@@ -32,6 +32,8 @@ type PlexClient struct {
 
 // return a new instance of a plex client
 func NewClient(url, port string) *PlexClient {
+	// remove scheme
+	url = strings.Replace(url, "http://", "", -1)
 	return &PlexClient{
 		ServerURL: url,
 		Port:      port,

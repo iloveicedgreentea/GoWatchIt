@@ -34,6 +34,7 @@ type BeqClient struct {
 
 // return a new instance of a plex client
 func NewClient(url, port string) (*BeqClient, error) {
+	url = strings.Replace(url, "http://", "", -1)
 	c := &BeqClient{
 		ServerURL: url,
 		Port:      port,
@@ -152,7 +153,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	}
 	// log.Debugf("Header is set to %v", setHeader)
 
-	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
+	url := fmt.Sprintf("http://%s:%s%s", c.ServerURL, c.Port, endpoint)
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
