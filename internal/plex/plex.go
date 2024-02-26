@@ -333,14 +333,16 @@ func (c *PlexClient) makePlexReq(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	sData := string(data)
-	log.Debugf("Plex response: %s", sData)
+	// only do this for playback
+	if strings.Contains(path, "playback") {
+		sData := string(data)
 
-	if strings.Contains(sData, "Bad Request") {
-		return nil, errors.New("bad request when calling plex API")
-	}
-	if strings.Contains(sData, "404") {
-		return nil, errors.New("machine ID not found in Plex API - triple check your machine ID and client IP, then check it twice more")
+		if strings.Contains(sData, "Bad Request") {
+			return nil, errors.New("bad request when calling plex API")
+		}
+		if strings.Contains(sData, "404") {
+			return nil, errors.New("machine ID not found in Plex API - triple check your machine ID and client IP, then check it twice more")
+		}
 	}
 
 	return data, err
