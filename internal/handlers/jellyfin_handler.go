@@ -225,12 +225,12 @@ func jfMediaStop(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, ha
 func jfMediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.JellyfinWebhook, m *models.SearchRequest, skipActions *bool) {
 	log.Debug("Processing media pause event")
 	if !*skipActions {
+		go common.ChangeLight("on")
 		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
 		if err != nil {
 			log.Error(err)
 		}
 
-		go common.ChangeLight("on")
 
 		err = beqClient.UnloadBeqProfile(m)
 		if err != nil {
@@ -250,11 +250,11 @@ func jfMediaResume(client *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient, 
 	if !*skipActions {
 		// mediaType string, codec string, edition string
 		// trigger lights
+		go common.ChangeLight("off")
 		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
 		if err != nil {
 			log.Error(err)
 		}
-		go common.ChangeLight("off")
 		// Changing on resume is disabled because its annoying if you changed it since playing
 		// go changeMasterVolume(vip, mediaType)
 

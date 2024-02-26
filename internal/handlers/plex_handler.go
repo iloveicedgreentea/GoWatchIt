@@ -102,11 +102,12 @@ func ProcessWebhook(plexChan chan<- models.PlexWebhookPayload, c *gin.Context) {
 
 // does plex send stop if you exit with back button? - Yes, with X for mobile player as well
 func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest) {
+
+	go common.ChangeLight("on")
 	err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
 	if err != nil {
 		log.Error(err)
 	}
-	go common.ChangeLight("on")
 
 	err = beqClient.UnloadBeqProfile(m)
 	if err != nil {
@@ -124,12 +125,12 @@ func mediaStop(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistant
 // pause only happens with literally pausing
 func mediaPause(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, payload models.PlexWebhookPayload, m *models.SearchRequest, skipActions *bool) {
 	if !*skipActions {
+		go common.ChangeLight("on")
+
 		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "false")
 		if err != nil {
 			log.Error(err)
 		}
-
-		go common.ChangeLight("on")
 
 		err = beqClient.UnloadBeqProfile(m)
 		if err != nil {
@@ -199,13 +200,14 @@ func checkAvrCodec(client *plex.PlexClient, haClient *homeassistant.HomeAssistan
 func mediaPlay(client *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, payload models.PlexWebhookPayload, m *models.SearchRequest, useAvrCodec bool, data models.MediaContainer, skipActions *bool, wg *sync.WaitGroup) {
 	var err error
 
+	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
+	go common.ChangeLight("off")
+	go common.ChangeMasterVolume(m.MediaType)
+
 	err = mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
 	if err != nil {
 		log.Error(err)
 	}
-	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
-	go common.ChangeLight("off")
-	go common.ChangeMasterVolume(m.MediaType)
 
 	// optimistically try to hdmi sync. Will return if disabled
 	wg.Add(1)
