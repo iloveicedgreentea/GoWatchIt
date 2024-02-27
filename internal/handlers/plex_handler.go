@@ -213,22 +213,6 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 	}
 
 	var err error
-
-	// if its not a movie and time is the source, skip hdmi sync
-	if strings.ToLower(payload.Metadata.Type) != movieItemTitle && config.GetString("signal.source") == "time" {
-		log.Debug("skipping sync for non-movie type and time source")
-	} else {
-		wg.Add(1)
-		go func() {
-			if ctx.Err() != nil {
-				return // Exit early if context is cancelled
-			}
-
-			// optimistically try to hdmi sync. Will return if disabled
-			common.WaitForHDMISync(wg, skipActions, haClient, client)
-		}()
-	}
-
 	go func() {
 		if ctx.Err() != nil {
 			log.Debug("mediaPlay was cancelled before lights and volume change")
@@ -237,6 +221,23 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 		common.ChangeLight("off")
 		common.ChangeMasterVolume(m.MediaType)
 	}()
+
+	// if its not a movie and time is the source, skip hdmi sync
+	if strings.ToLower(payload.Metadata.Type) != movieItemTitle && config.GetString("signal.source") == "time" {
+		log.Debug("skipping sync for non-movie type and time source")
+	} else {
+		wg.Add(1)
+		go func() {
+			if ctx.Err() != nil {
+				log.Debug("mediaPlay was cancelled before hdmi sync")
+				return // Exit early if context is cancelled
+			}
+
+			// optimistically try to hdmi sync. Will return if disabled
+			common.WaitForHDMISync(wg, skipActions, haClient, client)
+		}()
+	}
+
 	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
 
 	go func() {
@@ -300,8 +301,12 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 	}
 	err = beqClient.LoadBeqProfile(m)
 	if err != nil {
-		log.Error("Error loading BEQ profile: ", err)
-		return
+		if err.Error() == "beq profile was not found in catalog" {
+			log.Warn("BEQ profile was not found in the catalog. Either the metadata is wrong or this movie does not have a BEQ")
+		} else {
+			log.Error("Error loading BEQ profile: ", err)
+			return
+		}
 	}
 	log.Info("BEQ profile loaded")
 	// send notification of it loaded
@@ -341,7 +346,7 @@ func mediaResume(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.
 
 		// allow skipping search to save time
 		// always unload in case something is loaded from movie for tv
-		
+
 		// TODO: make all of this a function
 		if ctx.Err() != nil {
 			log.Debug("mediaPlay was cancelled before unloading BEQ profile")
