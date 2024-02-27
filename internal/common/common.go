@@ -66,7 +66,9 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 			return
 		}
 
-		// continue processing webhooks when done
+		// continue processing webhooks when done/
+		// if webhook is delayed, resume will get processed so wait
+		time.Sleep(10 * time.Second)
 		*skipActions = false
 		wg.Done()
 	}()
@@ -94,6 +96,7 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 			envyName = strings.ReplaceAll(envyName, "remote.", "")
 		}
 		signal, err = readAttrAndWait(60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
+		// will break out here
 	case "time":
 		seconds := config.GetString("signal.time")
 		log.Debugf("using %v seconds for hdmi sync", seconds)
@@ -103,6 +106,7 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 			return
 		}
 		time.Sleep(time.Duration(sec) * time.Second)
+		return
 	case "jvc":
 		// read jvc attributes until its not nosignal
 		log.Warn("jvc HDMI sync is not implemented")
@@ -113,6 +117,7 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	}
 
 	log.Debugf("HDMI Signal value is %v", signal)
+
 	if err != nil {
 		log.Errorf("error getting HDMI signal: %v", err)
 	}
@@ -127,21 +132,18 @@ func readAttrAndWait(waitTime int, entType string, entName string, attrResp home
 	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
 		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
-		log.Debugf("HDMI Signal value is %v", isSignal)
+		if err != nil {
+			log.Errorf("Error reading %s attributes: %v", entName, err)
+			return false, err
+		}
+		log.Debugf("%s signal value is %v", entName, isSignal)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
 		}
-		if err != nil {
-			log.Errorf("Error reading envy attributes: %v", err)
-			return false, err
-		}
+
 		// otherwise continue
 		time.Sleep(200 * time.Millisecond)
-	}
-	if err != nil {
-		log.Errorf("Error reading envy attributes: %v", err)
-		return false, err
 	}
 
 	return false, err

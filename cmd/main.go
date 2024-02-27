@@ -102,7 +102,7 @@ func main() {
 	// Add plex webhook handler
 	r.POST("/plexwebhook", func(c *gin.Context) {
 		log.Debug("plexwebhook received")
-		handlers.ProcessWebhook(plexChan, c)
+		handlers.ProcessWebhook(c.Request.Context(), plexChan, c)
 	})
 	r.POST("/minidspwebhook", func(c *gin.Context) {
 		log.Debug("minidspwebhook received")
