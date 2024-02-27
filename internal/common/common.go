@@ -4,39 +4,18 @@ package common
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/avr"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
-
-	// "github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
-
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
-
-	// "github.com/iloveicedgreentea/go-plex/internal/plex"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
-// IsExpectedCodecPlaying checks if AVR is playing expectedCodec (mapped and normalized string)
-func IsExpectedCodecPlayingAVR(avrClient avr.AVRClient, expectedCodec string) (bool, error) {
-	// get the codec from avr
-	codec, err := avrClient.GetCodec()
-	if err != nil {
-		log.Errorf("error getting codec from denon, can't continue: %s", err)
-		return false, err
-	}
-
-	if codec == expectedCodec {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-// IsExpectedCodecPlaying checks if codec (mapped and normalized from the player -> eg plex codec name into BEQ name) is playing expectedCodec (mapped and normalized string)
-func IsExpectedCodecPlaying(codec, expectedCodec string) (bool, error) {
+// IsAtmosodecPlaying checks if Atmos (mapped and normalized from the player -> eg plex codec name into BEQ name) is being decoded instead of multi ch in (plex bug I believe)
+func IsAtmosCodecPlaying(codec, expectedCodec string) (bool, error) {
 	if codec == expectedCodec {
 		return true, nil
 	}
@@ -66,25 +45,30 @@ func ChangeLight(state string) {
 	}
 }
 
-// TODO: test this
-// waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
+// waitForHDMISync will pause until the source reports HDMI sync is complete
 func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
+	// if called and disabled, skip
+	// stop processing webhooks because if we call pause, that will fire another one and then we get into a loop
+	*skipActions = true
+
 	if !config.GetBool("signal.enabled") {
 		*skipActions = false
 		wg.Done()
 		return
 	}
-
 	log.Debug("Running HDMI sync wait")
+
 	defer func() {
-		// play item no matter what
+		// play item no matter what happens
 		err := PlaybackInterface("play", mediaClient)
 		if err != nil {
-			log.Errorf("Error playing plex: %v", err)
+			log.Errorf("Error playing client: %v", err)
 			return
 		}
 
-		// continue processing webhooks when done
+		// continue processing webhooks when done/
+		// if webhook is delayed, resume will get processed so wait
+		time.Sleep(10 * time.Second)
 		*skipActions = false
 		wg.Done()
 	}()
@@ -93,36 +77,47 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	var err error
 	var signal bool
 
-	// pause plex
-	log.Debug("pausing plex")
+	// pause client
+	log.Debug("pausing client")
 	err = PlaybackInterface("pause", mediaClient)
 	if err != nil {
-		log.Errorf("Error pausing plex: %v", err)
+		log.Errorf("Error pausing client: %v", err)
 		return
 	}
 
+	// check signal source
 	switch signalSource {
 	case "envy":
+		log.Debug("using envy for hdmi sync")
 		// read envy attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAEnvyResponse{}, haClient)
-	case "jvc":
-		// read jvc attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAjvcResponse{}, haClient)
-	case "sensor":
-		signal, err = readAttrAndWait(30, "binary_sensor", &models.HABinaryResponse{}, haClient)
-	default:
-		// TODO: maybe use a 15 sec delay?
-		log.Debug("using seconds for hdmi sync")
-		sec, err := strconv.Atoi(signalSource)
+		envyName := config.GetString("signal.envy")
+		// remove remote. if present
+		if strings.Contains(envyName, "remote") {
+			envyName = strings.ReplaceAll(envyName, "remote.", "")
+		}
+		signal, err = readAttrAndWait(60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
+		// will break out here
+	case "time":
+		seconds := config.GetString("signal.time")
+		log.Debugf("using %v seconds for hdmi sync", seconds)
+		sec, err := strconv.Atoi(seconds)
 		if err != nil {
-			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
+			log.Errorf("waitforHDMIsync enabled but no valid source provided. Make sure you have 'time' set as a plain number: %v -- %v", signalSource, err)
 			return
 		}
 		time.Sleep(time.Duration(sec) * time.Second)
-
+		return
+	case "jvc":
+		// read jvc attributes until its not nosignal
+		log.Warn("jvc HDMI sync is not implemented")
+	case "sensor":
+		log.Warn("sensor HDMI sync is not implemented")
+	default:
+		log.Warn("No valid source provided for hdmi sync")
 	}
 
 	log.Debugf("HDMI Signal value is %v", signal)
+
 	if err != nil {
 		log.Errorf("error getting HDMI signal: %v", err)
 	}
@@ -130,26 +125,25 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 }
 
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func readAttrAndWait(waitTime int, entType string, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
 
+	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
-		isSignal, err = haClient.ReadAttributes(haClient.EntityName, attrResp, entType)
+		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
+		if err != nil {
+			log.Errorf("Error reading %s attributes: %v", entName, err)
+			return false, err
+		}
+		log.Debugf("%s signal value is %v", entName, isSignal)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
 		}
-		if err != nil {
-			log.Errorf("Error reading envy attributes: %v", err)
-			return false, err
-		}
+
 		// otherwise continue
-		time.Sleep(1 * time.Second)
-	}
-	if err != nil {
-		log.Errorf("Error reading envy attributes: %v", err)
-		return false, err
+		time.Sleep(200 * time.Millisecond)
 	}
 
 	return false, err

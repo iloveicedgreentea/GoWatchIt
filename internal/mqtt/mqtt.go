@@ -13,7 +13,7 @@ var log = logger.GetLogger()
 
 func connect(clientID string) (mqtt.Client, error) {
 	broker := config.GetString("mqtt.url")
-	opts := mqtt.NewClientOptions().AddBroker(broker)
+	opts := mqtt.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s", broker))
 	opts.SetClientID(clientID)
 	opts.SetUsername(config.GetString("mqtt.username"))
 	opts.SetPassword(config.GetString("mqtt.password"))

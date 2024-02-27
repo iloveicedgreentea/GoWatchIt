@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"context"
 
 	"github.com/gin-gonic/gin"
 
@@ -63,14 +64,15 @@ func TestProcessWebhook(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	// get testing context with recorder
-	context, _ := gin.CreateTestContext(respRecorder)
-	context.Request = req
+	c, _ := gin.CreateTestContext(respRecorder)
+	c.Request = req
 
 	// Prepare a channel to receive the decoded payload
 	plexChan := make(chan models.PlexWebhookPayload, 10)
-
+	ctx, cancel := context.WithCancel(context.Background())
 	// Call the ProcessWebhook function
-	ProcessWebhook(plexChan, context)
+	ProcessWebhook(ctx,plexChan, c)
+	defer cancel() // TODO: test cancelling
 
 	// Test res
 	assert.Equal(t, http.StatusOK, respRecorder.Code)
@@ -79,6 +81,8 @@ func TestProcessWebhook(t *testing.T) {
 	case payload := <-plexChan:
 		assert.NotNil(t, payload)
 		assert.Equal(t, "player-id", payload.Player.UUID)
+	case <- ctx.Done():
+		t.Error("ctx cancelled")
 	case <-time.After(time.Second * 2): // Wait up to 1 second
 		t.Error("Expected payload was not received on plexChan")
 	}

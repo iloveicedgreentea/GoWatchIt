@@ -19,7 +19,7 @@ func GetAVRClient(url string) AVRClient {
         return &DenonClient{ServerURL: url, Port: "23", TelClient: telnet.StandardCaller}
     // Add cases for other brands
     default:
-		log.Error("No AVR brand set in config")
+		log.Error("unsupported AVR brand set in config")
         return nil
     }
 }
