@@ -303,6 +303,7 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 	if err != nil {
 		if err.Error() == "beq profile was not found in catalog" {
 			log.Warn("BEQ profile was not found in the catalog. Either the metadata is wrong or this movie does not have a BEQ")
+			return
 		} else {
 			log.Error("Error loading BEQ profile: ", err)
 			return
