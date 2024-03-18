@@ -8,7 +8,7 @@ RUN go vet -v
 
 RUN CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM alpine:20231219
+FROM alpine:20240315
 
 RUN apk add  supervisor
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
