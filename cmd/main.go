@@ -78,11 +78,13 @@ func main() {
 	var plexChan = make(chan models.PlexWebhookPayload, 5)
 	var minidspChan = make(chan models.MinidspRequest, 5)
 	var jfChan = make(chan models.JellyfinWebhook, 5)
+	var webhookChan = make(chan models.Webhook, 5)
 
 	// ready signals
 	plexReady := make(chan bool)
 	minidspReady := make(chan bool)
 	jfReady := make(chan bool)
+	webhookReady := make(chan bool)
 
 	// run worker forever in background
 	/*
@@ -92,13 +94,18 @@ func main() {
 	go handlers.PlexWorker(plexChan, plexReady)
 	go handlers.MiniDspWorker(minidspChan, minidspReady)
 	go handlers.JellyfinWorker(jfChan, jfReady)
+	go handlers.WebhookWorker(webhookChan, webhookReady)
 
 	/* ###############################
 		Routes
 	   ############################## */
 	// healthcheck
 	r.GET("/health", handlers.ProcessHealthcheckWebhookGin)
-
+	// non-plex based webhook
+	r.POST("/webhook", func(c *gin.Context) {
+		log.Debug("plexwebhook received")
+		handlers.ProcessPlainWebhook(c.Request.Context(), webhookChan, c)
+	})
 	// Add plex webhook handler
 	r.POST("/plexwebhook", func(c *gin.Context) {
 		log.Debug("plexwebhook received")

@@ -302,7 +302,7 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 	err = beqClient.LoadBeqProfile(m)
 	if err != nil {
 		if err.Error() == "beq profile was not found in catalog" {
-			log.Warn("BEQ profile was not found in the catalog. Either the metadata is wrong or this movie does not have a BEQ")
+			log.Warnf("BEQ profile was not found in the catalog. Either the metadata is wrong or this %s does not have a BEQ", payload.Metadata.Type)
 			return
 		} else {
 			log.Error("Error loading BEQ profile: ", err)
@@ -337,7 +337,7 @@ func mediaResume(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.
 		}
 		// mediaType string, codec string, edition string
 		// trigger lights
-		go common.ChangeLight("off")
+		go common.ChangeLight("off") // TODO: split stuff like this into functions
 		err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true")
 		if err != nil {
 			log.Error(err)
@@ -388,8 +388,13 @@ func mediaResume(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.
 		}
 		err = beqClient.LoadBeqProfile(m)
 		if err != nil {
-			log.Error(err)
-			return
+			if err.Error() == "beq profile was not found in catalog" {
+				log.Warnf("BEQ profile was not found in the catalog. Either the metadata is wrong or this %s does not have a BEQ", payload.Metadata.Type)
+				return
+			} else {
+				log.Error("Error loading BEQ profile: ", err)
+				return
+			}
 		}
 		log.Info("BEQ profile loaded")
 
