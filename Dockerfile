@@ -1,4 +1,4 @@
-FROM golang:1.22 as build
+FROM golang:1.22.2-bookworm as build
 
 WORKDIR /go/src/app
 COPY . .
@@ -8,7 +8,7 @@ RUN go vet -v
 
 RUN CGO_ENABLED=0 go build -o /go/bin/app
 
-FROM alpine:20231219
+FROM alpine:20240329
 
 RUN apk add  supervisor
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
