@@ -77,6 +77,7 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 2) You must mount a volume to `/data`
 3) Configure the application via web ui -> `http://(your-server-ip):9999`
 4) Set up your player with the instructions below
+5) You can change logging timezone by setting the `TZ` env var to your desired timezone 
 
 ### Plex Specifics
 1) get your player UUID(s) from `https://plex.tv/devices.xml` while logged in
