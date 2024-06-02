@@ -103,7 +103,7 @@ func main() {
 	r.GET("/health", handlers.ProcessHealthcheckWebhookGin)
 	// non-plex based webhook
 	r.POST("/webhook", func(c *gin.Context) {
-		log.Debug("plexwebhook received")
+		log.Debug("webhook received")
 		handlers.ProcessPlainWebhook(c.Request.Context(), webhookChan, c)
 	})
 	// Add plex webhook handler

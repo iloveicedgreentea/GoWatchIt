@@ -63,7 +63,7 @@ func ProcessWebhook(ctx context.Context, plexChan chan<- models.PlexWebhookPaylo
 		clientUUID := decodedPayload.Player.UUID
 		log.Infof("Got a request from UUID: %s", clientUUID)
 
-		t := strings.ToLower(decodedPayload.Metadata.Type)
+		t := decodedPayload.Metadata.Type
 
 		log.Debugf("ProcessWebhook:  Media type is: %s", t)
 		log.Debugf("ProcessWebhook:  Media title is: %s", decodedPayload.Metadata.Title)
@@ -72,8 +72,8 @@ func ProcessWebhook(ctx context.Context, plexChan chan<- models.PlexWebhookPaylo
 		userID := config.GetString("plex.ownerNameFilter")
 		// only respond to events on a particular account if you share servers and only for movies and shows
 		// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
-		if userID == "" || decodedPayload.Account.Title == userID {
-			if t == movieItemTitle || t == showItemTitle {
+		if len(userID) == 0 || strings.EqualFold(decodedPayload.Account.Title, userID) {
+			if strings.EqualFold(t, movieItemTitle) || strings.EqualFold(t, showItemTitle) {
 				log.Debug("adding item to plexChan")
 				select {
 				case plexChan <- decodedPayload:
@@ -223,7 +223,7 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 	}()
 
 	// if its not a movie and time is the source, skip hdmi sync
-	if strings.ToLower(payload.Metadata.Type) != movieItemTitle && config.GetString("signal.source") == "time" {
+	if !strings.EqualFold(payload.Metadata.Type, movieItemTitle) && config.GetString("signal.source") == "time" {
 		log.Debug("skipping sync for non-movie type and time source")
 	} else {
 		wg.Add(1)
@@ -286,7 +286,7 @@ func mediaPlay(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.Be
 		}
 		log.Debugf("Found codec: %s", m.Codec)
 		// if its a show and you dont want beq enabled, exit
-		if payload.Metadata.Type == showItemTitle {
+		if strings.EqualFold(payload.Metadata.Type, showItemTitle) {
 			if !config.GetBool("ezbeq.enableTvBeq") {
 				return
 			}
@@ -357,7 +357,7 @@ func mediaResume(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.
 		if err != nil {
 			log.Errorf("Error on startup - unloading beq %v", err)
 		}
-		if payload.Metadata.Type == showItemTitle {
+		if strings.EqualFold(payload.Metadata.Type, showItemTitle) {
 			if !config.GetBool("ezbeq.enableTvBeq") {
 				return
 			}
@@ -369,7 +369,7 @@ func mediaResume(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.
 		// get the tmdb id to match with ezbeq catalog
 		m.TMDB = getPlexMovieDb(payload)
 		// if the server was restarted, cached data is lost
-		if m.Codec == "" {
+		if len(m.Codec) == 0 {
 			log.Warn("No codec found in cache on resume. Was server restarted? Getting new codec")
 			log.Debug("Using plex to get codec because its not cached")
 			m.Codec, err = client.GetAudioCodec(data)
@@ -378,14 +378,12 @@ func mediaResume(ctx context.Context, client *plex.PlexClient, beqClient *ezbeq.
 				return
 			}
 		}
-		if m.Codec == "" {
-			log.Error("No codec found after trying to resume")
-			return
-		}
+
 		if ctx.Err() != nil {
 			log.Debug("mediaPlay was cancelled before loading BEQ profile")
 			return
 		}
+
 		err = beqClient.LoadBeqProfile(m)
 		if err != nil {
 			if err.Error() == "beq profile was not found in catalog" {
