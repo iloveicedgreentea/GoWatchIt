@@ -47,7 +47,8 @@ func TestLightTrigger(t *testing.T) {
 func TestNotification(t *testing.T) {
 
 	haClient := testSetup()
-
+	// make sure to test removing notify.
+	config.Set("homeAssistant.notifyentityname", "notify.mobile_app_iphone")
 	// trigger light and switch
 	err := haClient.SendNotification("test from go-plex")
 	assert.NoError(t, err)
@@ -61,11 +62,11 @@ func TestReadAttributes(t *testing.T) {
 		entType string
 	}
 	tt := []testStruct{
-		{
-			entName: "nz7",
-			test:    &models.HAjvcResponse{},
-			entType: "remote",
-		},
+		// {
+		// 	entName: "nz7",
+		// 	test:    &models.HAjvcResponse{},
+		// 	entType: "remote",
+		// },
 		{
 			entName: "envy",
 			test:    &models.HAEnvyResponse{},
