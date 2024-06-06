@@ -13,17 +13,17 @@ var log = logger.GetLogger()
 
 func connect(clientID string) (mqtt.Client, error) {
 	broker := config.GetString("mqtt.url")
-	opts := mqtt.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s", broker))
+	opts := mqtt.NewClientOptions().AddBroker(fmt.Sprintf("%s", broker))
 	opts.SetClientID(clientID)
 	opts.SetUsername(config.GetString("mqtt.username"))
 	opts.SetPassword(config.GetString("mqtt.password"))
 
 	c := mqtt.NewClient(opts)
 	token := c.Connect()
-	if !token.WaitTimeout(5*time.Second) {
+	if !token.WaitTimeout(5 * time.Second) {
 		return nil, fmt.Errorf("timeout when connecting to mqtt broker")
 	}
-	
+
 	if token.Error() != nil {
 		return nil, token.Error()
 	}
@@ -38,7 +38,7 @@ func PublishWrapper(topic string, msg string) error {
 
 // creates a connection to broker and sends the payload
 func Publish(payload []byte, topic string) error {
-	if ! config.GetBool("mqtt.enabled") { 
+	if !config.GetBool("mqtt.enabled") {
 		log.Debugf("MQTT is disabled, skipping publish to topic %v", topic)
 		return nil
 	}
@@ -70,8 +70,8 @@ func Publish(payload []byte, topic string) error {
 		// if this doesnt return true, it timed out
 		if !token.WaitTimeout(10 * time.Second) {
 			timeoutErr := fmt.Errorf("timeout when waiting for mqtt token")
-            log.Warning(timeoutErr.Error())
-            lastErr = timeoutErr
+			log.Warning(timeoutErr.Error())
+			lastErr = timeoutErr
 			continue
 		}
 
