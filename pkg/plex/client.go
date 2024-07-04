@@ -1,3 +1,4 @@
+// Plex implements the API for plex
 package plex
 
 import (
@@ -13,6 +14,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
+	"github.com/iloveicedgreentea/go-plex/pkg/utils"
 )
 
 var log = logger.GetLogger()
@@ -31,16 +33,19 @@ type PlexClient struct {
 }
 
 // return a new instance of a plex client
-func NewClient(url, port string) *PlexClient {
+func NewClient(scheme, url, port string) (*PlexClient, error) {
 	// remove scheme
-	url = strings.Replace(url, "http://", "", -1) // TODO: user can supply scheme
+	if !utils.ValidateHttpScheme(scheme) {
+		return nil, fmt.Errorf("invalid http scheme: %s", scheme)
+	}
+	url = strings.Replace(url, scheme, "", -1)
 	return &PlexClient{
 		ServerURL: url,
 		Port:      port,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
-	}
+	}, nil
 }
 
 // unmarshal xml into a struct

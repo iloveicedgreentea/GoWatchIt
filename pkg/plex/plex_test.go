@@ -5,22 +5,27 @@ package plex
 import (
 	"context"
 	"testing"
+	"time"
 
 	// "github.com/iloveicedgreentea/go-plex/models"
 	"github.com/spf13/viper"
 
-	// "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const https = "https://"
 
 func TestNewPlexPlayer(t *testing.T) {
 
 	serverURL := viper.GetString("plex.url")
 	port := viper.GetString("plex.port")
 
-	player := NewPlexPlayer(serverURL, port)
-	require.NotNil(t, player)
-	require.NotNil(t, player.plexClient)
+	player, err := NewPlexPlayer(https, serverURL, port)
+	require.NoError(t, err)
+
+	assert.NotNil(t, player)
+	assert.NotNil(t, player.plexClient)
 }
 
 // func TestPlexPlayer_Play(t *testing.T) {
@@ -39,8 +44,15 @@ func TestPlexPlayerAction(t *testing.T) {
 	port := viper.GetString("plex.port")
 	t.Logf("serverURL: %s, port: %s", serverURL, port)
 
-	player := NewPlexPlayer(serverURL, port)
-	err := player.Play(context.Background())
+	player, err := NewPlexPlayer(https, serverURL, port)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	err = player.Pause(ctx)
+	require.NoError(t, err)
+	time.Sleep(1 * time.Second)
+
+	err = player.Play(ctx)
 	require.NoError(t, err)
 }
 

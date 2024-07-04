@@ -17,3 +17,4 @@ type WebhookPayload[T PayloadTypeUnion] struct {
     Type    PayloadType
     Payload T
 }
+

@@ -4,20 +4,24 @@ package mediaplayer
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
 // MediaPlayer is a generic interface for media players like plex or jellyfin
 type MediaPlayer interface {
+	// TODO: add play/pause functions for webhook response? probably not since its in event router
 	Play(ctx context.Context) error
 	Pause(ctx context.Context) error
 	Stop(ctx context.Context) error
 	Resume(ctx context.Context) error
-	Scrobble(ctx context.Context, payload models.MediaPayload) error
+	Scrobble(ctx context.Context) error
 	GetAudioCodec(ctx context.Context, payload models.MediaPayload) (string, error)
-	GetEdition(ctx context.Context, payload models.MediaPayload) (string, error)
+	GetEdition(ctx context.Context, payload models.DataMediaContainer) (models.Edition, error)
 	RouteEvent(ctx context.Context, eventType string, payload models.MediaPayload) error
 	GetMediaData(ctx context.Context, key string) (interface{}, error)
+	ProcessWebhook(ctx context.Context, payload *http.Request) error
 }
 
 // MediaPlayerFactory manages different media player instances
