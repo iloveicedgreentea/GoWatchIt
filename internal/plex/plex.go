@@ -103,6 +103,7 @@ func (c *PlexClient) getRunningSession() (models.SessionMediaContainer, error) {
 	return data, err
 }
 
+// TODO: make this an interface
 // GetCodecFromSession gets the codec from a running session
 func (c *PlexClient) GetCodecFromSession(uuid string) (string, error) {
 	sess, err := c.getRunningSession()

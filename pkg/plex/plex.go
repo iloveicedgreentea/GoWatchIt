@@ -25,20 +25,22 @@ type PlexPlayer struct {
 	// Add any Plex-specific fields here
 }
 
+// TODO: mock this stuff
 // NewPlexPlayer creates a new PlexPlayer instance
 func NewPlexPlayer(scheme, serverURL, port string, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, c chan<- models.PlexWebhookPayload ) (*PlexPlayer, error) {
 	if !utils.ValidateHttpScheme(scheme) {
 		return nil, fmt.Errorf("invalid http scheme: %s", scheme)
 
 	}
+	plexClient, err := NewClient(scheme, serverURL, port)
 	return &PlexPlayer{
-		PlexClient: NewClient(scheme, serverURL, port),
+		PlexClient: plexClient,
 		BeqClient: beqClient,
 		HaClient: haClient,
 		SearchRequest: &models.SearchRequest{},
 		plexChan: c,
 
-	}, nil
+	}, err
 }
 
 // Play implements the Play method for Plex

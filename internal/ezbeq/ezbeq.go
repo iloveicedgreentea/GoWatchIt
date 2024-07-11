@@ -302,14 +302,14 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 }
 
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
-func checkEdition(val models.BeqCatalog, edition string) bool {
+func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 	// if edition from beq is empty, any match will do
 	if val.Edition == "" {
 		return true
 	}
 
 	// if the beq edition contains the string like Extended for "Extended Cut", its ok
-	if strings.Contains(val.Edition, edition) {
+	if strings.Contains(val.Edition, string(edition)) {
 		return true
 	}
 

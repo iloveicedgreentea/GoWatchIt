@@ -5,7 +5,7 @@ type SearchRequest struct {
 	Year            int
 	Codec           string
 	PreferredAuthor string
-	Edition         string
+	Edition         Edition
 	SkipSearch      bool
 	EntryID         string
 	MVAdjust        float64

@@ -153,7 +153,7 @@ func (p *PlexPlayer) mediaPause(cancel context.CancelFunc, payload models.PlexWe
 			log.Error(err)
 		}
 
-		err = p.BeqClient.UnloadBeqProfile(m)
+		err = p.BeqClient.UnloadBeqProfile(p.SearchRequest)
 		if err != nil {
 			log.Error(err)
 			if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
@@ -256,7 +256,7 @@ func (p *PlexPlayer) mediaPlay(ctx context.Context, avrClient avr.AVRClient, pay
 		// 		return
 		// 	}
 		// }
-		log.Debugf("Found codec: %s", m.Codec)
+		log.Debugf("Found codec: %s", p.SearchRequest.Codec)
 		// if its a show and you dont want beq enabled, exit
 		if strings.EqualFold(payload.Metadata.Type, string(showItemTitle)) {
 			if !config.GetBool("ezbeq.enableTvBeq") {
@@ -271,7 +271,7 @@ func (p *PlexPlayer) mediaPlay(ctx context.Context, avrClient avr.AVRClient, pay
 		log.Debug("mediaPlay was cancelled before loading BEQ profile")
 		return
 	}
-	err = p.BeqClient.LoadBeqProfile(m)
+	err = p.BeqClient.LoadBeqProfile(p.SearchRequest)
 	if err != nil {
 		if err.Error() == "beq profile was not found in catalog" {
 			log.Warnf("BEQ profile was not found in the catalog. Either the metadata is wrong or this %s does not have a BEQ", payload.Metadata.Type)
@@ -341,7 +341,7 @@ func (p *PlexPlayer) mediaResume(ctx context.Context, payload models.PlexWebhook
 		// get the tmdb id to match with ezbeq catalog
 		p.SearchRequest.TMDB = getPlexMovieDb(payload)
 		// if the server was restarted, cached data is lost
-		if len(m.Codec) == 0 {
+		if len(p.SearchRequest.Codec) == 0 {
 			log.Warn("No codec found in cache on resume. Was server restarted? Getting new codec")
 			log.Debug("Using plex to get codec because its not cached")
 			p.SearchRequest.Codec, err = p.PlexClient.GetAudioCodec(data)
@@ -466,7 +466,7 @@ func checkUUID(clientUUID string, filterConfig string) bool {
 }
 
 // based on event type, determine what to do
-func eventRouter(ctx context.Context, cancel context.CancelFunc, plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
+func (p *PlexPlayer) eventRouter(ctx context.Context, cancel context.CancelFunc, plexClient *plex.PlexClient, beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, avrClient avr.AVRClient, useAvrCodec bool, payload models.PlexWebhookPayload, model *models.SearchRequest, skipActions *bool) {
 	// perform function via worker
 
 	clientUUID := payload.Player.UUID
@@ -483,7 +483,7 @@ func eventRouter(ctx context.Context, cancel context.CancelFunc, plexClient *ple
 
 	var err error
 	var data models.MediaContainer
-	var editionName string
+	var editionName models.Edition
 
 	// make a call to plex to get the data based on key
 	data, err = plexClient.GetMediaData(payload.Metadata.Key)
@@ -495,8 +495,13 @@ func eventRouter(ctx context.Context, cancel context.CancelFunc, plexClient *ple
 		}
 		return
 	} else {
+		edition, err := p.getEditionName(ctx, models.DataMediaContainer{PlexPayload: &data, JellyfinPayload: nil})
+		if err != nil {
+			log.Errorf("Error getting edition name: %v", err)
+			// TODO: handle error
+		}
 		// get the edition name
-		editionName = getEditionName(data)
+		editionName = edition
 		log.Debugf("Event Router: Found edition: %s", editionName)
 	}
 
@@ -517,20 +522,20 @@ func eventRouter(ctx context.Context, cancel context.CancelFunc, plexClient *ple
 	case "media.play":
 		log.Debug("Event Router: media.play received")
 		wg := &sync.WaitGroup{}
-		mediaPlay(ctx, plexClient, beqClient, haClient, avrClient, payload, model, useAvrCodec, data, skipActions, wg)
+		p.mediaPlay(ctx, avrClient, payload, useAvrCodec, data, wg)
 	case "media.stop":
 		log.Debug("Event Router: media.stop received")
-		mediaStop(cancel, beqClient, haClient, payload, model)
+		p.mediaStop(cancel, payload)
 	case "media.pause":
 		log.Debug("Event Router: media.pause received")
-		mediaPause(cancel, beqClient, haClient, payload, model, skipActions)
+		p.mediaPause(cancel, payload)
 	// Pressing the 'resume' button in plex UI is media.play
 	case "media.resume":
 		log.Debug("Event Router: media.resume received")
-		mediaResume(ctx, plexClient, beqClient, haClient, payload, model, data, skipActions)
+		p.mediaResume(ctx, payload,data)
 	case "media.scrobble":
 		log.Debug("Scrobble received")
-		mediaScrobble(beqClient, model)
+		p.mediaScrobble()
 	default:
 		log.Debugf("Received unsupported event: %s", payload.Event)
 	}
@@ -550,7 +555,7 @@ func getPlexMovieDb(payload models.PlexWebhookPayload) string {
 }
 
 // entry point for background tasks
-func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
+func (p *PlexPlayer) PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool) {
 	if !config.GetBool("plex.enabled") {
 		log.Debug("Plex is disabled")
 		readyChan <- true
@@ -627,7 +632,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 		log.Debugf("Current length of plexChan in PlexWorker: %d", len(plexChan))
 		// determine what to do
 		log.Debug("Sending new payload to eventRouter")
-		eventRouter(ctx, cancel, plexClient, beqClient, haClient, avrClient, useAvrCodec, i, model, skipActions)
+		p.eventRouter(ctx, cancel, plexClient, beqClient, haClient, avrClient, useAvrCodec, i, model, skipActions)
 		log.Debug("eventRouter done processing payload")
 	}
 	cancel()

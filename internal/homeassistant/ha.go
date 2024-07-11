@@ -159,3 +159,33 @@ func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttrib
 		return false, err
 	}
 }
+
+
+func (c *HomeAssistantClient) SendEvent(eventType string, eventData map[string]interface{}) error {
+    url := fmt.Sprintf("http://%s:%s/api/events/%s", c.ServerURL, c.Port, eventType)
+
+    jsonData, err := json.Marshal(eventData)
+    if err != nil {
+        return fmt.Errorf("error marshaling event data: %v", err)
+    }
+
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+    if err != nil {
+        return fmt.Errorf("error creating request: %v", err)
+    }
+
+    req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+    req.Header.Set("Content-Type", "application/json")
+
+    resp, err := c.HTTPClient.Do(req)
+    if err != nil {
+        return fmt.Errorf("error sending request: %v", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+    }
+
+    return nil
+}

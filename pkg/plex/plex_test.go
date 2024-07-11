@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	// "github.com/iloveicedgreentea/go-plex/models"
+	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/spf13/viper"
 
 	"github.com/stretchr/testify/assert"
@@ -16,16 +16,20 @@ import (
 
 const https = "https://"
 
-func TestNewPlexPlayer(t *testing.T) {
-
+func newClient() (*PlexPlayer, error) {
 	serverURL := viper.GetString("plex.url")
 	port := viper.GetString("plex.port")
+	c := make(chan<- models.PlexWebhookPayload)
 
-	player, err := NewPlexPlayer(https, serverURL, port)
+	return NewPlexPlayer(https, serverURL, port, nil, nil, c)
+}
+
+func TestNewPlexPlayer(t *testing.T) {
+	player, err := newClient()
 	require.NoError(t, err)
 
 	assert.NotNil(t, player)
-	assert.NotNil(t, player.plexClient)
+	assert.NotNil(t, player.PlexClient)
 }
 
 // func TestPlexPlayer_Play(t *testing.T) {
@@ -40,11 +44,7 @@ func TestNewPlexPlayer(t *testing.T) {
 
 func TestPlexPlayerAction(t *testing.T) {
 
-	serverURL := viper.GetString("plex.url")
-	port := viper.GetString("plex.port")
-	t.Logf("serverURL: %s, port: %s", serverURL, port)
-
-	player, err := NewPlexPlayer(https, serverURL, port)
+	player, err := newClient()
 	require.NoError(t, err)
 
 	ctx := context.Background()
