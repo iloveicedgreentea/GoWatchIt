@@ -1,7 +1,7 @@
 .PHONY: build test run docker-run docker-build
 SHELL := /bin/bash
 build: 
-	cd cmd && go build -o ../build/server
+	cd cmd/gowatchit && go build -o ../../build/gowatchit
 test:
 	./test.sh
 docker-build:
@@ -11,4 +11,4 @@ docker-push:
 docker-run:
 	LOG_FILE=false LOG_LEVEL=debug docker-compose -f docker-compose-test.yml up
 run: build
-	LOG_FILE=false LOG_LEVEL=debug ./build/server
+	LOG_FILE=false LOG_LEVEL=debug ./build/gowatchit

@@ -1,1 +1,0 @@
-actions uses a registration system

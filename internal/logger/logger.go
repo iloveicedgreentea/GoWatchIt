@@ -1,50 +1,83 @@
 package logger
 
 import (
+	"context"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
-	"sync"
-
-	log "github.com/sirupsen/logrus"
 )
 
-var (
-	logger *log.Logger
-	once   sync.Once
-)
+// loggerKey is used as the key for storing the logger in the context
+type loggerKey struct{}
 
-func GetLogger() *log.Logger {
-	once.Do(func() {
-		logger = log.New()
+var defaultLogger *slog.Logger
 
-		// log to file if LOG_FILE is not false
-		if os.Getenv("LOG_FILE") != "false" {
-			// truncate old logs
+func Fatal(msg string, args ...any) {
+    slog.Error(msg, args...)
+    os.Exit(1)
+}
+
+// AddLoggerToContext adds a slog.Logger to the context
+func AddLoggerToContext(ctx context.Context, logger *slog.Logger) context.Context {
+	return context.WithValue(ctx, loggerKey{}, logger)
+}
+
+// GetLoggerFromContext retrieves the slog.Logger from the context
+func GetLoggerFromContext(ctx context.Context) *slog.Logger {
+	logger, ok := ctx.Value(loggerKey{}).(*slog.Logger)
+	if !ok {
+		// Return the default logger if not found in context
+		return GetLogger()
+	}
+	return logger
+}
+
+// GetLogger returns the default slog.Logger instance
+func GetLogger() *slog.Logger {
+	if defaultLogger == nil {
+		var handler slog.Handler
+
+		// Determine the log level
+		level := slog.LevelInfo
+		if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
+			level = slog.LevelDebug
+		}
+
+		// Set up logging to file if LOG_FILE is "true"
+		if os.Getenv("LOG_FILE") == "true" {
+			// Remove old log file
 			err := os.Remove("/data/application.log")
 			if err != nil && !os.IsNotExist(err) {
-				log.Fatalf("Failed to remove log file: %v", err)
+				slog.Error("Failed to remove log file", "error", err)
 			}
-			// Open a file for logging
+
+			// Open a new log file
 			file, err := os.OpenFile("/data/application.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 			if err != nil {
-				log.Fatalf("Failed to open log file: %v", err)
+				slog.Error("Failed to open log file", "error", err)
+			} else {
+				// Create a multi-writer for both file and stdout
+				multiWriter := io.MultiWriter(file, os.Stdout)
+				handler = slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
+					Level: level,
+				})
 			}
-
-			// Set logger output to the file and stdout
-			logger.SetOutput(io.MultiWriter(file, os.Stdout))
-		}
-		// log level
-		if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
-			logger.SetLevel(log.DebugLevel)
-		}
-		if os.Getenv("SUPER_DEBUG") == "true" {
-			logger.SetReportCaller(true)
 		}
 
-		logger.SetFormatter(&log.TextFormatter{
-			TimestampFormat: "01-02-2006 15:04:05", FullTimestamp: true,
-		})
-	})
-	return logger
+		// If no file handler was created, use a default stdout handler
+		if handler == nil {
+			handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+				Level: level,
+			})
+		}
+
+		// Create the logger
+		defaultLogger = slog.New(handler)
+
+		// Set as default logger
+		slog.SetDefault(defaultLogger)
+	}
+
+	return defaultLogger
 }

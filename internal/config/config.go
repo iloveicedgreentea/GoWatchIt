@@ -1,6 +1,9 @@
 package config
 
 import (
+	"context"
+	"log/slog"
+
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 
 	"github.com/fsnotify/fsnotify"
@@ -11,14 +14,14 @@ import (
 )
 
 var v *viper.Viper
-var log = logger.GetLogger()
+var log = logger.GetLoggerFromContext(context.Background())
 
 func init() {
 	v = viper.New()
 	// Try the directory of the executable first
 	ex, err := os.Executable()
 	if err != nil {
-		log.Fatalf("Could not find executable path: %v", err)
+		logger.Fatal("Could not find executable path", err)
 	}
 
 	exPath := filepath.Dir(ex)
@@ -51,7 +54,7 @@ func init() {
 		// Try the directory of the executable first
 		cwd, err := os.Getwd()
 		if err != nil {
-			log.Fatalf("Could not find executable path: %v", err)
+			logger.Fatal("Could not find executable path", err)
 		}
 		configpathTest := filepath.Join(cwd, "../../config.json")
 		v.SetConfigFile(configpathTest)
@@ -68,12 +71,16 @@ func init() {
 	}
 
 	v.OnConfigChange(func(e fsnotify.Event) {
-		log.Debugf("Config file changed: %s", e.Name)
+		log.Debug("Config file changed",
+			slog.String("reason", e.Name),
+		)
 		log.Info("Config reloaded")
 	})
 	// hot reload for config
 	v.WatchConfig()
-	log.Debugf("Config loaded from %s", v.ConfigFileUsed())
+	log.Debug("Config loaded",
+		slog.String("location", v.ConfigFileUsed()),
+	)
 }
 
 func Set(key string, value interface{}) {
