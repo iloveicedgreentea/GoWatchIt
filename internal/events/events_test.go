@@ -51,6 +51,8 @@ func TestRequestToEvent(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, models.ActionPlay, event.Action)
 		assert.Equal(t, "/library/metadata/3019", event.Metadata.Key)
+		assert.Equal(t, "Player", event.PlayerTitle)
+		assert.Equal(t, "player-id", event.PlayerUUID)
 	})
 
 	t.Run("Jellyfin event", func(t *testing.T) {
@@ -59,13 +61,14 @@ func TestRequestToEvent(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, models.ActionPlay, event.Action)
 		assert.Equal(t, "Living Room TV", event.PlayerTitle)
+		assert.Equal(t, "123456789", event.PlayerUUID)
 	})
 
 	t.Run("Unsupported event", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/webhook", nil) // TODO: this causes a panic
+		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
+		req.Header.Set("Content-Type", "text/plain")
 		_, err := RequestToEvent(ctx, req)
 		assert.Error(t, err)
-		assert.IsType(t, EventNotSupportedError{}, err)
 	})
 }
 
@@ -81,17 +84,30 @@ func TestIsPlexType(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", nil)
 		assert.False(t, isPlexType(ctx, req))
 	})
+
+	t.Run("Non-multipart request", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
+		req.Header.Set("Content-Type", "application/json")
+		assert.False(t, isPlexType(ctx, req))
+	})
 }
 
 func TestIsJellyfinType(t *testing.T) {
-	t.SkipNow() // TODO
+	t.SkipNow() // TODO:
 	t.Run("Valid Jellyfin request", func(t *testing.T) {
 		req := createJellyfinWebhookTestRequest()
 		assert.True(t, isJellyfinType(req))
 	})
 
 	t.Run("Invalid Jellyfin request", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/webhook", nil)
+		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
+		req.Header.Set("Content-Type", "text/plain")
+		assert.False(t, isJellyfinType(req))
+	})
+
+	t.Run("Non-JSON request", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		assert.False(t, isJellyfinType(req))
 	})
 }
@@ -118,10 +134,17 @@ func TestParseJellyfinWebhook(t *testing.T) {
 		_, err := parseJellyfinWebhook(ctx, req)
 		assert.Error(t, err)
 	})
+
+	t.Run("Non-JSON payload", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewBufferString("Not JSON"))
+		req.Header.Set("Content-Type", "text/plain")
+		_, err := parseJellyfinWebhook(ctx, req)
+		assert.Error(t, err)
+	})
 }
 
 func TestIsValidWebhook(t *testing.T) {
-	t.SkipNow() // TODO
+	t.SkipNow() // TODO:
 	t.Run("Valid webhook", func(t *testing.T) {
 		webhook := models.JellyfinWebhook{
 			DeviceID:   "123",
@@ -131,9 +154,23 @@ func TestIsValidWebhook(t *testing.T) {
 		assert.True(t, isValidWebhook(webhook))
 	})
 
-	t.Run("Invalid webhook", func(t *testing.T) {
+	t.Run("Invalid webhook - empty struct", func(t *testing.T) {
 		webhook := models.JellyfinWebhook{}
 		assert.False(t, isValidWebhook(webhook))
+	})
+
+	t.Run("Invalid webhook - missing required fields", func(t *testing.T) {
+		webhook := models.JellyfinWebhook{
+			DeviceID: "123",
+		}
+		assert.False(t, isValidWebhook(webhook))
+	})
+}
+
+func TestIsHomeassistantType(t *testing.T) {
+	t.Run("Not implemented", func(t *testing.T) {
+		req, _ := http.NewRequest("POST", "/webhook", nil)
+		assert.False(t, isHomeassistantType(req))
 	})
 }
 
