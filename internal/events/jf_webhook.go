@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
-	"github.com/iloveicedgreentea/go-plex/internal/utils"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -18,7 +17,6 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 	var webhook models.JellyfinWebhook
 	log := logger.GetLoggerFromContext(ctx)
 
-	// Read the request body
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		return models.Event{}, err
@@ -70,7 +68,7 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 }
 
 func isValidWebhook(s models.JellyfinWebhook) bool {
-	return utils.IsStructEmpty(s)
+	return s.ItemID != "" && s.DeviceID != "" && s.DeviceName != "" && s.ItemType != "" && s.NotificationType != ""
 }
 
 func isJellyfinWebhook(req *http.Request) bool {

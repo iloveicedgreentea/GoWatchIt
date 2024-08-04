@@ -34,7 +34,6 @@ type PlexMetadata struct {
 	LibrarySectionType  string `json:"librarySectionType"`
 	RatingKey           string `json:"ratingKey"`
 	Key                 string `json:"key"`
-	GUID                string `json:"guid"`
 	Type                string `json:"type"`
 	Title               string `json:"title"`
 	LibrarySectionTitle string `json:"librarySectionTitle"`

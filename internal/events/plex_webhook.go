@@ -133,7 +133,6 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		Metadata: models.Metadata{
 			LibrarySectionType:  decodedPayload.Metadata.LibrarySectionType,
 			Key:                 decodedPayload.Metadata.Key,
-			GUID:                decodedPayload.Metadata.GUID,
 			Type:                models.MediaType(decodedPayload.Metadata.Type),
 			Title:               decodedPayload.Metadata.Title,
 			LibrarySectionTitle: decodedPayload.Metadata.LibrarySectionTitle,
