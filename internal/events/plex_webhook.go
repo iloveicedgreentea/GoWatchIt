@@ -35,7 +35,6 @@ func parsePlexMultipartForm(payload []string) (models.PlexWebhookPayload, error)
 	return pwhPayload, nil
 }
 
-// TODO: test this
 // getMultipartPayload gets the payload from the multipart form and returns if ok
 func getMultipartPayload(ctx context.Context, request *http.Request) ([]string, error) {
 	log := logger.GetLoggerFromContext(ctx)
@@ -58,7 +57,6 @@ func getMultipartPayload(ctx context.Context, request *http.Request) ([]string, 
 }
 
 // Sends the payload to the channel for background processing
-// TODO: this takes an HTTP request and sends it to a channel
 func processPlexWebhook(ctx context.Context, request *http.Request) (models.Event, error) {
 	log := logger.GetLoggerFromContext(ctx)
 	payload, err := getMultipartPayload(ctx, request)
@@ -104,6 +102,43 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		)
 
 	}
-
-	return models.Event{}, nil
+	var action models.Action
+	switch decodedPayload.Event {
+	case "media.play":
+		action = models.ActionPlay
+	case "media.stop":
+		action = models.ActionStop
+	case "media.pause":
+		action = models.ActionPause
+	// Pressing the 'resume' button in plex UI is media.play
+	case "media.resume":
+		action = models.ActionResume
+	case "media.scrobble":
+		action = models.ActionScrobble
+	default:
+		log.Debug("Received unsupported event",
+			slog.String("event", decodedPayload.Event),
+		)
+	}
+	return models.Event{
+		Action:      action,
+		User:        decodedPayload.User,
+		Owner:       decodedPayload.Owner,
+		AccountID:   decodedPayload.Account.ID,
+		ServerUUID:  decodedPayload.Server.UUID,
+		PlayerUUID:  decodedPayload.Player.UUID,
+		PlayerTitle: decodedPayload.Player.Title,
+		ServerTitle: decodedPayload.Server.Title,
+		PlayerIP:    decodedPayload.Player.PublicAddress,
+		Metadata: models.Metadata{
+			LibrarySectionType:  decodedPayload.Metadata.LibrarySectionType,
+			Key:                 decodedPayload.Metadata.Key,
+			GUID:                decodedPayload.Metadata.GUID,
+			Type:                models.MediaType(decodedPayload.Metadata.Type),
+			Title:               decodedPayload.Metadata.Title,
+			LibrarySectionTitle: decodedPayload.Metadata.LibrarySectionTitle,
+			LibrarySectionID:    decodedPayload.Metadata.LibrarySectionID,
+			LibrarySectionKey:   decodedPayload.Metadata.LibrarySectionKey,
+		},
+	}, nil
 }

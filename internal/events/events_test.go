@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"net/http/httptest"
 
 	"github.com/stretchr/testify/assert"
 	// "github.com/stretchr/testify/require"
@@ -14,6 +15,35 @@ func createMockMultipartRequest(rawBody string) *http.Request {
 	req, _ := http.NewRequest("POST", "http://localhost:9999/plexwebhook", bytes.NewBufferString(rawBody))
 	req.Header.Set("Content-Type", "multipart/form-data; boundary=------------------------9a74d1aa5a7ac807")
 	return req
+}
+
+func createJellyfinWebhookTestRequest() *http.Request {
+	// Create a sample JSON payload
+	jsonPayload := []byte(`{
+		"DeviceId": "123456789",
+		"DeviceName": "Living Room TV",
+		"ClientName": "Jellyfin Web",
+		"UserId": "user123",
+		"ItemId": "item789",
+		"ItemType": "Movie",
+		"NotificationType": "PlaybackStart",
+		"Year": "2023",
+		"PlayedToCompletion": "false",
+		"IsPaused": "false"
+	}`)
+
+	// Create a new request with the JSON payload
+	req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewBuffer(jsonPayload))
+
+	// Set the Content-Type header to application/json
+	req.Header.Set("Content-Type", "application/json")
+
+	return req
+}
+
+func TestJellyfinEvent(t *testing.T) {
+	req := createJellyfinWebhookTestRequest()
+	assert.True(t, isJellyfinType(req))
 }
 
 func TestPlexEvent(t *testing.T) {

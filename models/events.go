@@ -8,6 +8,8 @@ const (
 	ActionPlay  Action = "play"
 	ActionPause Action = "pause"
 	ActionStop  Action = "stop"
+	ActionResume Action = "resume"
+	ActionScrobble Action = "scrobble"
 )
 
 type IntOrString struct {
@@ -45,6 +47,7 @@ type Event struct {
 // Metadata is a generic container for media metadata
 type Metadata struct {
 	LibrarySectionType  string    `json:"librarySectionType"`
+	// Same as ItemID for JF, Key for plex
 	Key                 string    `json:"key"`
 	GUID                string    `json:"guid"`
 	Type                MediaType `json:"type"`
@@ -53,7 +56,6 @@ type Metadata struct {
 	LibrarySectionID    int       `json:"librarySectionID"`
 	LibrarySectionKey   string    `json:"librarySectionKey"`
 	Year                int       `json:"year"`
-	ItemID              string    `json:"ItemId"`
 	IsPaused            bool      `json:"isPaused"`
 	Codec               string    `json:"codec"`
 	FileName            string    `json:"filename"`
