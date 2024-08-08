@@ -22,7 +22,6 @@ func RequestToEvent(ctx context.Context, req *http.Request) (models.Event, error
 	}
 
 	return models.Event{}, EventNotSupportedError{Message: "Event type not supported"}
-
 }
 
 // TODO: send to channel?

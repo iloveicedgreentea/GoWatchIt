@@ -18,6 +18,7 @@ func main() {
 
 	// Process request
 	// TODO: obviously do this in a handler
+	// TODO: func to write to chan
 	event, err := events.RequestToEvent(ctx, &http.Request{})
 	if err != nil {
 		logger.Fatal("Error processing event",
