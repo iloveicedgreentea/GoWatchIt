@@ -8,6 +8,7 @@ import (
 
 	// "github.com/StalkR/imdb"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,14 +37,15 @@ func TestGetMediaData(t *testing.T) {
 	require.NoError(t, err)
 
 	// no time to die
-	med, err := c.GetMediaData(ctx, "/library/metadata/70390")
+	event := models.Event{
+		Metadata: models.Metadata{
+			Key: "/library/metadata/70390",
+		},
+	}
+	med, err := c.getMediaData(ctx, event)
 	assert.NoError(t, err)
 
-	code, err := c.GetAudioCodec(ctx, med)
-	if !assert.NoError(t, err) {
-		t.Fatal(err)
-	}
-	assert.Equal(t, "Atmos", code)
+	assert.Equal(t, "Atmos", med.Video.Media.AudioCodec)
 
 }
 func TestGetCodecFromSession(t *testing.T) {

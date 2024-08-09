@@ -7,21 +7,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 	"strings"
+	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
 var log = logger.GetLogger()
 
 type HomeAssistantClient struct {
-	ServerURL      string
-	Port           string
-	Token          string
-	HTTPClient     http.Client
+	ServerURL  string
+	Port       string
+	Token      string
+	HTTPClient http.Client
 	EntityName string
 }
 
@@ -29,9 +29,9 @@ type HomeAssistantClient struct {
 func NewClient(url, port string, token string, entityName string) *HomeAssistantClient {
 	url = strings.Replace(url, "http://", "", -1)
 	return &HomeAssistantClient{
-		ServerURL:      url,
-		Port:           port,
-		Token:          token,
+		ServerURL:  url,
+		Port:       port,
+		Token:      token,
 		EntityName: entityName,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
@@ -42,7 +42,7 @@ func NewClient(url, port string, token string, entityName string) *HomeAssistant
 func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodType string) ([]byte, error) {
 	var req *http.Request
 	var err error
-	
+
 	// log.Debugf("Using method %s", methodType)
 	// bodyReader := bytes.NewReader(jsonBody)
 	url := fmt.Sprintf("http://%s:%s%s", c.ServerURL, c.Port, endpoint)
@@ -141,7 +141,6 @@ func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttrib
 	if err != nil {
 		return false, err
 	}
-	log.Debugf("Response: %s", resp)
 
 	// unmarshal
 	err = json.Unmarshal(resp, respObj)
@@ -160,32 +159,31 @@ func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttrib
 	}
 }
 
-
 func (c *HomeAssistantClient) SendEvent(eventType string, eventData map[string]interface{}) error {
-    url := fmt.Sprintf("http://%s:%s/api/events/%s", c.ServerURL, c.Port, eventType)
+	url := fmt.Sprintf("http://%s:%s/api/events/%s", c.ServerURL, c.Port, eventType)
 
-    jsonData, err := json.Marshal(eventData)
-    if err != nil {
-        return fmt.Errorf("error marshaling event data: %v", err)
-    }
+	jsonData, err := json.Marshal(eventData)
+	if err != nil {
+		return fmt.Errorf("error marshaling event data: %v", err)
+	}
 
-    req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-    if err != nil {
-        return fmt.Errorf("error creating request: %v", err)
-    }
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
 
-    req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
-    req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+	req.Header.Set("Content-Type", "application/json")
 
-    resp, err := c.HTTPClient.Do(req)
-    if err != nil {
-        return fmt.Errorf("error sending request: %v", err)
-    }
-    defer resp.Body.Close()
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-    }
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 
-    return nil
+	return nil
 }

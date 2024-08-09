@@ -26,7 +26,6 @@ func DecodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 		}
 	}
 
-	log.Debugf("decodeWebhook: Received event: %s", pwhPayload.Event)
 	return pwhPayload, 0, nil
 }
 

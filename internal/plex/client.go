@@ -260,24 +260,11 @@ func MapPlexToBeqAudioCodec(ctx context.Context, codecTitle, codecExtendTitle st
 
 }
 
-// get the tmdb ID from plex metadata
-func (c *PlexClient) getPlexMovieDb(payload models.Event) string {
-	// try to get IMDB title from plex to save time
-	for _, model := range payload.Metadata.GUID0 {
-		if strings.Contains(model.ID, "tmdb") {
-			log.Debugf("getPlexMovieDb: Got tmdb ID from plex - %s", model.ID)
-			return strings.Split(model.ID, "tmdb://")[1]
-		}
-	}
-	log.Error("TMDB id not found in Plex. ezBEQ will not work. Please check your metadata for this title!")
-	return ""
-}
-
 // get the type of audio codec for BEQ purpose like atmos, dts-x, etc
 func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (models.CodecName, error) {
 	var plexAudioCodec models.CodecName
 	log := logger.GetLoggerFromContext(ctx)
-	data, err  := p.getMediaData(ctx, payload)
+	data, err  := c.getMediaData(ctx, payload)
 	if err != nil {
 		return models.CodecAAC20, err
 	}
@@ -286,7 +273,8 @@ func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (m
 	log.Debug("Data type",
 		slog.String("type", fmt.Sprintf("%T", data)),
 	)
-	if mc := data.PlexPayload; mc != nil {
+	// TODO: better error handling
+	if mc := data; len(mc.Video.Key) > 0 {
 		// try to get Atmos from file because metadata with Truehd is usually misleading
 		f := mc.Video.Media.Part.File
 		if strings.Contains(strings.ToLower(f), string(models.CodecAtmos)) {
