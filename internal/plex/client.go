@@ -140,17 +140,14 @@ func (c *PlexClient) GetCodecFromSession(ctx context.Context, uuid string) (mode
 }
 
 // send a request to Plex to get data about something
-func (c *PlexClient) GetMediaData(ctx context.Context, libraryKey string) (models.DataMediaContainer, error) {
+func (c *PlexClient) getMediaData(ctx context.Context, payload models.Event) (models.MediaContainer, error) {
+	libraryKey := payload.Metadata.Key
 	res, err := c.makePlexReq(ctx, libraryKey)
 	if err != nil {
-		return models.DataMediaContainer{}, err
+		return models.MediaContainer{}, err
 	}
 
-	data, err := parseMediaContainer(res)
-	if err != nil {
-		return models.DataMediaContainer{}, err
-	}
-	return models.DataMediaContainer{PlexPayload: &data}, nil
+	return parseMediaContainer(res)
 }
 
 func insensitiveContains(s string, sub models.CodecName) bool {
@@ -263,10 +260,27 @@ func MapPlexToBeqAudioCodec(ctx context.Context, codecTitle, codecExtendTitle st
 
 }
 
+// get the tmdb ID from plex metadata
+func (c *PlexClient) getPlexMovieDb(payload models.Event) string {
+	// try to get IMDB title from plex to save time
+	for _, model := range payload.Metadata.GUID0 {
+		if strings.Contains(model.ID, "tmdb") {
+			log.Debugf("getPlexMovieDb: Got tmdb ID from plex - %s", model.ID)
+			return strings.Split(model.ID, "tmdb://")[1]
+		}
+	}
+	log.Error("TMDB id not found in Plex. ezBEQ will not work. Please check your metadata for this title!")
+	return ""
+}
+
 // get the type of audio codec for BEQ purpose like atmos, dts-x, etc
-func (c *PlexClient) GetAudioCodec(ctx context.Context, data models.DataMediaContainer) (models.CodecName, error) {
+func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (models.CodecName, error) {
 	var plexAudioCodec models.CodecName
 	log := logger.GetLoggerFromContext(ctx)
+	data, err  := p.getMediaData(ctx, payload)
+	if err != nil {
+		return models.CodecAAC20, err
+	}
 	// loop over streams, find the FIRST stream with ID = 2 (this is primary audio track) and read that val
 	// loop instead of index because of edge case with two or more video streams
 	log.Debug("Data type",
@@ -310,10 +324,10 @@ func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
 
 // getEditionName tries to extract the edition from plex or file name. Assumes you have well named files
 // Returned types, Unrated, Ultimate, Theatrical, Extended, Director, Criterion
-func (p *PlexClient) GetEdition(ctx context.Context, container models.DataMediaContainer) (models.Edition, error) {
-	data := container.PlexPayload
-	if data == nil {
-		return "", errors.New("data is nil")
+func (p *PlexClient) GetEdition(ctx context.Context, payload models.Event) (models.Edition, error) {
+	data, err  := p.getMediaData(ctx, payload)
+	if err != nil {
+		return models.EditionUnknown, err
 	}
 	edition := strings.ToLower(data.Video.EditionTitle)
 	fileName := strings.ToLower(data.Video.Media.Part.File)

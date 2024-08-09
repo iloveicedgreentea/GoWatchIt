@@ -53,6 +53,21 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 			slog.Any("error", err),
 		)
 	}
+	// TODO: call client for JellyfinMetadata
+	// urls := webhook.ExternalUrls
+	// log.Debugf("External urls: %#v", urls)
+	// for _, u := range urls {
+	// 	if u.Name == "TheMovieDb" {
+	// 		s := strings.Replace(u.URL, "https://www.themoviedb.org/", "", -1)
+	// 		// extract the numbers
+	// 		re, err := regexp.Compile(`\d+$`)
+	// 		if err != nil {
+	// 			return "", err
+	// 		}
+	// 		return re.FindString(s), nil
+	// 	}
+	// }
+
 	return models.Event{
 		Action:      action,
 		AccountID:   models.IntOrString{StringValue: webhook.UserID},
@@ -63,6 +78,7 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 			Type:     models.MediaType(webhook.ItemType),
 			IsPaused: paused,
 			Year:     year,
+			// TODO: tmdb for jellyfin
 		},
 	}, nil
 }

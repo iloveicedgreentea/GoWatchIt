@@ -44,6 +44,7 @@ type JellyfinMetadata struct {
 	PartCount        int            `json:"PartCount"`
 	MediaSourceCount int            `json:"MediaSourceCount"`
 	Audio            string         `json:"Audio"`
+	ExternalUrls     []ExternalUrls `json:"ExternalUrls"`
 	IsMovie          bool           `json:"IsMovie"`
 	IsSports         bool           `json:"IsSports"`
 	IsSeries         bool           `json:"IsSeries"`

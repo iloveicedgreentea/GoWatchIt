@@ -5,10 +5,10 @@ import "encoding/json"
 type Action string
 
 const (
-	ActionPlay  Action = "play"
-	ActionPause Action = "pause"
-	ActionStop  Action = "stop"
-	ActionResume Action = "resume"
+	ActionPlay     Action = "play"
+	ActionPause    Action = "pause"
+	ActionStop     Action = "stop"
+	ActionResume   Action = "resume"
 	ActionScrobble Action = "scrobble"
 )
 
@@ -41,15 +41,16 @@ type Event struct {
 	ServerTitle string      `json:"server_title"`
 	PlayerIP    string      `json:"player_ip"`
 	ServerIP    string      `json:"server_ip"`
-	Metadata Metadata `json:"metadata"`
+	Metadata    Metadata    `json:"metadata"`
 }
 
 // Metadata is a generic container for media metadata
 type Metadata struct {
-	LibrarySectionType  string    `json:"librarySectionType"`
+	LibrarySectionType string `json:"librarySectionType"`
 	// Same as ItemID for JF, Key for plex
 	Key                 string    `json:"key"`
 	GUID                string    `json:"guid"`
+	TMDB                string    `json:"tmdb"`
 	Type                MediaType `json:"type"`
 	Title               string    `json:"title"`
 	LibrarySectionTitle string    `json:"librarySectionTitle"`

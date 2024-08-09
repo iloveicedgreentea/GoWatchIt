@@ -3,7 +3,6 @@ package mediaplayer
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 	"sync"
 
@@ -17,7 +16,7 @@ import (
 )
 
 // Implement MediaEventHandler methods
-func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, client MediaAPIClient, homeAssistantClient *homeassistant.HomeAssistantClient) error {
+func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
 	log := logger.GetLoggerFromContext(ctx)
 	// Check if context is already cancelled before starting lets say you play but then stop, this should stop processing
 	if ctx.Err() != nil {
@@ -72,13 +71,6 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 	if ctx.Err() != nil {
 		log.Debug("mediaPlay was cancelled before unloading BEQ profile")
 		return nil
-	}
-	// TODO: create search request
-	searchReq := beqClient.NewRequest()
-	if err = beqClient.UnloadBeqProfile(searchReq); err != nil {
-		log.Error("Error unloading BEQ during play",
-			slog.Any("error", err),
-		)
 	}
 
 	select {

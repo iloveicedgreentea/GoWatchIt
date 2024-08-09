@@ -120,6 +120,16 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 			slog.String("event", decodedPayload.Event),
 		)
 	}
+	var tmdb string
+	// extract the tmdb ID from the GUID0 field
+	for _, model := range decodedPayload.Metadata.GUID0 {
+		if strings.Contains(model.ID, "tmdb") {
+			log.Debug("getPlexMovieDb: Got tmdb ID from plex",
+				slog.String("id", model.ID),
+			)
+			tmdb = strings.Split(model.ID, "tmdb://")[1]
+		}
+	}
 	return models.Event{
 		Action:      action,
 		User:        decodedPayload.User,
@@ -131,6 +141,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		ServerTitle: decodedPayload.Server.Title,
 		PlayerIP:    decodedPayload.Player.PublicAddress,
 		Metadata: models.Metadata{
+			TMDB:                tmdb,
 			LibrarySectionType:  decodedPayload.Metadata.LibrarySectionType,
 			Key:                 decodedPayload.Metadata.Key,
 			Type:                models.MediaType(decodedPayload.Metadata.Type),

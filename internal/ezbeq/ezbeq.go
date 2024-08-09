@@ -2,10 +2,12 @@ package ezbeq
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -48,12 +50,46 @@ func NewClient(url, port string) (*BeqClient, error) {
 	if err != nil {
 		return c, errors.New("error initializing beq client")
 	}
+
+	if len(c.DeviceInfo) == 0 {
+		return c, errors.New("no ezBEQ hardware devices found. Check your settings and devices")
+	}
+
 	return c, nil
 }
 
 // TODO: pass in params
-func (c *BeqClient) NewRequest() *models.BeqSearchRequest {
-	return &models.BeqSearchRequest{}
+// NewRequest returns a new request for ezbeq
+func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, mediaType models.MediaType, edition models.Edition, TMDB string, codec models.CodecName) *models.BeqSearchRequest {
+	log := logger.GetLoggerFromContext(ctx)
+	var deviceNames []string
+
+	for _, k := range c.DeviceInfo {
+		log.Debug("adding device to request",
+			slog.String("device", k.Name),
+		)
+		deviceNames = append(deviceNames, k.Name)
+	}
+	if len(deviceNames) == 0 {
+		log.Error("no devices found in DeviceInfo")
+		// TODO: ensure caller knows to check for nil
+		return nil
+	}
+
+	// TODO: test and assert device names len
+
+	return &models.BeqSearchRequest{
+		DryrunMode:      config.GetBool("ezbeq.dryRun"),
+		Slots:           config.GetIntSlice("ezbeq.slots"),
+		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
+		Devices:         deviceNames,
+		SkipSearch:      skipSearch,
+		Year:            year,
+		MediaType:       mediaType,
+		TMDB:            TMDB,
+		Codec:           codec,
+		Edition:         edition,
+	}
 
 }
 
@@ -340,6 +376,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 	var err error
 	var catalog models.BeqCatalog
 
+
 	// if provided stuff is blank, we cant skip search
 	if m.EntryID == "" || m.MVAdjust == 0 {
 		m.SkipSearch = false
@@ -474,5 +511,6 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 		}
 	}
 
+	// TODO: use a wrapper function
 	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), "")
 }

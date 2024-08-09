@@ -31,12 +31,13 @@ type GUID0 struct {
 }
 
 type PlexMetadata struct {
-	LibrarySectionType  string `json:"librarySectionType"`
-	RatingKey           string `json:"ratingKey"`
-	Key                 string `json:"key"`
-	Type                string `json:"type"`
-	Title               string `json:"title"`
-	LibrarySectionTitle string `json:"librarySectionTitle"`
-	LibrarySectionID    int    `json:"librarySectionID"`
-	LibrarySectionKey   string `json:"librarySectionKey"`
+	LibrarySectionType  string  `json:"librarySectionType"`
+	RatingKey           string  `json:"ratingKey"`
+	Key                 string  `json:"key"`
+	Type                string  `json:"type"`
+	Title               string  `json:"title"`
+	GUID0               []GUID0 `json:"Guid"`
+	LibrarySectionTitle string  `json:"librarySectionTitle"`
+	LibrarySectionID    int     `json:"librarySectionID"`
+	LibrarySectionKey   string  `json:"librarySectionKey"`
 }
