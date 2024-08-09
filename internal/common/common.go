@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"log/slog"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
@@ -117,6 +118,10 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	}
 
 	log.Debugf("HDMI Signal value is %v", signal)
+	
+	log.Debug("HDMI sync complete",
+		slog.Bool("signal", signal),
+	)
 
 	if err != nil {
 		log.Errorf("error getting HDMI signal: %v", err)
