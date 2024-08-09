@@ -2,15 +2,17 @@ package common
 
 // all common actions
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"log/slog"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
@@ -25,33 +27,35 @@ func IsAtmosCodecPlaying(codec, expectedCodec string) (bool, error) {
 }
 
 // trigger HA for MV change per type
-func ChangeMasterVolume(mediaType models.MediaType) {
+func ChangeMasterVolume(ctx context.Context, mediaType models.MediaType) {
 	if config.GetBool("homeassistant.triggeravrmastervolumechangeonevent") && config.GetBool("homeassistant.enabled") {
-		log.Debug("changeMasterVolume: Changing volume")
+		log := logger.GetLoggerFromContext(ctx)
+		log.Debug("Changing volume")
 		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicvolume"))
 		if err != nil {
-			log.Error()
+			log.Error("Error changing volume", slog.String("error", err.Error()))
 		}
 	}
 }
 
 // trigger HA for light change given entity and desired state
-func ChangeLight(state string) {
+func ChangeLight(ctx context.Context,state string) {
 	if config.GetBool("homeassistant.triggerlightsonevent") && config.GetBool("homeassistant.enabled") {
-		log.Debug("changeLight: Changing light")
+		log := logger.GetLoggerFromContext(ctx)
+		log.Debug("Changing light")
 		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topiclights"))
 		if err != nil {
-			log.Errorf("Error changing light: %v", err)
+			log.Error("Error changing light", slog.String("error", err.Error()))
 		}
 	}
 }
 
 // waitForHDMISync will pause until the source reports HDMI sync is complete
-func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
+func WaitForHDMISync(ctx context.Context, wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
 	// if called and disabled, skip
 	// stop processing webhooks because if we call pause, that will fire another one and then we get into a loop
 	*skipActions = true
-
+	log := logger.GetLoggerFromContext(ctx)
 	if !config.GetBool("signal.enabled") {
 		*skipActions = false
 		wg.Done()
@@ -63,7 +67,7 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		// play item no matter what happens
 		err := PlaybackInterface("play", mediaClient)
 		if err != nil {
-			log.Errorf("Error playing client: %v", err)
+			log.Error("Error playing client", slog.String("error", err.Error()))
 			return
 		}
 
@@ -79,31 +83,34 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 	var signal bool
 
 	// pause client
-	log.Debug("pausing client")
+	log.Debug("Pausing client")
 	err = PlaybackInterface("pause", mediaClient)
 	if err != nil {
-		log.Errorf("Error pausing client: %v", err)
+		log.Error("Error pausing client", slog.String("error", err.Error()))
 		return
 	}
 
 	// check signal source
 	switch signalSource {
 	case "envy":
-		log.Debug("using envy for hdmi sync")
+		log.Debug("Using envy for hdmi sync")
 		// read envy attributes until its not nosignal
 		envyName := config.GetString("signal.envy")
 		// remove remote. if present
 		if strings.Contains(envyName, "remote") {
 			envyName = strings.ReplaceAll(envyName, "remote.", "")
 		}
-		signal, err = readAttrAndWait(60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
+		signal, err = readAttrAndWait(ctx, 60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
 		// will break out here
 	case "time":
 		seconds := config.GetString("signal.time")
-		log.Debugf("using %v seconds for hdmi sync", seconds)
+		log.Debug("Using time for hdmi sync", slog.String("seconds", seconds))
 		sec, err := strconv.Atoi(seconds)
 		if err != nil {
-			log.Errorf("waitforHDMIsync enabled but no valid source provided. Make sure you have 'time' set as a plain number: %v -- %v", signalSource, err)
+			log.Error("waitforHDMIsync enabled but no valid source provided. Make sure you have 'time' set as a plain number",
+				slog.String("source", signalSource),
+				slog.String("error", err.Error()),
+			)
 			return
 		}
 		time.Sleep(time.Duration(sec) * time.Second)
@@ -117,31 +124,33 @@ func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassist
 		log.Warn("No valid source provided for hdmi sync")
 	}
 
-	log.Debugf("HDMI Signal value is %v", signal)
-	
-	log.Debug("HDMI sync complete",
-		slog.Bool("signal", signal),
-	)
+	log.Debug("HDMI sync complete", slog.Bool("signal", signal))
 
 	if err != nil {
-		log.Errorf("error getting HDMI signal: %v", err)
+		log.Error("Error getting HDMI signal", slog.String("error", err.Error()))
 	}
-
 }
 
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entType string, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func readAttrAndWait(ctx context.Context,waitTime int, entType string, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
+	log := logger.GetLoggerFromContext(ctx)
 
 	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
 		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
 		if err != nil {
-			log.Errorf("Error reading %s attributes: %v", entName, err)
+			log.Error("Error reading attributes",
+				slog.String("entity", entName),
+				slog.String("error", err.Error()),
+			)
 			return false, err
 		}
-		log.Debugf("%s signal value is %v", entName, isSignal)
+		log.Debug("Signal value",
+			slog.String("entity", entName),
+			slog.Bool("isSignal", isSignal),
+		)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
@@ -152,7 +161,6 @@ func readAttrAndWait(waitTime int, entType string, entName string, attrResp home
 	}
 
 	return false, err
-
 }
 
 // common function for all supported players
