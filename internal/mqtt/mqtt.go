@@ -14,7 +14,7 @@ var log = logger.GetLogger()
 
 func connect(clientID string) (mqtt.Client, error) {
 	broker := config.GetString("mqtt.url")
-	opts := mqtt.NewClientOptions().AddBroker(fmt.Sprintf("%s", broker))
+	opts := mqtt.NewClientOptions().AddBroker(broker)
 	opts.SetClientID(clientID)
 	opts.SetUsername(config.GetString("mqtt.username"))
 	opts.SetPassword(config.GetString("mqtt.password"))
@@ -36,7 +36,7 @@ func PublishWrapper(topic string, msg string) error {
 
 // creates a connection to broker and sends the payload
 func Publish(payload []byte, topic string) error {
-	if !config.GetBool("mqtt.enabled") {
+	if !config.IsMQTTEnabled() {
 		log.Debug("MQTT is disabled, skipping publish",
 			slog.String("topic", topic),
 		)

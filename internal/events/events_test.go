@@ -93,7 +93,7 @@ func TestIsPlexType(t *testing.T) {
 }
 
 func TestIsJellyfinType(t *testing.T) {
-	t.SkipNow() // TODO:
+	t.SkipNow() // TODO: skipped
 	t.Run("Valid Jellyfin request", func(t *testing.T) {
 		req := createJellyfinWebhookTestRequest()
 		assert.True(t, isJellyfinType(req))
@@ -144,7 +144,7 @@ func TestParseJellyfinWebhook(t *testing.T) {
 }
 
 func TestIsValidWebhook(t *testing.T) {
-	t.SkipNow() // TODO:
+	t.SkipNow() // TODO: skipped
 	t.Run("Valid webhook", func(t *testing.T) {
 		webhook := models.JellyfinWebhook{
 			DeviceID:   "123",

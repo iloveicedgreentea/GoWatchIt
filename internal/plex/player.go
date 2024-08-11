@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 
-	// "github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/mediaplayer"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
@@ -13,10 +12,6 @@ import (
 // PlexPlayer implements the MediaAPIClient interface
 type PlexPlayer struct {
 	Client mediaplayer.MediaAPIClient
-	// TODO: all beq operations should be moved to orchestrator
-	// HaClient  *homeassistant.HomeAssistantClient // TODO: interface
-	// SearchRequest is a shared state for BEQ searching
-	// SearchRequest *models.BeqSearchRequest
 	// EventChan is a channel for sending processed webhook data to a background worker
 	EventChan chan<- models.MediaPayload
 	// SkipActions is a flag for skipping processing events while HDMI sync is running
@@ -37,8 +32,6 @@ func NewPlexPlayer(scheme, serverURL, port string) (*PlexPlayer, error) {
 	}, nil
 }
 
-// TODO: anything that needs to access BEQ and stuff needs to be moved to the player
-
 // Implement MediaPlayerControlHandler methods
 func (p *PlexPlayer) Play(ctx context.Context) error {
 	// Implement Plex-specific play logic
@@ -54,4 +47,3 @@ func (p *PlexPlayer) Stop(ctx context.Context) error {
 	// Implement Plex-specific stop logic
 	return p.Client.DoPlaybackAction(ctx, models.ActionStop)
 }
-

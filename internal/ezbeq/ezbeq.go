@@ -58,7 +58,6 @@ func NewClient(url, port string) (*BeqClient, error) {
 	return c, nil
 }
 
-// TODO: pass in params
 // NewRequest returns a new request for ezbeq
 func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, mediaType models.MediaType, edition models.Edition, TMDB string, codec models.CodecName) *models.BeqSearchRequest {
 	log := logger.GetLoggerFromContext(ctx)
@@ -79,7 +78,7 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 	// TODO: test and assert device names len
 
 	return &models.BeqSearchRequest{
-		DryrunMode:      config.GetBool("ezbeq.dryRun"),
+		DryrunMode:      config.IsBeqDryRun(),
 		Slots:           config.GetIntSlice("ezbeq.slots"),
 		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
 		Devices:         deviceNames,
@@ -328,7 +327,7 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 	// search through results and find match
 	for _, val := range payload {
 		// if skipping TMDB, set the IDs to match
-		if config.GetBool("jellyfin.skiptmdb") {
+		if config.IsJellyfinSkipTMDB() {
 			if m.Title == "" {
 				return models.BeqCatalog{}, errors.New("title is blank, can't skip TMDB")
 			}
@@ -398,7 +397,7 @@ func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
-	if !config.GetBool("ezbeq.enabled") {
+	if !config.IsBeqEnabled() {
 		log.Debug("BEQ is disabled, skipping")
 		return nil
 	}
@@ -414,7 +413,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 
 	var err error
 	var catalog models.BeqCatalog
-
 
 	// if provided stuff is blank, we cant skip search
 	if m.EntryID == "" || m.MVAdjust == 0 {
@@ -534,7 +532,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 
 // UnloadBeqProfile will unload all profiles from all devices
 func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
-	if !config.GetBool("ezbeq.enabled") {
+	if !config.IsBeqEnabled() {
 		log.Debug("BEQ is disabled, skipping")
 		return nil
 	}

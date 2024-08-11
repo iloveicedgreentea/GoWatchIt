@@ -2,10 +2,12 @@ package homeassistant
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -132,6 +134,37 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 type HAAttributeResponse interface {
 	GetState() string
 	GetSignalStatus() bool
+}
+
+func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType string, entName string, attrResp HAAttributeResponse) (bool, error) {
+	var err error
+	var isSignal bool
+	log := logger.GetLoggerFromContext(ctx)
+
+	// read attributes until its not nosignal
+	for i := 0; i < waitTime; i++ {
+		isSignal, err = c.ReadAttributes(entName, attrResp, entType)
+		if err != nil {
+			log.Error("Error reading attributes",
+				slog.String("entity", entName),
+				slog.String("error", err.Error()),
+			)
+			return false, err
+		}
+		log.Debug("Signal value",
+			slog.String("entity", entName),
+			slog.Bool("isSignal", isSignal),
+		)
+		if isSignal {
+			log.Debug("HDMI sync complete")
+			return isSignal, nil
+		}
+
+		// otherwise continue
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	return false, err
 }
 
 // ReadAttributes generic function to read attribute. entType remote || binary_sensor

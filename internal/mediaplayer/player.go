@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/iloveicedgreentea/go-plex/internal/common"
+	"github.com/iloveicedgreentea/go-plex/internal/actions"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
@@ -33,16 +33,17 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 			log.Debug("mediaPlay was cancelled before lights and volume change")
 			return
 		}
-		common.ChangeLight(models.ActionOff)
-		common.ChangeMasterVolume(payload.Metadata.Type)
+		actions.ChangeLight(ctx, models.ActionOff)
+		actions.ChangeMasterVolume(ctx, payload.Metadata.Type)
 	}()
 
 	// TODO: check this
 	// Perform HDMI sync
-	if !strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeMovie)) && config.GetString("signal.source") == "time" {
+	// Call the sync function which will check if its enabled
+	if !strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeMovie)) && config.IsSignalSourceTime() {
 		log.Debug("skipping sync for non-movie type and time source")
 	} else {
-		// wg.Add(1)
+		// wg.Add(1) // TODO: enable
 		go func() {
 			if ctx.Err() != nil {
 				log.Debug("mediaPlay was cancelled before hdmi sync")
@@ -78,44 +79,12 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 		log.Error("mediaPlay cancelled before unloading BEQ profile")
 		return nil
 	default:
-		log.Debug("Using plex to get codec")
-		// TODO: try session data then fallback to lookup
-		searchReq.Codec, err = client.GetAudioCodec(ctx, models.DataMediaContainer{PlexPayload: &data})
-		if err != nil {
-			return fmt.Errorf("error getting codec from plex, can't continue: %s", err)
-		}
-		// slower but more accurate especially with atmos
-		// TODO: implement avr stuff
-		// if useAvrCodec {
-		// 	p.SearchRequest.Codec, err = checkAvrCodec(client, haClient, avrClient, payload, data)
-		// 	// if it failed, get codec data from client
-		// 	if err != nil {
-		// 		log.Warnf("error getting codec from AVR, falling back to client: %s", err)
-		// 		m.Codec, err = client.GetAudioCodec(data)
-		// 		if err != nil {
-		// 			log.Errorf("error getting codec from plex, can't continue: %s", err)
-		// 			return
-		// 		}
-		// 	}
-		// } else {
-		// 	log.Debug("Using plex to get codec")
-		// 	// TODO: try session data then fallback to lookup
-		// 	m.Codec, err = client.GetAudioCodec(data)
-		// 	if err != nil {
-		// 		log.Errorf("error getting codec from plex, can't continue: %s", err)
-		// 		return
-		// 	}
-		// }
-		log.Debug("Found codec: %s", searchReq.Codec)
 		// if its a show and you dont want beq enabled, exit
 		if strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeShow)) {
-			if !config.GetBool("ezbeq.enableTvBeq") {
+			if !config.IsBeqTVEnabled() {
 				return nil
 			}
 		}
-
-		// TODO: get TMDB from client
-		searchReq.TMDB = getPlexMovieDb(payload)
 	}
 
 	if ctx.Err() != nil {
@@ -123,14 +92,14 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 		return nil
 	}
 	// TODO: pass in object
-	err = beqClient.LoadBeqProfile(searchReq)
+	err = beqClient.LoadBeqProfile(searchRequest)
 	if err != nil {
 		return err
 	}
 	log.Info("BEQ profile loaded")
 	// send notification of it loaded
-	if config.GetBool("ezbeq.notifyOnLoad") && config.GetBool("homeAssistant.enabled") {
-		err := homeAssistantClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, searchReq.Codec))
+	if config.IsBeqNotifyOnLoadEnabled() && config.IsHomeAssistantEnabled() {
+		err := homeAssistantClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, searchRequest.Codec))
 		if err != nil {
 			return err
 		}

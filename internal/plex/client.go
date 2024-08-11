@@ -264,7 +264,7 @@ func MapPlexToBeqAudioCodec(ctx context.Context, codecTitle, codecExtendTitle st
 func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (models.CodecName, error) {
 	var plexAudioCodec models.CodecName
 	log := logger.GetLoggerFromContext(ctx)
-	data, err  := c.getMediaData(ctx, payload)
+	data, err := c.getMediaData(ctx, payload)
 	if err != nil {
 		return models.CodecAAC20, err
 	}
@@ -304,16 +304,10 @@ func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (m
 	return plexAudioCodec, nil
 }
 
-// TODO: rename
-// GetPlexMovieDb is used because of the Client interface
-func (c *PlexClient) GetPlexMovieDb(payload interface{}) string {
-	return ""
-}
-
 // getEditionName tries to extract the edition from plex or file name. Assumes you have well named files
 // Returned types, Unrated, Ultimate, Theatrical, Extended, Director, Criterion
 func (p *PlexClient) GetEdition(ctx context.Context, payload models.Event) (models.Edition, error) {
-	data, err  := p.getMediaData(ctx, payload)
+	data, err := p.getMediaData(ctx, payload)
 	if err != nil {
 		return models.EditionUnknown, err
 	}

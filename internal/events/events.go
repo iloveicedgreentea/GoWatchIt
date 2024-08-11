@@ -24,8 +24,6 @@ func RequestToEvent(ctx context.Context, req *http.Request) (models.Event, error
 	return models.Event{}, EventNotSupportedError{Message: "Event type not supported"}
 }
 
-// TODO: send to channel?
-
 func isPlexType(ctx context.Context, req *http.Request) bool {
 	_, err := getMultipartPayload(ctx, req)
 	return err == nil
