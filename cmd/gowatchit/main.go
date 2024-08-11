@@ -7,6 +7,9 @@ import (
 
 	"github.com/iloveicedgreentea/go-plex/internal/events"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
+	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
+
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -16,9 +19,28 @@ func main() {
 	logger.AddLoggerToContext(ctx, log)
 
 	eventChan := make(chan models.Event)
+	
 
-	// TODO: handler and shit
-	// go eventHandler(ctx)
+	// init clients
+	beqClient, err := ezbeq.NewClient()
+	if err != nil {
+		log.Error("Error creating beq client",
+			slog.Any("error", err),
+		)
+		return
+	}
+
+	homeAssistantClient, err := homeassistant.NewClient()
+	if err != nil {
+		log.Error("Error creating HA client",
+			slog.Any("error", err),
+		)
+		return
+	}
+
+
+	// handler
+	go eventHandler(ctx, eventChan, beqClient, homeAssistantClient)
 
 	// Process request
 	// TODO: obviously do this in the API worker async

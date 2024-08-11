@@ -17,8 +17,6 @@ import (
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
-var log = logger.GetLogger()
-
 type HomeAssistantClient struct {
 	ServerURL  string
 	Port       string
@@ -28,7 +26,16 @@ type HomeAssistantClient struct {
 }
 
 // // A client to interface with home assistant
-func NewClient(url, port string, token string, entityName string) *HomeAssistantClient {
+func NewClient() (*HomeAssistantClient, error) {
+	if !config.IsHomeAssistantEnabled() {
+		return nil, nil
+	}
+
+	url := config.GetString("homeAssistant.url")
+	port := config.GetString("homeAssistant.port")
+	token := config.GetString("homeAssistant.token")
+	entityName := config.GetString("homeAssistant.remoteentityname")
+	// TODO: use scheme validation
 	url = strings.Replace(url, "http://", "", -1)
 	return &HomeAssistantClient{
 		ServerURL:  url,
@@ -38,7 +45,7 @@ func NewClient(url, port string, token string, entityName string) *HomeAssistant
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
-	}
+	}, nil
 }
 
 func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodType string) ([]byte, error) {

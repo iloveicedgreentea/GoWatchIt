@@ -13,7 +13,7 @@ import (
 func TestMuteCmds(t *testing.T) {
 	assert := assert.New(t)
 
-	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
+	c, err := NewClient()
 	assert.NoError(err)
 
 	// send mute commands
@@ -418,7 +418,7 @@ func TestBuildAuthorWhitelist(t *testing.T) {
 func TestSearchCatalog(t *testing.T) {
 	assert := assert.New(t)
 
-	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
+	c, err := NewClient()
 	assert.NoError(err)
 
 	// list of testing structs
@@ -623,7 +623,7 @@ func TestSearchCatalog(t *testing.T) {
 func TestLoadProfile(t *testing.T) {
 	assert := assert.New(t)
 
-	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
+	c, err := NewClient()
 	assert.NoError(err)
 
 	tt := []models.BeqSearchRequest{

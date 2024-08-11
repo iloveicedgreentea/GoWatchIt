@@ -35,7 +35,14 @@ type BeqClient struct {
 }
 
 // return a new instance of a plex client
-func NewClient(url, port string) (*BeqClient, error) {
+func NewClient() (*BeqClient, error) {
+	if !config.IsBeqEnabled() {
+		return nil, nil
+	}
+
+	url := config.GetString("ezbeq.url")
+	port := config.GetString("ezbeq.port")
+	// TODO: use scheme validation
 	url = strings.Replace(url, "http://", "", -1)
 	c := &BeqClient{
 		ServerURL: url,
@@ -397,6 +404,7 @@ func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
+	// TODO: config isEditionEnabled to ignore edition matching
 	if !config.IsBeqEnabled() {
 		log.Debug("BEQ is disabled, skipping")
 		return nil

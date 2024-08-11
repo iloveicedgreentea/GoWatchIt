@@ -1,6 +1,8 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Action string
 
@@ -31,8 +33,10 @@ func (ios *IntOrString) UnmarshalJSON(data []byte) error {
 // Event is a generic container for events
 type Event struct {
 	Action Action `json:"action"`
-	User   bool   `json:"user"`
-	Owner  bool   `json:"owner"`
+	// Client should be a mediaplayer.APIclient
+	Client interface{} `json:"client"`
+	User   bool        `json:"user"`
+	Owner  bool        `json:"owner"`
 	// JF and plex have different account structures
 	AccountID   IntOrString `json:"id"`
 	ServerUUID  string      `json:"server_uuid"`

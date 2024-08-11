@@ -12,7 +12,10 @@ import (
 
 func testSetup() (*HomeAssistantClient) {
 
-	haClient := NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.remoteentityname"))
+	haClient, err := NewClient()
+	if err != nil {
+		return nil
+	}
 
 	return haClient
 }
