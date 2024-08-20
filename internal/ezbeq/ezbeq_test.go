@@ -22,8 +22,8 @@ func TestMuteCmds(t *testing.T) {
 }
 func TestGetStatus(t *testing.T) {
 	c := &BeqClient{
-		ServerURL: config.GetString("ezbeq.url"),
-		Port:      config.GetString("ezbeq.port"),
+		ServerURL: config.GetEZBeqUrl(),
+		Port:      config.GetEZBeqPort(),
 	}
 
 	// send mute commands

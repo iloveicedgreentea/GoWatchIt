@@ -40,8 +40,8 @@ func NewClient() (*BeqClient, error) {
 		return nil, nil
 	}
 
-	url := config.GetString("ezbeq.url")
-	port := config.GetString("ezbeq.port")
+	url := config.GetEZBeqUrl()
+	port := config.GetEZBeqPort()
 	// TODO: use scheme validation
 	url = strings.Replace(url, "http://", "", -1)
 	c := &BeqClient{
@@ -86,8 +86,8 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 
 	return &models.BeqSearchRequest{
 		DryrunMode:      config.IsBeqDryRun(),
-		Slots:           config.GetIntSlice("ezbeq.slots"),
-		PreferredAuthor: config.GetString("ezbeq.preferredAuthor"),
+		Slots:           config.GetEZBeqSlots(),
+		PreferredAuthor: config.GetEZBeqPreferredAuthor(),
 		Devices:         deviceNames,
 		SkipSearch:      skipSearch,
 		Year:            year,
@@ -183,7 +183,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 
 	}
 
-	return mqtt.PublishWrapper(config.GetString("mqtt.topicMinidspMuteStatus"), fmt.Sprintf("%v", status))
+	return mqtt.PublishWrapper(config.GetMQTTTopic("minidspmutestatus"), fmt.Sprintf("%v", status))
 }
 
 // MakeCommand sends the command of payload
@@ -535,7 +535,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), fmt.Sprintf("%s: %s by %s", catalog.Title, m.Codec, catalog.Author))
+	return mqtt.PublishWrapper(config.GetMQTTTopic("beqcurrentprofile"), fmt.Sprintf("%s: %s by %s", catalog.Title, m.Codec, catalog.Author))
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
@@ -563,5 +563,5 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 	}
 
 	// TODO: use a wrapper function
-	return mqtt.PublishWrapper(config.GetString("mqtt.topicBeqCurrentProfile"), "")
+	return mqtt.PublishWrapper(config.GetMQTTTopic("beqcurrentprofile"), "")
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func getNewClient() (*PlexClient, error) {
-	return NewClient("https", config.GetString("plex.url"), config.GetString("plex.port"))
+	return NewClient("https", config.GetPlexUrl(), config.GetPlexPort())
 }
 
 // test to ensure server is white listed
@@ -54,7 +54,7 @@ func TestGetCodecFromSession(t *testing.T) {
 	ctx := context.Background()
 	require.NoError(t, err)
 
-	codec, err := c.GetCodecFromSession(ctx, config.GetString("plex.deviceuuidfilter"))
+	codec, err := c.GetCodecFromSession(ctx, config.GetPlexDeviceUUIDFilter())
 	assert.NoError(t, err)
 
 	t.Log(codec)
@@ -136,15 +136,3 @@ func TestMapCodecs(t *testing.T) {
 
 // 	return "fail"
 // }
-
-func removeDuplicateStr(strSlice []string) []string {
-	allKeys := make(map[string]bool)
-	list := []string{}
-	for _, item := range strSlice {
-		if _, value := allKeys[item]; !value {
-			allKeys[item] = true
-			list = append(list, item)
-		}
-	}
-	return list
-}

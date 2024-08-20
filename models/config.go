@@ -12,7 +12,7 @@ type EZBEQConfig struct {
 	NotifyOnLoad                  bool   `json:"notifyonload" db:"notify_on_load"`
 	Port                          string `json:"port" db:"port"`
 	PreferredAuthor               string `json:"preferredauthor" db:"preferred_author"`
-	Slots                         string `json:"slots" db:"slots"` // Store as JSON string in DB
+	Slots                         []int `json:"slots" db:"slots"` // Store as JSON string in DB
 	StopPlexIfMismatch            bool   `json:"stopplexifmismatch" db:"stop_plex_if_mismatch"`
 	URL                           string `json:"url" db:"url"`
 	UseAVRCodecSearch             bool   `json:"useavrcodecsearch" db:"use_avr_codec_search"`
@@ -44,6 +44,7 @@ type JellyfinConfig struct {
 	UserID           string `json:"userID" db:"user_id"`
 	Port             string `json:"port" db:"port"`
 	URL              string `json:"url" db:"url"`
+	SkipTMDB         bool   `json:"skiptmdb" db:"skip_tmdb"`
 }
 
 type MainConfig struct {

@@ -41,37 +41,24 @@ func main() {
 	}
 
 	// TODO: use const for sql file location
+	// Create the database connection
 	db, err := database.GetDB("../sqlite/db.sqlite3")
 	if err != nil {
 		logger.Fatal("Failed to connect to the database: ", err)
 	}
 	defer db.Close()
 
+	// create or update tables
 	err = database.RunMigrations(db)
 	if err != nil {
 		logger.Fatal("Failed to run migrations: ", err)
 	}
 
-	// TODO: use config
-	// config, err := config.NewConfig(db)
-	// if err != nil {
-	//     log.Fatal(err)
-	// }
-
-	// // Load EZBEQ config
-	// ezbeqConfig, err := config.GetEzbeqConfig()
-	// if err != nil {
-	//     log.Fatal(err)
-	// }
-
-	// // Modify config
-	// ezbeqConfig.Enabled = true
-
-	// // Save EZBEQ config
-	// err = config.SaveEzbeqConfig(ezbeqConfig)
-	// if err != nil {
-	//     log.Fatal(err)
-	// }
+	// init the config manager
+	err = config.InitConfig(db)
+	if err != nil {
+		logger.Fatal("Failed to run init config: ", err)
+	}
 
 	// init router
 	router := gin.New()
@@ -123,7 +110,7 @@ func main() {
 	go eventHandler(ctx, eventChan, beqClient, homeAssistantClient)
 
 	// init the router
-	port := config.GetString("main.listenPort")
+	port := config.GetMainListenPort()
 	if port == "" {
 		port = "9999"
 	}

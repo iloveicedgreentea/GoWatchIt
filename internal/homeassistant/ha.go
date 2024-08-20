@@ -31,10 +31,10 @@ func NewClient() (*HomeAssistantClient, error) {
 		return nil, nil
 	}
 
-	url := config.GetString("homeAssistant.url")
-	port := config.GetString("homeAssistant.port")
-	token := config.GetString("homeAssistant.token")
-	entityName := config.GetString("homeAssistant.remoteentityname")
+	url := config.GetHomeAssistantUrl()
+	port := config.GetHomeAssistantPort()
+	token := config.GetHomeAssistantToken()
+	entityName := config.GetHomeAssistantRemoteEntityName()
 	// TODO: use scheme validation
 	url = strings.Replace(url, "http://", "", -1)
 	return &HomeAssistantClient{
@@ -131,7 +131,7 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 		return err
 	}
 	//  remove notify. if present
-	name := strings.ReplaceAll(config.GetString("ezbeq.notifyEndpointName"), "notify.", "")
+	name := strings.ReplaceAll(config.GetEZBeqNotifyEndpointName(), "notify.", "")
 	endpoint := fmt.Sprintf("/api/services/notify/%s", name)
 	_, err = c.doRequest(endpoint, jsonPayload, http.MethodPost)
 	return err

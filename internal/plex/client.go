@@ -360,7 +360,7 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 
 	// Add query parameters if needed
 	if strings.Contains(path, "playback") {
-		playerIP := config.GetString("signal.playerip")
+		playerIP := config.GetHDMISyncPlayerIP()
 		if playerIP == "" {
 			return nil, errors.New("player IP not set in config")
 		}
@@ -376,7 +376,7 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 		}
 		params := url.Values{}
 		// only X-Plex-Target-Client-Identifier MUST be sent and it MUST match the client machine id found in clientIP:32500/resources
-		params.Add("X-Plex-Target-Client-Identifier", config.GetString("signal.playermachineidentifier"))
+		params.Add("X-Plex-Target-Client-Identifier", config.GetHDMISyncMachineIdentifier())
 		// API docs says these must be sent, but thats not true at all
 		// params.Add("commandID", "0")
 		// params.Add("type", "video")

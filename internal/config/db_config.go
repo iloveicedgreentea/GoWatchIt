@@ -1,81 +1,90 @@
 package config
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
+)
+
+var (
+	globalConfig *Config
+	once         sync.Once
 )
 
 type Config struct {
 	db *sql.DB
 }
 
-func NewConfig(db *sql.DB) (*Config, error) {
-	return &Config{db: db}, nil
+// InitConfig initializes the global config instance
+func InitConfig(db *sql.DB) error {
+	var err error
+	once.Do(func() {
+		globalConfig = &Config{db: db}
+		// Initialize tables if they don't exist
+		err = globalConfig.initTables()
+	})
+	return err
 }
 
-// TODO: verify its loading correctly
+func (c *Config) initTables() error {
+	tables := []interface{}{
+		&models.EZBEQConfig{},
+		&models.HomeAssistantConfig{},
+		&models.JellyfinConfig{},
+		&models.MQTTConfig{},
+		&models.HDMISyncConfig{},
+	}
 
-// LoadConfig loads a configuration struct from the database
-func (c *Config) LoadConfig(cfg interface{}) error {
+	for _, table := range tables {
+		if err := c.CreateConfigTable(table); err != nil {
+			return fmt.Errorf("failed to create table for %T: %v", table, err)
+		}
+	}
+	return nil
+}
+
+func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
+	log := logger.GetLoggerFromContext(ctx)
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("cfg must be a pointer to a struct")
 	}
 	v = v.Elem()
 	t := v.Type()
-
 	tableName := t.Name()
-	query := fmt.Sprintf("SELECT * FROM %s", tableName)
 
-	rows, err := c.db.Query(query)
+	var columns []string
+	var scanDest []interface{}
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag != "" && dbTag != "-" {
+			columns = append(columns, dbTag)
+			scanDest = append(scanDest, v.Field(i).Addr().Interface())
+		}
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM %s LIMIT 1", strings.Join(columns, ", "), tableName)
+
+	err := c.db.QueryRowContext(ctx, query).Scan(scanDest...)
 	if err != nil {
-		return fmt.Errorf("failed to query table %s: %v", tableName, err)
-	}
-	defer rows.Close()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return fmt.Errorf("failed to get columns: %v", err)
-	}
-
-	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		for i := range values {
-			values[i] = new(sql.RawBytes)
+		if err == sql.ErrNoRows {
+			log.Debug("No configuration found in table", "table", tableName)
+			return nil
 		}
-
-		err = rows.Scan(values...)
-		if err != nil {
-			return fmt.Errorf("failed to scan row: %v", err)
-		}
-
-		for i, colName := range columns {
-			field := v.FieldByName(colName)
-			if field.IsValid() && field.CanSet() {
-				err = setField(field, string(*values[i].(*sql.RawBytes)))
-				if err != nil {
-					return fmt.Errorf("failed to set field %s: %v", colName, err)
-				}
-			}
-		}
-
-		// We've loaded one complete row, so we can break here
-		// If you expect multiple rows, you might need to handle this differently
+		return fmt.Errorf("failed to scan row: %v", err)
 	}
 
-	if rows.Err() != nil {
-		return fmt.Errorf("error iterating over rows: %v", rows.Err())
-	}
-
+	log.Debug("Loaded configuration", "table", tableName)
 	return nil
 }
 
-// SaveConfig saves a configuration struct to the database
 func (c *Config) SaveConfig(cfg interface{}) error {
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
@@ -83,8 +92,8 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	}
 	v = v.Elem()
 	t := v.Type()
-
 	tableName := t.Name()
+
 	var columns []string
 	var placeholders []string
 	var values []interface{}
@@ -110,34 +119,52 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	return nil
 }
 
-// Helper function to set field value from string
-func setField(field reflect.Value, value string) error {
-	switch field.Kind() {
-	case reflect.String:
-		field.SetString(value)
-	case reflect.Bool:
-		boolValue, err := strconv.ParseBool(value)
-		if err != nil {
-			return err
-		}
-		field.SetBool(boolValue)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		intValue, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		field.SetInt(intValue)
-	// Add more types as needed
-	default:
-		return fmt.Errorf("unsupported field type: %v", field.Kind())
+// CreateConfigTable creates a table for the given config struct if it doesn't exist
+func (c *Config) CreateConfigTable(cfg interface{}) error {
+	v := reflect.ValueOf(cfg)
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("cfg must be a pointer to a struct")
 	}
+	v = v.Elem()
+	t := v.Type()
+	tableName := t.Name()
+
+	var columns []string
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag != "" && dbTag != "-" {
+			columns = append(columns, fmt.Sprintf("%s %s", dbTag, getSQLType(field.Type)))
+		}
+	}
+
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableName, strings.Join(columns, ", "))
+
+	_, err := c.db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("failed to create table: %v", err)
+	}
+
 	return nil
+}
+
+func getSQLType(t reflect.Type) string {
+	switch t.Kind() {
+	case reflect.Bool:
+		return "BOOLEAN"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return "INTEGER"
+	case reflect.String:
+		return "TEXT"
+	default:
+		return "TEXT"
+	}
 }
 
 // Example usage functions
 func (c *Config) GetEzbeqConfig() (*models.EZBEQConfig, error) {
 	cfg := &models.EZBEQConfig{}
-	err := c.LoadConfig(cfg)
+	err := c.LoadConfig(context.Background(), cfg)
 	return cfg, err
 }
 
@@ -146,3 +173,14 @@ func (c *Config) SaveEzbeqConfig(cfg *models.EZBEQConfig) error {
 }
 
 // Implement similar methods for other config types
+
+// GetConfig is a helper function to get the global config instance
+func GetConfig() *Config {
+	return globalConfig
+}
+
+// ResetConfig resets the global config instance (useful for testing)
+func ResetConfig() {
+	globalConfig = nil
+	once = sync.Once{}
+}

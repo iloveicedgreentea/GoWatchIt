@@ -65,7 +65,7 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 			return
 		}
 		// TODO: make a send playing topic function isntead of passing in topic
-		if err := mqtt.PublishWrapper(config.GetString("mqtt.topicplayingstatus"), "true"); err != nil {
+		if err := mqtt.PublishWrapper(config.GetMQTTTopic("playingstatus"), "true"); err != nil {
 			log.Error("Error publishing playing status",
 				slog.Any("error", err),
 			)

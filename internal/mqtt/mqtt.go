@@ -13,11 +13,11 @@ import (
 var log = logger.GetLogger()
 
 func connect(clientID string) (mqtt.Client, error) {
-	broker := config.GetString("mqtt.url")
+	broker := config.GetMQTTURL()
 	opts := mqtt.NewClientOptions().AddBroker(broker)
 	opts.SetClientID(clientID)
-	opts.SetUsername(config.GetString("mqtt.username"))
-	opts.SetPassword(config.GetString("mqtt.password"))
+	opts.SetUsername(config.GetMQTTUsername())
+	opts.SetPassword(config.GetMQTTPassword())
 	c := mqtt.NewClient(opts)
 	token := c.Connect()
 	if !token.WaitTimeout(5 * time.Second) {

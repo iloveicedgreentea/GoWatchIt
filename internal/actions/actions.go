@@ -17,7 +17,7 @@ func ChangeMasterVolume(ctx context.Context, mediaType models.MediaType) {
 	if config.IsHomeAssistantTriggerAVRMasterVolumeChangeOnEvent() {
 		log := logger.GetLoggerFromContext(ctx)
 		log.Debug("Changing volume")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicvolume"))
+		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetMQTTTopic("volume"))
 		if err != nil {
 			log.Error("Error changing volume", slog.String("error", err.Error()))
 		}
@@ -29,7 +29,7 @@ func ChangeLight(ctx context.Context, state string) {
 	if config.IsHomeAssistantTriggerLightsOnEvent() {
 		log := logger.GetLoggerFromContext(ctx)
 		log.Debug("Changing light")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topiclights"))
+		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetMQTTTopic("lights"))
 		if err != nil {
 			log.Error("Error changing light", slog.String("error", err.Error()))
 		}

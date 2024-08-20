@@ -9,6 +9,7 @@ import (
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
+// migrateTable will create or update a given table based on a struct
 func migrateTable(db *sql.DB, structType interface{}) error {
 	tableName := getTableName(structType)
 
@@ -42,6 +43,7 @@ func migrateTable(db *sql.DB, structType interface{}) error {
 	return nil
 }
 
+// tableExists checks if a table exists in the database
 func tableExists(db *sql.DB, tableName string) (bool, error) {
 	query := `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`
 	var name string
@@ -52,6 +54,7 @@ func tableExists(db *sql.DB, tableName string) (bool, error) {
 	return err == nil, err
 }
 
+// updateTableSchema will add new columns to an existing table
 func updateTableSchema(db *sql.DB, structType interface{}) error {
 	tableName := getTableName(structType)
 	t := reflect.TypeOf(structType)
@@ -69,6 +72,7 @@ func updateTableSchema(db *sql.DB, structType interface{}) error {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		dbTag := field.Tag.Get("db")
+		// Skip fields without db tag
 		if dbTag == "" {
 			continue
 		}
@@ -87,6 +91,7 @@ func updateTableSchema(db *sql.DB, structType interface{}) error {
 	return nil
 }
 
+// getExistingColumns returns a map of existing columns in a table
 func getExistingColumns(db *sql.DB, tableName string) (map[string]bool, error) {
 	query := fmt.Sprintf("PRAGMA table_info(%s);", tableName)
 	rows, err := db.Query(query)
@@ -110,6 +115,7 @@ func getExistingColumns(db *sql.DB, tableName string) (map[string]bool, error) {
 	return columns, nil
 }
 
+// getTableName returns the table name for a given struct
 func getTableName(structType interface{}) string {
 	t := reflect.TypeOf(structType)
 	if t.Kind() == reflect.Ptr {
@@ -157,6 +163,7 @@ func generateTableSQL(structType interface{}) string {
 	return createTableSQL
 }
 
+// Generates SQL statements for creating indices on the given struct
 func generateIndexSQL(structType interface{}) string {
 	t := reflect.TypeOf(structType)
 	if t.Kind() == reflect.Ptr {

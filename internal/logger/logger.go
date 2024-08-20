@@ -81,3 +81,8 @@ func GetLogger() *slog.Logger {
 
 	return defaultLogger
 }
+
+func Error(msg string, args ...any) {
+	log := GetLogger()
+	log.Error(msg, args...)
+}

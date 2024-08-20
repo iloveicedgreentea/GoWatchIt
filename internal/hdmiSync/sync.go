@@ -43,7 +43,7 @@ func WaitForHDMISync(ctx context.Context, wg *sync.WaitGroup, skipActions *bool,
 		wg.Done()
 	}()
 
-	signalSource := config.GetString("signal.source")
+	signalSource := config.GetHDMISyncSource()
 	var err error
 	var signal bool
 
@@ -60,7 +60,7 @@ func WaitForHDMISync(ctx context.Context, wg *sync.WaitGroup, skipActions *bool,
 	case "envy":
 		log.Debug("Using envy for hdmi sync")
 		// read envy attributes until its not nosignal
-		envyName := config.GetString("signal.envy")
+		envyName := config.GetHDMISyncEnvyName() // TODO: this should support any device
 		// remove remote. if present
 		if strings.Contains(envyName, "remote") {
 			envyName = strings.ReplaceAll(envyName, "remote.", "")
@@ -68,7 +68,7 @@ func WaitForHDMISync(ctx context.Context, wg *sync.WaitGroup, skipActions *bool,
 		signal, err = haClient.ReadAttrAndWait(ctx, 60, "remote", envyName, &models.HAEnvyResponse{})
 		// will break out here
 	case "time":
-		seconds := config.GetString("signal.time")
+		seconds := config.GetHDMISyncSeconds()
 		log.Debug("Using time for hdmi sync", slog.String("seconds", seconds))
 		sec, err := strconv.Atoi(seconds)
 		if err != nil {

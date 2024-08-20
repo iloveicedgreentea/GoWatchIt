@@ -82,7 +82,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		slog.String("media_title", decodedPayload.Metadata.Title),
 	)
 	// check filter for user if not blank
-	userID := config.GetString("plex.ownerNameFilter")
+	userID := config.GetPlexOwnerNameFilter()
 	// only respond to events on a particular account if you share servers and only for movies and shows
 	// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
 	if len(userID) == 0 || strings.EqualFold(decodedPayload.Account.Title, userID) {
