@@ -41,34 +41,37 @@ func main() {
 	}
 
 	// TODO: use const for sql file location
+	// TODO: file needs to be docker-compatible
 	// Create the database connection
-	db, err := database.GetDB("../sqlite/db.sqlite3")
+	log.Info("Connecting to the database...")
+	db, err := database.GetDB("db.sqlite3")
 	if err != nil {
 		logger.Fatal("Failed to connect to the database: ", err)
 	}
 	defer db.Close()
 
 	// create or update tables
+	log.Info("Running migrations...")
 	err = database.RunMigrations(db)
 	if err != nil {
 		logger.Fatal("Failed to run migrations: ", err)
 	}
 
 	// init the config manager
+	log.Info("Initializing config...")
 	err = config.InitConfig(db)
 	if err != nil {
 		logger.Fatal("Failed to run init config: ", err)
 	}
 
 	// init router
-	router := gin.New()
+	log.Info("Initializing router...")
+	router := gin.Default()
 	// do not cache static files
 	router.Use(noCache()) // TODO: scope to specific routes
 
-	log.Info("Loading config...")
-	// TODO: sqlite for config
-
 	// init event channel
+	log.Info("Creating workers...")
 	eventChan := make(chan models.Event)
 
 	// TODO: use ready signal chans
@@ -90,6 +93,7 @@ func main() {
 	router.SetTrustedProxies(nil)
 
 	// init clients
+	log.Info("Creating clients...")
 	beqClient, err := ezbeq.NewClient()
 	if err != nil {
 		log.Error("Error creating beq client",
@@ -114,6 +118,8 @@ func main() {
 	if port == "" {
 		port = "9999"
 	}
+	log.Info("Starting server")
+	log.Debug("Listening on port", slog.String("port", port))
 	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
 		logger.Fatal(err.Error())
 	}

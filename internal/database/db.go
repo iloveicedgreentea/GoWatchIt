@@ -3,20 +3,44 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // GetDB returns a connection to the database
 func GetDB(path string) (*sql.DB, error) {
+	// Check if the file exists
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		// Create the directory if it doesn't exist
+		dir := filepath.Dir(path)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, err
+		}
+
+		// Create an empty file
+		file, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+		file.Close()
+	}
+
+	// Open the database
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
+
+	// Ping the database to verify the connection
 	err = db.Ping()
 	if err != nil {
+		db.Close()
 		return nil, err
 	}
+
 	return db, nil
 }
 

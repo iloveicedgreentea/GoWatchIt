@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
@@ -75,7 +74,7 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 				return
 			}
 			var searchRequest *models.BeqSearchRequest
-			if config.IsBeqEnabled() {
+			if beqClient != nil {
 				// Create BEQ search request
 				searchRequest = beqClient.NewRequest(eventCtx, false, payload.Metadata.Year, payload.Metadata.Type, edition, payload.Metadata.TMDB, codec)
 				if searchRequest == nil {
@@ -101,7 +100,6 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 func eventRouter(ctx context.Context, cancel context.CancelFunc, event models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) {
 	switch event.Action {
 	case models.ActionPlay:
-		// TODO: remove functions in main loop from this func like codec
 		mediaplayer.HandlePlay(ctx, cancel, event, wg, beqClient, homeAssistantClient, searchRequest)
 	}
 }

@@ -38,7 +38,7 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 		actions.ChangeMasterVolume(ctx, payload.Metadata.Type)
 	}()
 
-	// TODO: check this
+	// TODO: check if sync enabled
 	// Perform HDMI sync
 	// Call the sync function which will check if its enabled
 	if !strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeMovie)) && config.IsSignalSourceTime() {
@@ -94,17 +94,19 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 		log.Debug("mediaPlay was cancelled before loading BEQ profile")
 		return nil
 	}
-	// TODO: pass in object
-	err = beqClient.LoadBeqProfile(searchRequest)
-	if err != nil {
-		return err
-	}
-	log.Info("BEQ profile loaded")
-	// send notification of it loaded
-	if config.IsBeqNotifyOnLoadEnabled() && config.IsHomeAssistantEnabled() {
-		err := homeAssistantClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, searchRequest.Codec))
+
+	if beqClient != nil {
+		err = beqClient.LoadBeqProfile(searchRequest)
 		if err != nil {
 			return err
+		}
+		log.Info("BEQ profile loaded")
+		// send notification of it loaded
+		if config.IsBeqNotifyOnLoadEnabled() && homeAssistantClient != nil {
+			err := homeAssistantClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, searchRequest.Codec))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
