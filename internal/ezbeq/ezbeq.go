@@ -388,14 +388,35 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
 func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
+	valLower := strings.ToLower(val.Edition)
+	editionLower := strings.ToLower(string(edition))
+
 	// if edition from beq is empty, any match will do
 	if val.Edition == "" {
 		return true
 	}
 
 	// if the beq edition contains the string like Extended for "Extended Cut", its ok
-	if strings.Contains(val.Edition, string(edition)) {
+	if strings.Contains(valLower, editionLower) {
 		return true
+	}
+
+	// Some BEQ have short hand names
+	switch {
+	case strings.Contains(valLower, "DC"):
+		return edition == models.EditionDirectorsCut
+	case strings.Contains(valLower, "SE"):
+		return edition == models.EditionSpecialEdition
+	case strings.Contains(valLower, "TC"):
+		return edition == models.EditionTheatrical
+	case strings.Contains(valLower, "UC"):
+		return edition == models.EditionUltimate
+	case strings.Contains(valLower, "CR"):
+		return edition == models.EditionCriterion
+	case strings.Contains(valLower, "UR"):
+		return edition == models.EditionUnrated
+	case strings.Contains(valLower, "EX"):
+		return edition == models.EditionExtended
 	}
 
 	return false

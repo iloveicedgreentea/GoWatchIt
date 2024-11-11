@@ -334,6 +334,7 @@ func (p *PlexClient) GetEdition(ctx context.Context, payload models.Event) (mode
 	return models.EditionNone, nil
 }
 
+// mapToEdition maps a string to a models.Edition assuming s is lowercased
 func mapToEdition(s string) models.Edition {
 	switch {
 	case strings.Contains(s, "extended"):
