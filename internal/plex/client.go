@@ -311,21 +311,25 @@ func (p *PlexClient) GetEdition(ctx context.Context, payload models.Event) (mode
 	if err != nil {
 		return models.EditionUnknown, err
 	}
-	edition := strings.ToLower(data.Video.EditionTitle)
-	fileName := strings.ToLower(data.Video.Media.Part.File)
+	return getEdition(data)
+}
+
+func getEdition(data models.MediaContainer) (models.Edition, error) {
+	edition := data.Video.EditionTitle
+	fileName := data.Video.Media.Part.File
 
 	// First, check the edition from Plex metadata
-	if edition != "" {
-		mappedEdition := mapToEdition(edition)
+	if len(edition) > 0 {
+		mappedEdition := utils.MapSToEdition(edition)
 		if mappedEdition != "" {
 			return mappedEdition, nil
 		}
 		// If we couldn't map it, return it unknown
-		return models.EditionUnknown, errors.New("could not map edition")
+		return models.EditionNone, errors.New("could not map edition")
 	}
 
 	// If no edition in metadata, try to extract from file name
-	mappedEdition := mapToEdition(fileName)
+	mappedEdition := utils.MapSToEdition(fileName)
 	if mappedEdition != "" {
 		return mappedEdition, nil
 	}
@@ -334,25 +338,6 @@ func (p *PlexClient) GetEdition(ctx context.Context, payload models.Event) (mode
 	return models.EditionNone, nil
 }
 
-// mapToEdition maps a string to a models.Edition assuming s is lowercased
-func mapToEdition(s string) models.Edition {
-	switch {
-	case strings.Contains(s, "extended"):
-		return models.EditionExtended
-	case strings.Contains(s, "unrated"):
-		return models.EditionUnrated
-	case strings.Contains(s, "theatrical"):
-		return models.EditionTheatrical
-	case strings.Contains(s, "ultimate"):
-		return models.EditionUltimate
-	case strings.Contains(s, "director"):
-		return models.EditionDirectorsCut
-	case strings.Contains(s, "criterion"):
-		return models.EditionCriterion
-	default:
-		return models.EditionUnknown
-	}
-}
 
 func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, error) {
 	// Construct the URL with url.URL

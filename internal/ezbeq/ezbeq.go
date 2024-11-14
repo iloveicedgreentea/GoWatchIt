@@ -23,6 +23,7 @@ import (
 var log = logger.GetLogger()
 
 type BeqClient struct {
+	Scheme              string
 	ServerURL           string
 	Port                string
 	CurrentProfile      string
@@ -40,12 +41,14 @@ func NewClient() (*BeqClient, error) {
 		return nil, nil
 	}
 
-	url := config.GetEZBeqUrl()
 	port := config.GetEZBeqPort()
-	// TODO: use scheme validation
-	url = strings.Replace(url, "http://", "", -1)
+	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s:%s", config.GetEZBeqUrl(), port))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing url: %v", err)
+	}
 	c := &BeqClient{
-		ServerURL: url,
+		ServerURL: parsedUrl.Host,
+		Scheme:    parsedUrl.Scheme,
 		Port:      port,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
@@ -53,7 +56,7 @@ func NewClient() (*BeqClient, error) {
 	}
 
 	// update client with latest metadata from minidsp
-	err := c.GetStatus()
+	err = c.GetStatus()
 	if err != nil {
 		return c, errors.New("error initializing beq client")
 	}
@@ -101,6 +104,9 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 
 // GetStatus will get metadata from ezbeq and load into client
 func (c *BeqClient) GetStatus() error {
+	if c == nil {
+		return errors.New("beq client is nil")
+	}
 	// get all devices
 	res, err := c.makeReq("/api/2/devices", nil, http.MethodGet)
 	if err != nil {
@@ -145,6 +151,9 @@ func urlEncode(s string) string {
 
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
+	if c == nil {
+		return errors.New("beq client is nil")
+	}
 	log.Debug("Running mute command")
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
@@ -188,6 +197,9 @@ func (c *BeqClient) MuteCommand(status bool) error {
 
 // MakeCommand sends the command of payload
 func (c *BeqClient) MakeCommand(payload []byte) error {
+	if c == nil {
+		return errors.New("beq client is nil")
+	}
 	for _, v := range c.DeviceInfo {
 		endpoint := fmt.Sprintf("/api/1/devices/%s", v.Name)
 		_, err := c.makeReq(endpoint, payload, http.MethodPatch)
@@ -201,6 +213,9 @@ func (c *BeqClient) MakeCommand(payload []byte) error {
 
 // generic func for beq requests. Payload should be nil
 func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) ([]byte, error) {
+	if c == nil {
+		return nil, errors.New("beq client is nil")
+	}
 	var setHeader bool
 	var req *http.Request
 	var err error
@@ -214,7 +229,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	}
 	// log.Debugf("Header is set to %v", setHeader)
 
-	url := fmt.Sprintf("http://%s:%s%s", c.ServerURL, c.Port, endpoint)
+	url := fmt.Sprintf("%s%s:%s%s", c.Scheme, c.ServerURL, c.Port, endpoint)
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
@@ -392,7 +407,7 @@ func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 	editionLower := strings.ToLower(string(edition))
 
 	// if edition from beq is empty, any match will do
-	if val.Edition == "" {
+	if len(val.Edition) == 0 {
 		return true
 	}
 
@@ -403,22 +418,23 @@ func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 
 	// Some BEQ have short hand names
 	switch {
-	case strings.Contains(valLower, "DC"):
+	case strings.Contains(valLower, "dc"):
 		return edition == models.EditionDirectorsCut
-	case strings.Contains(valLower, "SE"):
+	case strings.Contains(valLower, "se"):
 		return edition == models.EditionSpecialEdition
-	case strings.Contains(valLower, "TC"):
+	case strings.Contains(valLower, "tc"):
 		return edition == models.EditionTheatrical
-	case strings.Contains(valLower, "UC"):
+	case strings.Contains(valLower, "uc"):
 		return edition == models.EditionUltimate
-	case strings.Contains(valLower, "CR"):
+	case strings.Contains(valLower, "cr"):
 		return edition == models.EditionCriterion
-	case strings.Contains(valLower, "UR"):
+	case strings.Contains(valLower, "ur"):
 		return edition == models.EditionUnrated
-	case strings.Contains(valLower, "EX"):
+	case strings.Contains(valLower, "ex"):
 		return edition == models.EditionExtended
 	}
-
+	// TODO: enable loose matching option if BEQ edition is not blank and it doesnt match anything here, AND, the request edition is blank, then let it match anything
+	// TODO: add option to skip BEQ edition verification so it matches any edition found
 	return false
 }
 

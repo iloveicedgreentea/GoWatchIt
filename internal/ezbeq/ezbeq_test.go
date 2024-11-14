@@ -20,6 +20,53 @@ func TestMuteCmds(t *testing.T) {
 	assert.NoError(c.MuteCommand(true))
 	assert.NoError(c.MuteCommand(false))
 }
+
+func TestSearchKnownTitles(t *testing.T) {
+	// TODO: test beq search and match for known titles
+	// Stargate (1994) {edition-Extended Edition} Remux 1080p
+}
+
+func TestCheckEdition(t *testing.T) {
+
+	type test struct {
+		beqEdition string
+		edition    models.Edition
+		expected   bool
+	}
+	tests := []test{
+		{
+			beqEdition: "Extended",
+			edition:    models.EditionExtended,
+			expected:   true,
+		},
+		{
+			beqEdition: "ex",
+			edition:    models.EditionExtended,
+			expected:   true,
+		},
+		{
+			beqEdition: "EX",
+			edition:    models.EditionExtended,
+			expected:   true,
+		},
+		{
+			beqEdition: "DC",
+			edition:    models.EditionDirectorsCut,
+			expected:   true,
+		},
+		{
+			beqEdition: "DC+SE+TC",
+			edition:    models.EditionDirectorsCut,
+			expected:   true,
+		},
+	}
+
+	for _, test := range tests {
+		match := checkEdition(models.BeqCatalog{Edition: test.beqEdition}, test.edition)
+		assert.Equal(t, test.expected, match, "Expected: ", test.expected, "Got: ", match, "for ", test.beqEdition)
+	}
+
+}
 func TestGetStatus(t *testing.T) {
 	c := &BeqClient{
 		ServerURL: config.GetEZBeqUrl(),
@@ -417,8 +464,10 @@ func TestBuildAuthorWhitelist(t *testing.T) {
 
 func TestSearchCatalog(t *testing.T) {
 	assert := assert.New(t)
+	// TODO: test searching
 
 	c, err := NewClient()
+	assert.NotNil(c)
 	assert.NoError(err)
 
 	// list of testing structs
@@ -594,6 +643,19 @@ func TestSearchCatalog(t *testing.T) {
 			expectedEdition:  "",
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
 			expectedMvAdjust: 0.0,
+		},
+		{
+			//  Star Wars (1977) {edition-Project 4K77} Remux 2160p DTS-HD MA
+			m: models.BeqSearchRequest{
+				TMDB:            "11",
+				Year:            1977,
+				Codec:           "DTS-HD MA 5.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",
+			expectedMvAdjust: 1.0,
 		},
 	}
 

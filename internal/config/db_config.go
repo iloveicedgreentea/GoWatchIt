@@ -50,6 +50,13 @@ func (c *Config) initTables() error {
 }
 
 func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
+	if c == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	if c.db == nil {
+		return fmt.Errorf("db is nil")
+	}
 	log := logger.GetLoggerFromContext(ctx)
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
@@ -86,6 +93,13 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 }
 
 func (c *Config) SaveConfig(cfg interface{}) error {
+	if c == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	if c.db == nil {
+		return fmt.Errorf("db is nil")
+	}
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("cfg must be a pointer to a struct")
