@@ -1,13 +1,70 @@
 package ezbeq
 
 import (
+	"database/sql"
 	"fmt"
+	l "log"
+	"os"
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/database"
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
 )
+
+var db *sql.DB
+
+// TODO: move this to a test utils pkg
+func TestMain(m *testing.M) {
+	// Setup code before tests
+	var err error
+
+	// Open SQLite database connection
+	db, err = database.GetDB("../../db-test.sqlite3")
+	if err != nil {
+		l.Fatalf("Failed to open database: %v", err)
+	}
+
+	//run migrations
+	err = database.RunMigrations(db)
+	if err != nil {
+		l.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	// Initialize the config with the database
+	err = config.InitConfig(db)
+	if err != nil {
+		l.Fatalf("Failed to initialize config: %v", err)
+	}
+
+	cf := config.GetConfig()
+
+	// populate test data
+	beqCfg := models.EZBEQConfig{
+		Enabled:              true,
+		DryRun:               true,
+		URL:                  "localhost",
+		Port:                 "8080",
+		LooseEditionMatching: true,
+		SkipEditionMatching:  false,
+	}
+	err = cf.SaveEzbeqConfig(&beqCfg)
+	if err != nil {
+		l.Fatalf("Failed to save ezbeq config: %v", err)
+	}
+	// Run the tests
+	code := m.Run()
+
+	// Cleanup code after tests
+	err = db.Close()
+	if err != nil {
+		l.Printf("Error closing database: %v", err)
+	}
+
+	// Exit with the test result code
+	os.Exit(code)
+}
 
 // TestMuteCmds send commands to minidsp
 func TestMuteCmds(t *testing.T) {

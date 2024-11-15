@@ -42,7 +42,7 @@ func NewClient() (*BeqClient, error) {
 	}
 
 	port := config.GetEZBeqPort()
-	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s:%s", config.GetEZBeqUrl(), port))
+	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s://%s", config.GetEZBeqScheme(),config.GetEZBeqUrl()))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing url: %v", err)
 	}
@@ -54,6 +54,12 @@ func NewClient() (*BeqClient, error) {
 			Timeout: 5 * time.Second,
 		},
 	}
+	log := logger.GetLogger()
+	log.Debug("created new beq client",
+		slog.String("server_url", c.ServerURL),
+		slog.String("scheme", c.Scheme),
+		slog.String("port", c.Port),
+	)
 
 	// update client with latest metadata from minidsp
 	err = c.GetStatus()
@@ -229,13 +235,17 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	}
 	// log.Debugf("Header is set to %v", setHeader)
 
-	url := fmt.Sprintf("%s%s:%s%s", c.Scheme, c.ServerURL, c.Port, endpoint)
+	u := url.URL{
+		Scheme: c.Scheme,
+		Host:   fmt.Sprintf("%s:%s", c.ServerURL, c.Port),
+		Path:  endpoint,
+	}
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
-		req, err = http.NewRequest(methodType, url, nil)
+		req, err = http.NewRequest(methodType, u.String(), nil)
 	} else {
-		req, err = http.NewRequest(methodType, url, bytes.NewBuffer(payload))
+		req, err = http.NewRequest(methodType, u.String(), bytes.NewBuffer(payload))
 	}
 	if err != nil {
 		return []byte{}, err
@@ -381,6 +391,7 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 				break
 			}
 		}
+		// TODO: matching is probably failing here
 		if val.MovieDbID == m.TMDB && val.Year == m.Year && audioMatch {
 			log.Debug("Potential match found",
 				slog.String("title", val.Title),
@@ -403,6 +414,10 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
 func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
+	// skip if matching disabled
+	if config.IsBeqSkipEditionMatching() {
+		return true
+	}
 	valLower := strings.ToLower(val.Edition)
 	editionLower := strings.ToLower(string(edition))
 
@@ -433,8 +448,14 @@ func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 	case strings.Contains(valLower, "ex"):
 		return edition == models.EditionExtended
 	}
-	// TODO: enable loose matching option if BEQ edition is not blank and it doesnt match anything here, AND, the request edition is blank, then let it match anything
-	// TODO: add option to skip BEQ edition verification so it matches any edition found
+
+	// if BEQ returns an edition but we have none, and loose matching is enabled, let it match
+	if config.IsBeqLooseEditionMatching() {
+		if edition == models.EditionNone {
+			return true
+		}
+	}
+
 	return false
 }
 
