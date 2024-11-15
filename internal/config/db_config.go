@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -48,7 +49,6 @@ func (c *Config) initTables() error {
 	}
 	return nil
 }
-
 func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
@@ -73,12 +73,29 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 		dbTag := field.Tag.Get("db")
 		if dbTag != "" && dbTag != "-" {
 			columns = append(columns, dbTag)
-			scanDest = append(scanDest, v.Field(i).Addr().Interface())
+
+			// Special handling for slices - use string placeholder
+			if v.Field(i).Kind() == reflect.Slice {
+				var jsonStr string
+				scanDest = append(scanDest, &jsonStr)
+				// Store the field index and scan destination for later processing
+				defer func(fieldIdx int, jsonStrPtr *string) {
+					if *jsonStrPtr != "" {
+						var sliceValue reflect.Value
+						slicePtr := reflect.New(v.Field(fieldIdx).Type())
+						if err := json.Unmarshal([]byte(*jsonStrPtr), slicePtr.Interface()); err == nil {
+							sliceValue = slicePtr.Elem()
+							v.Field(fieldIdx).Set(sliceValue)
+						}
+					}
+				}(i, &jsonStr)
+			} else {
+				scanDest = append(scanDest, v.Field(i).Addr().Interface())
+			}
 		}
 	}
 
 	query := fmt.Sprintf("SELECT %s FROM %s LIMIT 1", strings.Join(columns, ", "), tableName)
-
 	err := c.db.QueryRowContext(ctx, query).Scan(scanDest...)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -91,7 +108,6 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 	log.Debug("Loaded configuration", "table", tableName)
 	return nil
 }
-
 func (c *Config) SaveConfig(cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
@@ -100,6 +116,7 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	if c.db == nil {
 		return fmt.Errorf("db is nil")
 	}
+
 	v := reflect.ValueOf(cfg)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("cfg must be a pointer to a struct")
@@ -118,7 +135,17 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 		if dbTag != "" && dbTag != "-" {
 			columns = append(columns, dbTag)
 			placeholders = append(placeholders, "?")
-			values = append(values, v.Field(i).Interface())
+
+			// Special handling for slices - convert to JSON string
+			if v.Field(i).Kind() == reflect.Slice {
+				jsonBytes, err := json.Marshal(v.Field(i).Interface())
+				if err != nil {
+					return fmt.Errorf("failed to marshal slice field %s: %v", field.Name, err)
+				}
+				values = append(values, string(jsonBytes))
+			} else {
+				values = append(values, v.Field(i).Interface())
+			}
 		}
 	}
 

@@ -3,9 +3,10 @@ package config
 import (
 	"context"
 
-	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/models"
 )
+
 // Main
 func GetMainListenPort() string {
 	var config models.MainConfig
@@ -100,7 +101,6 @@ func GetHomeAssistantRemoteEntityName() string {
 	return config.RemoteEntityName
 }
 
-
 // MQTT
 func GetMQTTTopic(topicName string) string {
 	var config models.MQTTConfig
@@ -150,7 +150,6 @@ func GetMQTTPassword() string {
 	return config.Password
 }
 
-
 // EZBeq
 func GetEZBeqUrl() string {
 	var config models.EZBEQConfig
@@ -159,6 +158,17 @@ func GetEZBeqUrl() string {
 		return ""
 	}
 	return config.URL
+}
+func GetEZBeqScheme() string {
+	var config models.EZBEQConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load EZBEQ config", "error", err)
+		return ""
+	}
+	if config.Scheme == "" {
+		return "http"
+	}
+	return config.Scheme
 }
 
 func GetEZBeqPort() string {
@@ -196,8 +206,6 @@ func GetEZBeqNotifyEndpointName() string {
 	}
 	return config.NotifyEndpointName
 }
-
-
 
 // Plex
 

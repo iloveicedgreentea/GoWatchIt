@@ -61,6 +61,7 @@ func GetLogger() *slog.Logger {
 				multiWriter := io.MultiWriter(file, os.Stdout)
 				handler = slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
 					Level: level,
+					AddSource: true,
 				})
 			}
 		}
@@ -69,6 +70,7 @@ func GetLogger() *slog.Logger {
 		if handler == nil {
 			handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 				Level: level,
+				AddSource: true,
 			})
 		}
 

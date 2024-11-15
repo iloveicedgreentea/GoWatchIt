@@ -10,14 +10,17 @@ type EZBEQConfig struct {
 	EnableTVBEQ                   bool   `json:"enabletvbeq" db:"enable_tv_beq"`
 	NotifyEndpointName            string `json:"notifyendpointname" db:"notify_endpoint_name"`
 	NotifyOnLoad                  bool   `json:"notifyonload" db:"notify_on_load"`
-	Port                          string `json:"port" db:"port"`
 	PreferredAuthor               string `json:"preferredauthor" db:"preferred_author"`
-	Slots                         []int `json:"slots" db:"slots"` // Store as JSON string in DB
+	Slots                         []int  `json:"slots" db:"slots"` // Store as JSON string in DB
 	StopPlexIfMismatch            bool   `json:"stopplexifmismatch" db:"stop_plex_if_mismatch"`
+	Port                          string `json:"port" db:"port"`
 	URL                           string `json:"url" db:"url"`
+	Scheme                        string `json:"scheme" db:"scheme"`
 	UseAVRCodecSearch             bool   `json:"useavrcodecsearch" db:"use_avr_codec_search"`
 	AVRBrand                      string `json:"avrbrand" db:"avr_brand"`
 	AVRURL                        string `json:"avrurl" db:"avr_url"`
+	LooseEditionMatching          bool   `json:"looseeditionmatching" db:"loose_edition_matching"`
+	SkipEditionMatching           bool   `json:"skipeditionmatching" db:"skip_edition_matching"`
 }
 
 type HomeAssistantConfig struct {
