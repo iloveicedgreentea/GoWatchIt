@@ -44,8 +44,9 @@ func TestMain(m *testing.M) {
 	beqCfg := models.EZBEQConfig{
 		Enabled:              true,
 		DryRun:               true,
-		URL:                  "localhost",
+		URL:                  "ezbeq.local",
 		Port:                 "8080",
+		Scheme:               "http",
 		LooseEditionMatching: true,
 		SkipEditionMatching:  false,
 	}
@@ -76,11 +77,6 @@ func TestMuteCmds(t *testing.T) {
 	// send mute commands
 	assert.NoError(c.MuteCommand(true))
 	assert.NoError(c.MuteCommand(false))
-}
-
-func TestSearchKnownTitles(t *testing.T) {
-	// TODO: test beq search and match for known titles
-	// Stargate (1994) {edition-Extended Edition} Remux 1080p
 }
 
 func TestCheckEdition(t *testing.T) {
@@ -534,6 +530,19 @@ func TestSearchCatalog(t *testing.T) {
 		expectedMvAdjust                float64
 	}
 	tt := []testStruct{
+		{
+			// Stargate (1994) {edition-Extended Edition} Remux 1080p
+			m: models.BeqSearchRequest{
+				TMDB:            "2164",
+				Year:            1994,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "none",
+				Edition:         "Extended",
+			},
+			expectedEdition:  "Extended",
+			expectedDigest:   "6d9cfaed8335a348491eebae27f7f5fb11752e32df64b46d24d6f995dd74d96d",
+			expectedMvAdjust: 0,
+		},
 		{
 			// fast five extended
 			m: models.BeqSearchRequest{

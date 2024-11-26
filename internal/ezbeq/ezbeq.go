@@ -16,7 +16,6 @@ import (
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
-	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -198,7 +197,7 @@ func (c *BeqClient) MuteCommand(status bool) error {
 
 	}
 
-	return mqtt.PublishWrapper(config.GetMQTTTopic("minidspmutestatus"), fmt.Sprintf("%v", status))
+	return nil
 }
 
 // MakeCommand sends the command of payload
@@ -593,7 +592,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 		}
 	}
 
-	return mqtt.PublishWrapper(config.GetMQTTTopic("beqcurrentprofile"), fmt.Sprintf("%s: %s by %s", catalog.Title, m.Codec, catalog.Author))
+	return nil
 }
 
 // UnloadBeqProfile will unload all profiles from all devices
@@ -621,5 +620,5 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 	}
 
 	// TODO: use a wrapper function
-	return mqtt.PublishWrapper(config.GetMQTTTopic("beqcurrentprofile"), "")
+	return nil
 }

@@ -3,16 +3,13 @@ package mediaplayer
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 	"sync"
 
-	"github.com/iloveicedgreentea/go-plex/internal/actions"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
-	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -29,14 +26,6 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 	}
 
 	var err error
-	go func() {
-		if ctx.Err() != nil {
-			log.Debug("mediaPlay was cancelled before lights and volume change")
-			return
-		}
-		actions.ChangeLight(ctx, models.ActionOff)
-		actions.ChangeMasterVolume(ctx, payload.Metadata.Type)
-	}()
 
 	// TODO: check if sync enabled
 	// Perform HDMI sync
@@ -58,19 +47,6 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 	}
 
 	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
-
-	go func() {
-		if ctx.Err() != nil {
-			log.Debug("mediaPlay was cancelled before publishing playing status")
-			return
-		}
-		// TODO: make a send playing topic function isntead of passing in topic
-		if err := mqtt.PublishWrapper(config.GetMQTTTopic("playingstatus"), "true"); err != nil {
-			log.Error("Error publishing playing status",
-				slog.Any("error", err),
-			)
-		}
-	}()
 
 	if ctx.Err() != nil {
 		log.Debug("mediaPlay was cancelled before unloading BEQ profile")

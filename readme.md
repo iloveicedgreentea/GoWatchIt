@@ -44,15 +44,12 @@ Players Supported:
 
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec detected
-* Set volume based on media type (Movie, Show, etc)
-* Trigger lights when playing, pausing, or stopping automatically (e.g turn off lights on play, turn on when paused)
 * HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen)
 * Web based UI for configuration
 
 Other cool stuff:
 * Mute/Unmute Minidsp automation for things like turning off subs at night
-* Various MQTT sensors for playing status, volume control, lights, mute status, and current BEQ profile
-* Mobile notifications to notify for events like loading/unloading BEQ was successful or failed
+* Home Assistant notifications to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * Built in support for Home Assistant and Minidsp
 
@@ -60,7 +57,6 @@ Other cool stuff:
 > ⚠️ ⚠️ *Warning: You should really set a compressor on your minidsp for safety as outlined in the [BEQ forum post](https://www.avsforum.com/threads/bass-eq-for-filtered-movies.2995212/). I am not responsible for any damage* ⚠️ ⚠️
 ### Prerequisites
 > ℹ  It is assumed you have the following tools working. Refer to their respective guides for installation help.
-* MQTT Broker (Optional)
 * Home Assistant (Optional)
 * Plex or Jellyfin
 * ezBEQ
@@ -158,97 +154,6 @@ This application will load BEQ profiles automatically when you play something in
 
 ## Home Assistant Quickstart
 
-### MQTT
-MQTT is used so this application could theoretically be used with any home automation system. Only Home Assistant is officially supported. You will need to set MQTT up first. Detailed instructions here https://www.home-assistant.io/integrations/mqtt/
-  
-1) Install mosquito mqtt add on
-2) Install mqtt integration
-3) Set up your topics in HA and the application's config
-4) Set up Automations in HA based on the payloads of MQTT
-
-Features that will write to Topics of your choosing:
-* Current BEQ Profile
-* Lights
-* Minidsp mute status
-* Item type (Movie, Show, etc)
-* Playing status
-
-These Topics allow you to trigger automations in HA based on sensor values such as:
-
-* Triggering HVAC when playing status is true for X minutes (e.g circulate stale air)
-* Toggling lights when playing status changes
-* Displaying current BEQ profile on a dashboard
-* Modulating volume based on item type (e.g a lower volume for shows, higher for movies)
-* Muting/unmuting minidsp(s) and showing the status
-
-Here are some sensor examples
-
-```yaml
-mqtt:
-  binary_sensor:
-    - name: "subs_muted"
-      state_topic: "theater/subs/status"
-      payload_on: "false"
-      payload_off: "true"
-    - name: "plex_playing"
-      state_topic: "theater/plex/playing"
-      payload_on: "true"
-      payload_off: "false"
-  sensor:
-    - name: "lights"
-      state_topic: "theater/lights/front"
-      value_template: "{{ value_json.state }}"
-    - name: "volume"
-      state_topic: "theater/denon/volume"
-      value_template: "{{ value_json.type }}"
-    - name: "beq_current_profile"
-      state_topic: "theater/beq/currentprofile"
-```
-
-### Automation Example
-Here is an example of an automation to change lights based on MQTT.
-
-Assuming you have the following sensor:
-```yaml
-mqtt:
-  sensor:
-    - name: "lights"
-      state_topic: "theater/lights/front"
-      value_template: "{{ value_json.state }}"
-```
-
-This will turn the light(s) on/off depending on the state of the sensor, state is changed by a message sent to the topic
-
-```yaml
-alias: MQTT - Theater Lights
-description: Trigger lights when mqtt received, depending on state
-trigger:
-  - platform: mqtt
-    topic: theater/lights/front
-condition: []
-action:
-  - if:
-      - condition: state
-        entity_id: sensor.lights
-        state: "on"
-    then:
-      - service: light.turn_on
-        data: {}
-        target:
-          entity_id: light.caseta_r_wireless_in_wall_dimmer
-  - if:
-      - condition: state
-        entity_id: sensor.lights
-        state: "off"
-    then:
-      - service: light.turn_off
-        data: {}
-        target:
-          entity_id: light.caseta_r_wireless_in_wall_dimmer
-mode: queued
-max: 10
-```
-
 ### Handlers
 `/plexwebhook`
 
@@ -316,11 +221,16 @@ Jellyfin may have some issues matching as I have found it will sometimes just no
 
 This application will do its best to match editions. It will look for one of the following:
 1) Plex edition metadata. Set this from your server in the Plex UI
-2) Looking at the file name if it contains `Unrated, Ultimate, Theatrical, Extended, Director, Criterion`
+2) Looking at the file name if it contains `Unrated, Ultimate, Theatrical, Extended, Director, Criterion` (case insensitive)
 
 There is no other reliable way to get the edition. If an edition is not matched, BEQ will fail to load for safety reasons (different editions have different masterings, etc). If a BEQCatalog entry has a blank edition, then edition will not matter and it will match based on the usual criteria.
 
-If you find repeated match failures because of editions, open a github issue with debug logs of you triggering `media.play`
+If you want to match an edition when none is found locally, you can enable Loose Edition Matching. It will match if:
+
+1) We sent a blank edition in the request
+2) BEQ catalogue returns an edition
+
+This is only useful if you have issues matching editions.
 
 ### HDMI Sync Automation
 This application supports automatically waiting until HDMI sync is complete. 
