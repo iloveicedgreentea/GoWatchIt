@@ -40,7 +40,6 @@ linters:
     - misspell # Finds commonly misspelled English words
     - copyloopvar # Checks for pointers to enclosing loop variables
     - gocritic # Provides diagnostics that check for bugs, performance and style issues
-    - shadow
 
 # Linter-specific settings
 linters-settings:

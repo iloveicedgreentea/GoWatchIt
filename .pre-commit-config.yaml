@@ -8,4 +8,4 @@ repos:
         args: [-l, -w]
       # GolangCI-Lint
       - id: golangci-lint-mod
-        args: [--fix, --new, --config=.golangci.yml]
+        args: [--fix, --config=.golangci.yml]
