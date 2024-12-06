@@ -12,11 +12,6 @@ run:
   # Exit code when at least one issue was found
   issues-exit-code: 1
 
-  # Which files to skip
-  skip-dirs:
-    - vendor
-    - third_party
-
 # Output configuration options
 output:
   # Make issues output unique by line
@@ -43,15 +38,12 @@ linters:
     - prealloc # Suggests slice preallocation
     - revive # Fast, configurable, extensible, flexible, and beautiful linter
     - misspell # Finds commonly misspelled English words
-    - exportloopref # Checks for pointers to enclosing loop variables
+    - copyloopvar # Checks for pointers to enclosing loop variables
     - gocritic # Provides diagnostics that check for bugs, performance and style issues
+    - shadow
 
 # Linter-specific settings
 linters-settings:
-  govet:
-    check-shadowing: true
-    enable-all: true
-
   gosec:
     excludes:
       - G104 # Audit errors not being checked (too noisy)
@@ -84,3 +76,5 @@ issues:
 
   # Don't show issues from excluded files
   exclude-use-default: false
+  exclude-dirs:
+    - vendor
