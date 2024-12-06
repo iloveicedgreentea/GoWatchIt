@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 		l.Fatalf("Failed to open database: %v", err)
 	}
 
-	//run migrations
+	// run migrations
 	err = database.RunMigrations(db)
 	if err != nil {
 		l.Fatalf("Failed to run migrations: %v", err)
@@ -80,7 +80,6 @@ func TestMuteCmds(t *testing.T) {
 }
 
 func TestCheckEdition(t *testing.T) {
-
 	type test struct {
 		beqEdition string
 		edition    models.Edition
@@ -118,22 +117,19 @@ func TestCheckEdition(t *testing.T) {
 		match := checkEdition(models.BeqCatalog{Edition: test.beqEdition}, test.edition)
 		assert.Equal(t, test.expected, match, "Expected: ", test.expected, "Got: ", match, "for ", test.beqEdition)
 	}
-
 }
+
 func TestGetStatus(t *testing.T) {
-	c := &BeqClient{
-		ServerURL: config.GetEZBeqUrl(),
-		Port:      config.GetEZBeqPort(),
-	}
+	c, err := NewClient()
+	assert.NoError(t, err)
 
 	// send mute commands
 	assert.NotEmpty(t, c.Port)
 	assert.NotEmpty(t, c.ServerURL)
 
-	err := c.GetStatus()
+	err = c.GetStatus()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, c.DeviceInfo)
-
 }
 
 func TestSingleDevice(t *testing.T) {
@@ -274,6 +270,7 @@ func TestSingleDevice(t *testing.T) {
 		t.Log(v.Name)
 	}
 }
+
 func TestDualDevice(t *testing.T) {
 	rawJson := `{
 		"master": {
@@ -465,6 +462,7 @@ func TestDualDevice(t *testing.T) {
 		t.Log(v.Name)
 	}
 }
+
 func TestUrlEncode(t *testing.T) {
 	s := urlEncode("DTS-HD MA 7.1")
 	assert.Equal(t, "DTS-HD+MA+7.1", s)
@@ -510,7 +508,6 @@ func TestHasAuthor(t *testing.T) {
 }
 
 func TestBuildAuthorWhitelist(t *testing.T) {
-
 	s := buildAuthorWhitelist("aron7awol, mobe1969", "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345")
 	assert.Equal(t, "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345&authors=aron7awol&authors=mobe1969", s)
 }
@@ -836,5 +833,4 @@ func TestLoadProfile(t *testing.T) {
 		err = c.UnloadBeqProfile(&tc)
 		assert.NoError(err)
 	}
-
 }

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
@@ -30,7 +31,7 @@ type BeqClient struct {
 	CurrentMediaType    string
 	MuteStatus          bool
 	MasterVolume        float64
-	HTTPClient          http.Client
+	HTTPClient          *retryablehttp.Client
 	DeviceInfo          []models.BeqDevices
 }
 
@@ -41,18 +42,20 @@ func NewClient() (*BeqClient, error) {
 	}
 
 	port := config.GetEZBeqPort()
-	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s://%s", config.GetEZBeqScheme(),config.GetEZBeqUrl()))
+	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s://%s", config.GetEZBeqScheme(), config.GetEZBeqUrl()))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing url: %v", err)
 	}
 	c := &BeqClient{
-		ServerURL: parsedUrl.Host,
-		Scheme:    parsedUrl.Scheme,
-		Port:      port,
-		HTTPClient: http.Client{
-			Timeout: 5 * time.Second,
-		},
+		ServerURL:  parsedUrl.Host,
+		Scheme:     parsedUrl.Scheme,
+		Port:       port,
+		HTTPClient: retryablehttp.NewClient(),
 	}
+
+	// set timeout
+	c.HTTPClient.HTTPClient.Timeout = time.Second * 10
+
 	log := logger.GetLogger()
 	log.Debug("created new beq client",
 		slog.String("server_url", c.ServerURL),
@@ -63,7 +66,7 @@ func NewClient() (*BeqClient, error) {
 	// update client with latest metadata from minidsp
 	err = c.GetStatus()
 	if err != nil {
-		return c, errors.New("error initializing beq client")
+		return c, fmt.Errorf("error initializing beq client while getting status - %w", err)
 	}
 
 	if len(c.DeviceInfo) == 0 {
@@ -104,7 +107,6 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 		Codec:           codec,
 		Edition:         edition,
 	}
-
 }
 
 // GetStatus will get metadata from ezbeq and load into client
@@ -222,7 +224,7 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 		return nil, errors.New("beq client is nil")
 	}
 	var setHeader bool
-	var req *http.Request
+	var req *retryablehttp.Request
 	var err error
 
 	// log.Debugf("Using method %s", methodType)
@@ -237,14 +239,14 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	u := url.URL{
 		Scheme: c.Scheme,
 		Host:   fmt.Sprintf("%s:%s", c.ServerURL, c.Port),
-		Path:  endpoint,
+		Path:   endpoint,
 	}
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
-		req, err = http.NewRequest(methodType, u.String(), nil)
+		req, err = retryablehttp.NewRequest(methodType, u.String(), nil)
 	} else {
-		req, err = http.NewRequest(methodType, u.String(), bytes.NewBuffer(payload))
+		req, err = retryablehttp.NewRequest(methodType, u.String(), bytes.NewBuffer(payload))
 	}
 	if err != nil {
 		return []byte{}, err
@@ -253,22 +255,22 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	// log.Debugf("Using url %s", req.URL)
-	// log.Debugf("Headers from req %v", req.Header)
-	// simple retry
+
+	// retry
 	res, err := c.makeCallWithRetry(req, 20, endpoint)
 
 	return res, err
 }
 
 // makeCallWithRetry returns response body and err
-func (c *BeqClient) makeCallWithRetry(req *http.Request, maxRetries int, endpoint string) ([]byte, error) {
+func (c *BeqClient) makeCallWithRetry(req *retryablehttp.Request, maxRetries int, endpoint string) ([]byte, error) {
 	// declaring here so we can return err outside of loop just by exiting it
 	var status int
 	var res *http.Response
 	var resp []byte
 	var err error
 
+	// TODO: remove the loop library does it
 	for i := 0; i < maxRetries; i++ {
 		res, err = c.HTTPClient.Do(req)
 		if err != nil {

@@ -22,7 +22,6 @@
 
 <p align="center">
   <b>Focus on watching your content, not babysitting it.</b><br>
-  Automate Your Theater
 </p>
 
 ---
@@ -37,21 +36,22 @@
 
 ## Features
 
+Main features:
+* Load/unload BEQ profiles automatically, without user action and the correct codec detected
+* HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen in front of your friends)
+* Web based UI
+
 Players Supported:
 * Plex 
 * Jellyfin (no support given, but tested)
 * Emby (may work due to jellyfin support, no support given and not tested)
 
-Main features:
-* Load/unload BEQ profiles automatically, without user action and the correct codec detected
-* HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen)
-* Web based UI for configuration
-
 Other cool stuff:
-* Mute/Unmute Minidsp automation for things like turning off subs at night
+* Mute/Unmute Minidsp
 * Home Assistant notifications to notify for events like loading/unloading BEQ was successful or failed
 * Dry run and notification modes to verify BEQ profiles without actually loading them
 * Built in support for Home Assistant and Minidsp
+* API to get BEQ status
 
 ## Setup
 > ⚠️ ⚠️ *Warning: You should really set a compressor on your minidsp for safety as outlined in the [BEQ forum post](https://www.avsforum.com/threads/bass-eq-for-filtered-movies.2995212/). I am not responsible for any damage* ⚠️ ⚠️
@@ -64,6 +64,8 @@ Other cool stuff:
 
 You can configure this to only load BEQ profiles, or do everything else besides BEQ. It is up to you.
 
+> ℹ  If you are using MSO, make sure to use the BEQ friendly output export. If you have PEQ on your inputs, BEQ will overwrite them. If you have shared gain, make sure to disable master volume adjustment
+
 ### Docker Setup
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).
 > ℹ  If you are using Jellyfin, read the Jellyfin specific instructions below
@@ -75,7 +77,62 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 4) Set up your player with the instructions below
 5) You can change logging timezone by setting the `TZ` env var to your desired timezone 
 
-### Plex Specifics
+### Triggering
+There are three ways to trigger an action:
+
+1) Home Assistant
+2) Plex
+3) Jellyfin/emby
+
+#### Home Assistant
+You need to create a rest_commannd and an automation
+
+Rest command
+1) TBD # TODO: add rest command example
+
+Automation
+1) Create a new blank automation
+2) Set the triggers to be BOTH your client playing AND stopping
+3) Give each event a unique ID
+4) For actions, create a Choose block
+5) Have one option get triggered by the play event and the other by the stop event
+
+Example
+```yaml
+mode: single
+triggers:
+  - trigger: state
+    entity_id:
+      - media_player.plex
+    to: playing
+    id: playing
+  - trigger: state
+    entity_id:
+      - media_player.plex
+    from: playing # notice this triggers when it changes FROM playing you can also change this to stop and pause separately
+    id: stopped
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - playing
+        sequence:
+          - action: rest_command.playing
+            metadata: {}
+            data: {}
+      - conditions:
+          - condition: trigger
+            id:
+              - stopped # you can add additional commands for different states like pause
+        sequence:
+          - action: rest_command.stopped
+            metadata: {}
+            data: {}
+```
+
+#### Plex
 1) get your player UUID(s) from `https://plex.tv/devices.xml` while logged in
   * https://plex.tv/devices.xml?X-Plex-Token=xyz [Getting plex token](https://support.plex.tv/articles/206721658-using-plex-tv-resources-information-to-troubleshoot-app-connections/)
 2) Set up Plex to send webhooks to your server IP, port 9999, and the handler endpoint of `/plexwebhook`
@@ -84,7 +141,7 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 4) Add UUID(s) and user filters to the application config
 5) Play a movie and check server logs. It should say what it loaded and you should see whatever options you enabled work
 
-### Jellyfin Specifics
+#### Jellyfin
 
 You must use the [official Jellyfin Webhooks plugin](https://github.com/jellyfin/jellyfin-plugin-webhook/tree/master) to send webhooks to this application.
 
