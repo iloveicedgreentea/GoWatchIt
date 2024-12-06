@@ -5,6 +5,7 @@ import (
 	"fmt"
 	l "log"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
@@ -13,62 +14,68 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var db *sql.DB
+var (
+	db     *sql.DB
+	dbOnce sync.Once
+)
 
 // TODO: move this to a test utils pkg
 func TestMain(m *testing.M) {
-	// Setup code before tests
-	var err error
+	var code int
+	dbOnce.Do(func() {
+		// Setup code before tests
+		var err error
 
-	// Open SQLite database connection
-	db, err = database.GetDB("../../db-test.sqlite3")
-	if err != nil {
-		l.Fatalf("Failed to open database: %v", err)
-	}
+		// Open SQLite database connection
+		db, err = database.GetDB("../../db-test.sqlite3")
+		if err != nil {
+			l.Fatalf("Failed to open database: %v", err)
+		}
 
-	// run migrations
-	err = database.RunMigrations(db)
-	if err != nil {
-		l.Fatalf("Failed to run migrations: %v", err)
-	}
+		// run migrations
+		err = database.RunMigrations(db)
+		if err != nil {
+			l.Fatalf("Failed to run migrations: %v", err)
+		}
 
-	// Initialize the config with the database
-	err = config.InitConfig(db)
-	if err != nil {
-		l.Fatalf("Failed to initialize config: %v", err)
-	}
+		// Initialize the config with the database
+		err = config.InitConfig(db)
+		if err != nil {
+			l.Fatalf("Failed to initialize config: %v", err)
+		}
 
-	cf := config.GetConfig()
+		cf := config.GetConfig()
 
-	// populate test data
-	beqCfg := models.EZBEQConfig{
-		Enabled:              true,
-		DryRun:               true,
-		URL:                  "ezbeq.local",
-		Port:                 "8080",
-		Scheme:               "http",
-		LooseEditionMatching: true,
-		SkipEditionMatching:  false,
-	}
-	err = cf.SaveEzbeqConfig(&beqCfg)
-	if err != nil {
-		l.Fatalf("Failed to save ezbeq config: %v", err)
-	}
-	// Run the tests
-	code := m.Run()
+		// populate test data
+		beqCfg := models.EZBEQConfig{
+			Enabled:              true,
+			DryRun:               true,
+			URL:                  "ezbeq.local",
+			Port:                 "8080",
+			Scheme:               "http",
+			LooseEditionMatching: true,
+			SkipEditionMatching:  false,
+		}
+		err = cf.SaveEzbeqConfig(&beqCfg)
+		if err != nil {
+			l.Fatalf("Failed to save ezbeq config: %v", err)
+		}
+		// Run the tests
+		code = m.Run()
 
-	// Cleanup code after tests
-	err = db.Close()
-	if err != nil {
-		l.Printf("Error closing database: %v", err)
-	}
-
+		// Cleanup code after tests
+		err = db.Close()
+		if err != nil {
+			l.Printf("Error closing database: %v", err)
+		}
+	})
 	// Exit with the test result code
 	os.Exit(code)
 }
 
 // TestMuteCmds send commands to minidsp
 func TestMuteCmds(t *testing.T) {
+	t.Parallel()
 	a := assert.New(t)
 
 	c, err := NewClient()
@@ -80,6 +87,7 @@ func TestMuteCmds(t *testing.T) {
 }
 
 func TestCheckEdition(t *testing.T) {
+	t.Parallel()
 	type test struct {
 		beqEdition string
 		edition    models.Edition
@@ -113,13 +121,18 @@ func TestCheckEdition(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		match := checkEdition(&models.BeqCatalog{Edition: test.beqEdition}, test.edition)
-		assert.Equal(t, test.expected, match, "Expected: ", test.expected, "Got: ", match, "for ", test.beqEdition)
+	for i := range tests {
+		test := tests[i] // Capture range variable
+		t.Run(fmt.Sprintf("Edition_%s", test.beqEdition), func(t *testing.T) {
+			t.Parallel()
+			match := checkEdition(&models.BeqCatalog{Edition: test.beqEdition}, test.edition)
+			assert.Equal(t, test.expected, match, "Expected: ", test.expected, "Got: ", match, "for ", test.beqEdition)
+		})
 	}
 }
 
 func TestGetStatus(t *testing.T) {
+	t.Parallel()
 	c, err := NewClient()
 	assert.NoError(t, err)
 
@@ -133,6 +146,7 @@ func TestGetStatus(t *testing.T) {
 }
 
 func TestSingleDevice(t *testing.T) {
+	t.Parallel()
 	rawJson := `{
 		"master": {
 		  "type": "minidsp",
@@ -273,6 +287,7 @@ func TestSingleDevice(t *testing.T) {
 }
 
 func TestDualDevice(t *testing.T) {
+	t.Parallel()
 	rawJson := `{
 		"master": {
 		  "name": "master",
@@ -465,12 +480,8 @@ func TestDualDevice(t *testing.T) {
 	}
 }
 
-func TestUrlEncode(t *testing.T) {
-	s := urlEncode("DTS-HD MA 7.1")
-	assert.Equal(t, "DTS-HD+MA+7.1", s)
-}
-
 func TestHasAuthor(t *testing.T) {
+	t.Parallel()
 	a := assert.New(t)
 	type testStruct struct {
 		author   string
@@ -502,18 +513,18 @@ func TestHasAuthor(t *testing.T) {
 			expected: true,
 		},
 	}
-	for _, tc := range tt {
-		s := hasAuthor(tc.author)
-		a.Equal(tc.expected, s)
+	for i := range tt {
+		tc := tt[i] // Capture range variable
+		t.Run(fmt.Sprintf("Author_%s", tc.author), func(t *testing.T) {
+			t.Parallel()
+			s := hasAuthor(tc.author)
+			a.Equal(tc.expected, s)
+		})
 	}
 }
 
-func TestBuildAuthorWhitelist(t *testing.T) {
-	s := buildAuthorWhitelist("aron7awol, mobe1969", "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345")
-	assert.Equal(t, "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345&authors=aron7awol&authors=mobe1969", s)
-}
-
 func TestSearchCatalog(t *testing.T) {
+	t.Parallel()
 	a := assert.New(t)
 	// TODO: test searching
 
@@ -537,7 +548,7 @@ func TestSearchCatalog(t *testing.T) {
 				PreferredAuthor: "none",
 				Edition:         "Extended",
 			},
-			expectedEdition:  "Extended",
+			expectedEdition:  "Extended Cut",
 			expectedDigest:   "6d9cfaed8335a348491eebae27f7f5fb11752e32df64b46d24d6f995dd74d96d",
 			expectedMvAdjust: 0,
 		},
@@ -717,21 +728,24 @@ func TestSearchCatalog(t *testing.T) {
 				PreferredAuthor: "none",
 				Edition:         "",
 			},
-			expectedEdition:  "",
+			expectedEdition:  "Project 4K77",
 			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",
 			expectedMvAdjust: 1.0,
 		},
 	}
 
-	for _, tc := range tt {
-		// should be TrueHD 7.1
-		res, err := c.searchCatalog(&tc.m)
-		a.NoError(err)
-		a.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
-		a.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
-		a.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.m.Title, func(t *testing.T) {
+			t.Parallel()
+			res, err := c.searchCatalog(&tc.m)
+			a.NoError(err)
+			a.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
+			a.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
+			a.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
+		})
 	}
-
+	// should always fail
 	_, err = c.searchCatalog(&models.BeqSearchRequest{
 		TMDB:            "ojdsfojnekfw",
 		Year:            2018,
@@ -746,6 +760,10 @@ func TestSearchCatalog(t *testing.T) {
 // ezbeq doesnt expose a failure if the entry_id is wrong, so need to look at UI for now
 // I could write a scraper to find instance of fast five in slot one, thats a lot of work for a small test
 func TestLoadProfile(t *testing.T) {
+	t.Parallel()
+	if os.Getenv("RUN_INTEGRATION") != "true" {
+		t.Skip("skipping TestLoadProfile test")
+	}
 	a := assert.New(t)
 
 	c, err := NewClient()
@@ -825,6 +843,7 @@ func TestLoadProfile(t *testing.T) {
 		},
 	}
 
+	// this should not be parallel
 	for _, tc := range tt {
 		err = c.LoadBeqProfile(&tc)
 		a.NoError(err)

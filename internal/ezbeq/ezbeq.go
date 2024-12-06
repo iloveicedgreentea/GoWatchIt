@@ -55,8 +55,9 @@ func NewClient() (*BeqClient, error) {
 
 	// set timeout
 	c.HTTPClient.HTTPClient.Timeout = time.Second * 10
-
 	log := logger.GetLogger()
+	c.HTTPClient.Logger = log
+
 	log.Debug("created new beq client",
 		slog.String("server_url", c.ServerURL),
 		slog.String("scheme", c.Scheme),
@@ -152,10 +153,6 @@ func mapToBeqDevice(jsonData []byte) (beqPayload map[string]models.BeqDevices, e
 	return beqPayload, err
 }
 
-func urlEncode(s string) string {
-	return url.QueryEscape(s)
-}
-
 // MuteCommand sends a mute on/off true = muted, false = not muted
 func (c *BeqClient) MuteCommand(status bool) error {
 	if c == nil {
@@ -220,6 +217,11 @@ func (c *BeqClient) MakeCommand(payload []byte) error {
 
 // generic func for beq requests. Payload should be nil
 func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) ([]byte, error) {
+	log := logger.GetLogger()
+	log.Debug("Making request",
+		slog.String("endpoint", endpoint),
+		slog.String("method", methodType),
+	)
 	if c == nil {
 		return nil, errors.New("beq client is nil")
 	}
@@ -233,18 +235,15 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	case http.MethodPatch:
 		setHeader = true
 	}
+	// caller encodes stuff by using url.Values
+	fullURL := fmt.Sprintf("%s://%s:%s%s", c.Scheme, c.ServerURL, c.Port, endpoint)
 
-	u := url.URL{
-		Scheme: c.Scheme,
-		Host:   fmt.Sprintf("%s:%s", c.ServerURL, c.Port),
-		Path:   endpoint,
-	}
 	// stupid - https://github.com/golang/go/issues/32897 can't pass a typed nil without panic, because its not an untyped nil
 	// extra check in case you pass in []byte{}
 	if len(payload) == 0 {
-		req, err = retryablehttp.NewRequest(methodType, u.String(), nil)
+		req, err = retryablehttp.NewRequest(methodType, fullURL, nil)
 	} else {
-		req, err = retryablehttp.NewRequest(methodType, u.String(), bytes.NewBuffer(payload))
+		req, err = retryablehttp.NewRequest(methodType, fullURL, bytes.NewBuffer(payload))
 	}
 	if err != nil {
 		return []byte{}, err
@@ -253,66 +252,40 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	log.Debug("Created request object",
+		slog.String("url", req.URL.String()),
+		slog.String("method", methodType),
+	)
 
 	// retry
-	res, err := c.makeCallWithRetry(req, 20, endpoint)
+	res, err := c.makeCallWithRetry(req)
 
 	return res, err
 }
 
 // makeCallWithRetry returns response body and err
-func (c *BeqClient) makeCallWithRetry(req *retryablehttp.Request, maxRetries int, endpoint string) ([]byte, error) {
-	// declaring here so we can return err outside of loop just by exiting it
-	var status int
-	var res *http.Response
-	var resp []byte
-	var err error
-
-	// TODO: remove the loop library does it
-	for i := 0; i < maxRetries; i++ {
-		res, err = c.HTTPClient.Do(req)
-		if err != nil {
-			log.Debug("Error with request - Retrying",
-				slog.String("error", err.Error()),
-			)
-			time.Sleep(time.Second * 2)
-			continue
-		}
+func (c *BeqClient) makeCallWithRetry(req *retryablehttp.Request) ([]byte, error) {
+	res, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
 		if err := res.Body.Close(); err != nil {
 			logger.GetLogger().Warn("error closing response body: %v")
 		}
+	}()
 
-		resp, err = io.ReadAll(res.Body)
-		if err != nil {
-			log.Debug("Reading body failed - Retrying",
-				slog.String("error", err.Error()),
-			)
-			time.Sleep(time.Second * 2)
-			continue
-		}
-
-		status = res.StatusCode
-
-		if status != http.StatusOK {
-			return nil, fmt.Errorf("got status: %d -- error from body is %v", status, string(resp))
-		}
-
-		// don't retry for 404
-		if status == 404 {
-			return resp, fmt.Errorf("404 for %s", endpoint)
-		}
-
-		if status >= 204 && status != 404 {
-			log.Debug("Response status",
-				slog.String("body", string(resp)),
-				slog.Int("status", status),
-			)
-			log.Debug("Retrying request...")
-			err = fmt.Errorf("error in response: %v", res.Status)
-			time.Sleep(time.Second * 2)
-			continue
-		}
+	resp, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Debug("Reading body failed",
+			slog.String("error", err.Error()),
+		)
+		return nil, err
 	}
+	log.Debug("Response from BEQ",
+		slog.String("response", string(resp)),
+		slog.String("endpoint", req.URL.String()),
+	)
 
 	return resp, err
 }
@@ -324,24 +297,29 @@ func hasAuthor(s string) bool {
 }
 
 // buildAuthorWhitelist returns a string of authors to search for
-func buildAuthorWhitelist(preferredAuthors, endpoint string) string {
-	authors := strings.Split(preferredAuthors, ",")
-	for _, v := range authors {
-		endpoint += fmt.Sprintf("&authors=%s", strings.TrimSpace(v))
+func buildAuthorWhitelist(preferredAuthors string, q url.Values) url.Values {
+	for _, author := range strings.Split(preferredAuthors, ",") {
+		q.Add("authors", strings.TrimSpace(author))
 	}
-	return endpoint
+
+	return q
 }
 
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog, error) {
-	// url encode because of spaces and stuff
-	code := urlEncode(string(m.Codec))
-	endpoint := fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
+	// build query
+	q := url.Values{}
+	q.Add("audiotypes", string(m.Codec))
+	q.Add("years", strconv.Itoa(m.Year))
+	q.Add("tmdbid", m.TMDB)
 
-	// this is an author whitelist for each non-empty author append it to search
+	// Add authors if present
 	if hasAuthor(m.PreferredAuthor) {
-		endpoint = buildAuthorWhitelist(m.PreferredAuthor, endpoint)
+		q = buildAuthorWhitelist(m.PreferredAuthor, q)
 	}
+
+	endpoint := fmt.Sprintf("/api/1/search?%s", q.Encode())
+
 	log.Debug("Sending ezbeq search request",
 		slog.String("endpoint", endpoint),
 	)
