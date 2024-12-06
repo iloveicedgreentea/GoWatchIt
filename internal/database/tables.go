@@ -98,7 +98,11 @@ func getExistingColumns(db *sql.DB, tableName string) (map[string]bool, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			fmt.Println(err) // TODO: use logger
+		}
+	}()
 
 	columns := make(map[string]bool)
 	for rows.Next() {

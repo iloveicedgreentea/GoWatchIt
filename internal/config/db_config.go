@@ -49,6 +49,7 @@ func (c *Config) initTables() error {
 	}
 	return nil
 }
+
 func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
@@ -79,22 +80,22 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 				var jsonStr string
 				scanDest = append(scanDest, &jsonStr)
 				// Store the field index and scan destination for later processing
-				defer func(fieldIdx int, jsonStrPtr *string) {
-					if *jsonStrPtr != "" {
-						var sliceValue reflect.Value
-						slicePtr := reflect.New(v.Field(fieldIdx).Type())
-						if err := json.Unmarshal([]byte(*jsonStrPtr), slicePtr.Interface()); err == nil {
-							sliceValue = slicePtr.Elem()
-							v.Field(fieldIdx).Set(sliceValue)
-						}
+				if jsonStr != "" {
+					var sliceValue reflect.Value
+					slicePtr := reflect.New(v.Field(i).Type())
+					if err := json.Unmarshal([]byte(jsonStr), slicePtr.Interface()); err == nil {
+						sliceValue = slicePtr.Elem()
+						v.Field(i).Set(sliceValue)
 					}
-				}(i, &jsonStr)
+				}
 			} else {
 				scanDest = append(scanDest, v.Field(i).Addr().Interface())
 			}
 		}
 	}
-
+	// yes this is theoretically vulnerable to SQL injection, but I control table names and its just not a major risk
+	// its more complicated to use prepared statements here because I dynamically get columns from struct tags
+	// #nosec
 	query := fmt.Sprintf("SELECT %s FROM %s LIMIT 1", strings.Join(columns, ", "), tableName)
 	err := c.db.QueryRowContext(ctx, query).Scan(scanDest...)
 	if err != nil {
@@ -108,6 +109,7 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 	log.Debug("Loaded configuration", "table", tableName)
 	return nil
 }
+
 func (c *Config) SaveConfig(cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
@@ -149,6 +151,8 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 		}
 	}
 
+	// yes this is theoretically vulnerable to SQL injection, but I control table names and its just not a major risk
+	// #nosec
 	query := fmt.Sprintf("INSERT OR REPLACE INTO %s (%s) VALUES (%s)",
 		tableName, strings.Join(columns, ", "), strings.Join(placeholders, ", "))
 

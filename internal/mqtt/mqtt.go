@@ -29,7 +29,7 @@ func connect(clientID string) (mqtt.Client, error) {
 	return c, nil
 }
 
-func PublishWrapper(topic string, msg string) error {
+func PublishWrapper(topic, msg string) error {
 	// trigger automation
 	return Publish([]byte(msg), topic)
 }
@@ -63,7 +63,6 @@ func Publish(payload []byte, topic string) error {
 		)
 		token := c.Publish(topic, 1, false, payload)
 		err = token.Error()
-
 		// sleep for 1 sec and try again
 		if err != nil {
 			lastErr = err

@@ -37,7 +37,7 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 
 			// Get edition
 			// TODO: config isEditionEnabled to ignore edition matching
-			edition, err := client.GetEdition(eventCtx, payload)
+			edition, err := client.GetEdition(eventCtx, &payload)
 			if err != nil {
 				log.Error("Error getting edition", slog.Any("error", err))
 				return
@@ -68,7 +68,7 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 			// }
 			// }
 			// TODO: use config to get which kind of codec but insice this func
-			codec, err := client.GetAudioCodec(eventCtx, payload)
+			codec, err := client.GetAudioCodec(eventCtx, &payload)
 			if err != nil {
 				log.Error("Error getting codec", slog.Any("error", err))
 				return
@@ -89,7 +89,7 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 			}
 
 			// Route event
-			eventRouter(eventCtx, eventCancel, payload, &wg, beqClient, homeAssistantClient, searchRequest)
+			eventRouter(eventCtx, eventCancel, &payload, &wg, beqClient, homeAssistantClient, searchRequest)
 		}()
 
 		// Wait for all goroutines to complete before processing the next event
@@ -97,9 +97,11 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 	}
 }
 
-func eventRouter(ctx context.Context, cancel context.CancelFunc, event models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) {
-	switch event.Action {
-	case models.ActionPlay:
-		mediaplayer.HandlePlay(ctx, cancel, event, wg, beqClient, homeAssistantClient, searchRequest)
+func eventRouter(ctx context.Context, cancel context.CancelFunc, event *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) {
+	if event.Action == models.ActionPlay {
+		err := mediaplayer.HandlePlay(ctx, cancel, event, wg, beqClient, homeAssistantClient, searchRequest)
+		if err != nil {
+			logger.GetLogger().Error("Error handling play event", slog.Any("error", err))
+		}
 	}
 }

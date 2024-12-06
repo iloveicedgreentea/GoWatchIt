@@ -36,14 +36,14 @@ type PlexClient struct {
 var _ mediaplayer.MediaAPIClient = (*PlexClient)(nil)
 
 // return a new instance of a plex client
-func NewClient(scheme, url, port string) (*PlexClient, error) {
+func NewClient(scheme, servUrl, port string) (*PlexClient, error) {
 	// remove scheme
 	if !utils.ValidateHttpScheme(scheme) {
 		return nil, fmt.Errorf("invalid http scheme: %s", scheme)
 	}
-	url = strings.Replace(url, scheme, "", -1)
+	servUrl = strings.ReplaceAll(servUrl, scheme, "")
 	return &PlexClient{
-		URL:  url,
+		URL:  servUrl,
 		Port: port,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
@@ -115,7 +115,8 @@ func (c *PlexClient) GetCodecFromSession(ctx context.Context, uuid string) (mode
 	// filter by uuid
 	// try up to 15 times until session is active. webhook sends before session is ready
 	for i := 0; i < 15; i++ {
-		for _, video := range sess.Video {
+		for i := range sess.Video {
+			video := &sess.Video[i]
 			log.Debug("Machine identifier",
 				slog.String("identifier", video.Player.MachineIdentifier),
 			)
@@ -123,7 +124,8 @@ func (c *PlexClient) GetCodecFromSession(ctx context.Context, uuid string) (mode
 				log.Debug("Found session matching uuid",
 					slog.String("uuid", uuid),
 				)
-				for _, stream := range video.Media.Part.Stream {
+				for i := range video.Media.Part.Stream {
+					stream := &video.Media.Part.Stream[i]
 					log.Debug("Stream data",
 						slog.String("data", fmt.Sprintf("%#v", stream)),
 					)
@@ -140,7 +142,7 @@ func (c *PlexClient) GetCodecFromSession(ctx context.Context, uuid string) (mode
 }
 
 // send a request to Plex to get data about something
-func (c *PlexClient) getMediaData(ctx context.Context, payload models.Event) (models.MediaContainer, error) {
+func (c *PlexClient) getMediaData(ctx context.Context, payload *models.Event) (models.MediaContainer, error) {
 	libraryKey := payload.Metadata.Key
 	res, err := c.makePlexReq(ctx, libraryKey)
 	if err != nil {
@@ -156,7 +158,7 @@ func insensitiveContains(s string, sub models.CodecName) bool {
 
 // check if its DD+ codec
 func containsDDP(s string) bool {
-	//English (EAC3 5.1) -> dd+ atmos?
+	// English (EAC3 5.1) -> dd+ atmos?
 	// Assuming EAC3 5.1 is DD+ Atmos, thats how plex seems to call it
 	// may not always be the case but easier to assume so
 	ddPlusNames := []models.CodecName{models.CodecDDP, models.CodecDDPlus, models.CodecEAC3, models.CodecEAC3Alt}
@@ -257,11 +259,10 @@ func MapPlexToBeqAudioCodec(ctx context.Context, codecTitle, codecExtendTitle st
 	default:
 		return "Empty"
 	}
-
 }
 
 // get the type of audio codec for BEQ purpose like atmos, dts-x, etc
-func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (models.CodecName, error) {
+func (c *PlexClient) GetAudioCodec(ctx context.Context, payload *models.Event) (models.CodecName, error) {
 	var plexAudioCodec models.CodecName
 	log := logger.GetLoggerFromContext(ctx)
 	data, err := c.getMediaData(ctx, payload)
@@ -274,14 +275,17 @@ func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (m
 		slog.String("type", fmt.Sprintf("%T", data)),
 	)
 	// TODO: better error handling
-	if mc := data; len(mc.Video.Key) > 0 {
+	if mc := data; mc.Video.Key != "" {
 		// try to get Atmos from file because metadata with Truehd is usually misleading
 		f := mc.Video.Media.Part.File
 		if strings.Contains(strings.ToLower(f), string(models.CodecAtmos)) {
 			log.Debug("Got atmos codec from filename")
 			return MapPlexToBeqAudioCodec(ctx, f, f), nil
 		}
-		for _, val := range mc.Video.Media.Part.Stream {
+
+		// index because of performance
+		for i := range mc.Video.Media.Part.Stream {
+			val := &mc.Video.Media.Part.Stream[i]
 			if val.StreamType == "2" {
 				log.Debug("Found codecs",
 					slog.String("displayTitle", val.DisplayTitle),
@@ -306,20 +310,20 @@ func (c *PlexClient) GetAudioCodec(ctx context.Context, payload models.Event) (m
 
 // getEditionName tries to extract the edition from plex or file name. Assumes you have well named files
 // Returned types, Unrated, Ultimate, Theatrical, Extended, Director, Criterion
-func (p *PlexClient) GetEdition(ctx context.Context, payload models.Event) (models.Edition, error) {
-	data, err := p.getMediaData(ctx, payload)
+func (c *PlexClient) GetEdition(ctx context.Context, payload *models.Event) (models.Edition, error) {
+	data, err := c.getMediaData(ctx, payload)
 	if err != nil {
 		return models.EditionUnknown, err
 	}
-	return getEdition(data)
+	return getEdition(&data)
 }
 
-func getEdition(data models.MediaContainer) (models.Edition, error) {
+func getEdition(data *models.MediaContainer) (models.Edition, error) {
 	edition := data.Video.EditionTitle
 	fileName := data.Video.Media.Part.File
 
 	// First, check the edition from Plex metadata
-	if len(edition) > 0 {
+	if edition != "" {
 		mappedEdition := utils.MapSToEdition(edition)
 		if mappedEdition != "" {
 			return mappedEdition, nil
@@ -337,7 +341,6 @@ func getEdition(data models.MediaContainer) (models.Edition, error) {
 	// no edition found, so its standard
 	return models.EditionNone, nil
 }
-
 
 func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, error) {
 	// Construct the URL with url.URL
@@ -379,11 +382,11 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 		}
 	}
 	// Create the request
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequest("GET", u.String(), http.NoBody)
 	if err != nil {
 		return nil, err
 	}
-	// req.Header.Add("X-Plex-Target-Client-Identifier", c.MachineID)
+	// "X-Plex-Target-Client-Identifier"
 	log.Debug("Plex: sending request",
 		slog.String("url", u.String()),
 	)
@@ -392,7 +395,13 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 	if err != nil {
 		return nil, fmt.Errorf("error when calling plex API: %v", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.Error("error closing response body",
+				slog.Any("error", err),
+			)
+		}
+	}()
 
 	// Read the response
 	data, err := io.ReadAll(res.Body)

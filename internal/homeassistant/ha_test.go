@@ -1,7 +1,6 @@
 package homeassistant
 
 import (
-	// "strings"
 	"strings"
 	"testing"
 
@@ -10,7 +9,6 @@ import (
 )
 
 func testSetup() *HomeAssistantClient {
-
 	haClient, err := NewClient()
 	if err != nil {
 		return nil
@@ -21,13 +19,11 @@ func testSetup() *HomeAssistantClient {
 
 // make sure script can trigger
 func TestScriptTrigger(t *testing.T) {
-
 	haClient := testSetup()
 
 	// trigger an empty script to verify client
 	err := haClient.TriggerScript("test")
 	assert.NoError(t, err)
-
 }
 
 // this tests an actual light
@@ -42,17 +38,16 @@ func TestLightTrigger(t *testing.T) {
 
 	err = haClient.SwitchLight("switch", "caseta_r_wireless_in_wall_neutral_switch", "off")
 	assert.NoError(t, err)
-
 }
 
 // test sending a real notification
 func TestNotification(t *testing.T) {
-
 	haClient := testSetup()
 	// trigger light and switch
 	err := haClient.SendNotification("test from go-plex")
 	assert.NoError(t, err)
 }
+
 func TestReadAttributes(t *testing.T) {
 	haClient := testSetup()
 
@@ -75,7 +70,6 @@ func TestReadAttributes(t *testing.T) {
 	}
 
 	for _, k := range tt {
-		k := k
 
 		signal, err := haClient.ReadAttributes(k.entName, k.test, k.entType)
 		t.Log(k.entName, signal)

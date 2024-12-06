@@ -14,7 +14,7 @@ import (
 )
 
 // Implement MediaEventHandler methods
-func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
+func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
 	log := logger.GetLoggerFromContext(ctx)
 	// Check if context is already cancelled before starting lets say you play but then stop, this should stop processing
 	if ctx.Err() != nil {
@@ -98,22 +98,22 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload models.E
 	return nil
 }
 
-func HandlePause(ctx context.Context, cancel context.CancelFunc, payload models.Event) error {
+func HandlePause(ctx context.Context, cancel context.CancelFunc, payload *models.Event) error {
 	// Implement Plex-specific pause event handling
 	return nil
 }
 
-func HandleStop(ctx context.Context, cancel context.CancelFunc, payload models.Event) error {
+func HandleStop(ctx context.Context, cancel context.CancelFunc, payload *models.Event) error {
 	// Implement Plex-specific stop event handling
 	return nil
 }
 
-func HandleResume(ctx context.Context, cancel context.CancelFunc, payload models.Event) error {
+func HandleResume(ctx context.Context, cancel context.CancelFunc, payload *models.Event) error {
 	// Implement Plex-specific resume event handling
 	return nil
 }
 
-func HandleScrobble(ctx context.Context, payload models.Event) error {
+func HandleScrobble(ctx context.Context, payload *models.Event) error {
 	// Implement Plex-specific scrobble event handling
 	return nil
 }

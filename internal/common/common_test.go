@@ -71,7 +71,7 @@ package common
 // 	}
 // }
 
-// // TODO; modify to ouput the payload
+// // TODO; modify to output the payload
 // func getJFPayload() (out models.JellyfinWebhook, err error) {
 // 	// open testing file
 // 	jsonFile, err := os.ReadFile("testdata/jf_pause.json")

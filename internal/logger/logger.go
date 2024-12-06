@@ -14,8 +14,8 @@ type loggerKey struct{}
 var defaultLogger *slog.Logger
 
 func Fatal(msg string, args ...any) {
-    slog.Error(msg, args...)
-    os.Exit(1)
+	slog.Error(msg, args...)
+	os.Exit(1)
 }
 
 // AddLoggerToContext adds a slog.Logger to the context
@@ -53,14 +53,14 @@ func GetLogger() *slog.Logger {
 			}
 
 			// Open a new log file
-			file, err := os.OpenFile("/data/application.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			file, err := os.OpenFile("/data/application.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 			if err != nil {
 				slog.Error("Failed to open log file", "error", err)
 			} else {
 				// Create a multi-writer for both file and stdout
 				multiWriter := io.MultiWriter(file, os.Stdout)
 				handler = slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
-					Level: level,
+					Level:     level,
 					AddSource: true,
 				})
 			}
@@ -69,7 +69,7 @@ func GetLogger() *slog.Logger {
 		// If no file handler was created, use a default stdout handler
 		if handler == nil {
 			handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-				Level: level,
+				Level:     level,
 				AddSource: true,
 			})
 		}

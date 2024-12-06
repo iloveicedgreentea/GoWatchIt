@@ -3,9 +3,10 @@ package config
 import (
 	"context"
 
-	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
+	"github.com/iloveicedgreentea/go-plex/models"
 )
+
 // HDMI
 func IsHDMISyncEnabled() bool {
 	var config models.HDMISyncConfig
@@ -61,6 +62,7 @@ func IsBeqDryRun() bool {
 	}
 	return config.DryRun
 }
+
 // TODO: implement a way to automatically grab configs and add to UI
 // TODO: implement in UI
 func IsBeqLooseEditionMatching() bool {

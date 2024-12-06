@@ -19,7 +19,9 @@ func setupTestDB(t *testing.T) *sql.DB {
 
 func TestEZBEQConfig(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		require.NoError(t, db.Close())
+	}()
 
 	err := InitConfig(db)
 	require.NoError(t, err)
@@ -78,7 +80,9 @@ func TestEZBEQConfig(t *testing.T) {
 
 func TestHomeAssistantConfig(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		require.NoError(t, db.Close())
+	}()
 
 	err := InitConfig(db)
 	require.NoError(t, err)

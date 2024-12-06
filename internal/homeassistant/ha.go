@@ -36,7 +36,7 @@ func NewClient() (*HomeAssistantClient, error) {
 	token := config.GetHomeAssistantToken()
 	entityName := config.GetHomeAssistantRemoteEntityName()
 	// TODO: use scheme validation
-	url = strings.Replace(url, "http://", "", -1)
+	url = strings.ReplaceAll(url, "http://", "")
 	return &HomeAssistantClient{
 		ServerURL:  url,
 		Port:       port,
@@ -51,12 +51,10 @@ func NewClient() (*HomeAssistantClient, error) {
 func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodType string) ([]byte, error) {
 	var req *http.Request
 	var err error
-
-	// log.Debugf("Using method %s", methodType)
-	// bodyReader := bytes.NewReader(jsonBody)
+	// TODO: use schema from db/client
 	url := fmt.Sprintf("http://%s:%s%s", c.ServerURL, c.Port, endpoint)
 	if len(payload) == 0 {
-		req, err = http.NewRequest(methodType, url, nil)
+		req, err = http.NewRequest(methodType, url, http.NoBody)
 	} else {
 		req, err = http.NewRequest(methodType, url, bytes.NewBuffer(payload))
 	}
@@ -74,7 +72,11 @@ func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodT
 	if err != nil {
 		return []byte{}, err
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logger.GetLogger().Warn("error closing response body: %v")
+		}
+	}()
 	if res.StatusCode != 200 {
 		return []byte{}, errors.New(res.Status)
 	}
@@ -98,7 +100,7 @@ func (c *HomeAssistantClient) TriggerScript(scriptName string) error {
 }
 
 // switch a light on/off
-func (c *HomeAssistantClient) SwitchLight(entityType string, entityName string, state string) error {
+func (c *HomeAssistantClient) SwitchLight(entityType, entityName, state string) error {
 	// trigger script
 	payload := models.HomeAssistantScriptReq{
 		EntityID: fmt.Sprintf("%s.%s", entityType, entityName),
@@ -143,7 +145,7 @@ type HAAttributeResponse interface {
 	GetSignalStatus() bool
 }
 
-func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType string, entName string, attrResp HAAttributeResponse) (bool, error) {
+func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType, entName string, attrResp HAAttributeResponse) (bool, error) {
 	var err error
 	var isSignal bool
 	log := logger.GetLoggerFromContext(ctx)
@@ -219,7 +221,11 @@ func (c *HomeAssistantClient) SendEvent(eventType string, eventData map[string]i
 	if err != nil {
 		return fmt.Errorf("error sending request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.GetLogger().Warn("error closing response body: %v")
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)

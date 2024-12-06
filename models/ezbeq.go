@@ -1,6 +1,5 @@
 package models
 
-
 type BeqSearchRequest struct {
 	TMDB            string
 	Year            int

@@ -48,7 +48,11 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to connect to the database: ", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Fatal("Failed to close the database: ", err)
+		}
+	}()
 
 	// create or update tables
 	log.Info("Running migrations...")
@@ -90,7 +94,10 @@ func main() {
 
 	// register routes
 	RegisterRoutes(router, eventChan)
-	router.SetTrustedProxies(nil)
+	err = router.SetTrustedProxies(nil)
+	if err != nil {
+		logger.Fatal("Failed to set trusted proxies: ", err)
+	}
 
 	// init clients
 	log.Info("Creating clients...")

@@ -16,16 +16,20 @@ func GetDB(path string) (*sql.DB, error) {
 	if os.IsNotExist(err) {
 		// Create the directory if it doesn't exist
 		dir := filepath.Dir(path)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return nil, err
 		}
 
 		// Create an empty file
-		file, err := os.Create(path)
+		// TODO: is path ever user supplied? potential directory traversal
+		file, err := os.Create(path) // #nosec
 		if err != nil {
 			return nil, err
 		}
-		file.Close()
+		err = file.Close()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Open the database
@@ -37,7 +41,7 @@ func GetDB(path string) (*sql.DB, error) {
 	// Ping the database to verify the connection
 	err = db.Ping()
 	if err != nil {
-		db.Close()
+		err = db.Close()
 		return nil, err
 	}
 

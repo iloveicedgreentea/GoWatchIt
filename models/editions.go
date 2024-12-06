@@ -4,13 +4,13 @@ package models
 type Edition string
 
 const (
-	EditionExtended Edition = "Extended"
-	EditionUnrated Edition = "Unrated"
-	EditionTheatrical Edition = "Theatrical"
+	EditionExtended       Edition = "Extended"
+	EditionUnrated        Edition = "Unrated"
+	EditionTheatrical     Edition = "Theatrical"
 	EditionSpecialEdition Edition = "Special"
-	EditionUltimate Edition = "Ultimate"
-	EditionDirectorsCut Edition = "Director"
-	EditionCriterion Edition = "Criterion"
-	EditionUnknown Edition = "Unknown"
-	EditionNone Edition = "None"
+	EditionUltimate       Edition = "Ultimate"
+	EditionDirectorsCut   Edition = "Director"
+	EditionCriterion      Edition = "Criterion"
+	EditionUnknown        Edition = "Unknown"
+	EditionNone           Edition = "None"
 )

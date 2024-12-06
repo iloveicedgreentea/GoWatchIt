@@ -81,7 +81,7 @@ func TestIsPlexType(t *testing.T) {
 	})
 
 	t.Run("Invalid Plex request", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/webhook", nil)
+		req, _ := http.NewRequest("POST", "/webhook", http.NoBody)
 		assert.False(t, isPlexType(ctx, req))
 	})
 
@@ -151,25 +151,25 @@ func TestIsValidWebhook(t *testing.T) {
 			DeviceName: "TestDevice",
 			ItemType:   "Movie",
 		}
-		assert.True(t, isValidWebhook(webhook))
+		assert.True(t, isValidWebhook(&webhook))
 	})
 
 	t.Run("Invalid webhook - empty struct", func(t *testing.T) {
 		webhook := models.JellyfinWebhook{}
-		assert.False(t, isValidWebhook(webhook))
+		assert.False(t, isValidWebhook(&webhook))
 	})
 
 	t.Run("Invalid webhook - missing required fields", func(t *testing.T) {
 		webhook := models.JellyfinWebhook{
 			DeviceID: "123",
 		}
-		assert.False(t, isValidWebhook(webhook))
+		assert.False(t, isValidWebhook(&webhook))
 	})
 }
 
 func TestIsHomeassistantType(t *testing.T) {
 	t.Run("Not implemented", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/webhook", nil)
+		req, _ := http.NewRequest("POST", "/webhook", http.NoBody)
 		assert.False(t, isHomeassistantType(req))
 	})
 }

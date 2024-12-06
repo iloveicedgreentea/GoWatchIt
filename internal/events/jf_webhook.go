@@ -21,7 +21,13 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 	if err != nil {
 		return models.Event{}, err
 	}
-	defer req.Body.Close()
+	defer func() {
+		if err := req.Body.Close(); err != nil {
+			log.Error("Failed to close request body",
+				slog.Any("error", err),
+			)
+		}
+	}()
 
 	// Unmarshal the JSON into the webhook struct
 	err = json.Unmarshal(body, &webhook)
@@ -30,7 +36,7 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 	}
 
 	// Check if the request is a Jellyfin webhook
-	if !isValidWebhook(webhook) {
+	if !isValidWebhook(&webhook) {
 		return models.Event{}, fmt.Errorf("failed to parse Jellyfin webhook due to missing fields: %#v", webhook)
 	}
 	var action models.Action
@@ -83,7 +89,7 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 	}, nil
 }
 
-func isValidWebhook(s models.JellyfinWebhook) bool {
+func isValidWebhook(s *models.JellyfinWebhook) bool {
 	return s.ItemID != "" && s.DeviceID != "" && s.DeviceName != "" && s.ItemType != "" && s.NotificationType != ""
 }
 

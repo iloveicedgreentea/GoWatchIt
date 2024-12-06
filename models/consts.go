@@ -1,6 +1,6 @@
 package models
 
 const (
-	ActionOn = "on"
+	ActionOn  = "on"
 	ActionOff = "off"
 )

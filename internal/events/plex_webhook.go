@@ -85,10 +85,9 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 	userID := config.GetPlexOwnerNameFilter()
 	// only respond to events on a particular account if you share servers and only for movies and shows
 	// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
-	if len(userID) == 0 || strings.EqualFold(decodedPayload.Account.Title, userID) {
+	if userID == "" || strings.EqualFold(decodedPayload.Account.Title, userID) {
 		if strings.EqualFold(mediaType, string(models.MediaTypeMovie)) || strings.EqualFold(mediaType, string(models.MediaTypeShow)) {
 			log.Debug("adding item to plexChan")
-
 		} else {
 			log.Debug("Media type not supported",
 				slog.String("media_type", mediaType),
@@ -100,7 +99,6 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 			slog.String("account_title", decodedPayload.Account.Title),
 			slog.String("filter", userID),
 		)
-
 	}
 	var action models.Action
 	switch decodedPayload.Event {

@@ -51,7 +51,7 @@ linters-settings:
     rules:
       - name: exported
         severity: warning
-        disabled: false
+        disabled: true
       - name: unexported-return
         severity: warning
         disabled: false
@@ -60,10 +60,13 @@ linters-settings:
         disabled: false
 
   gocritic:
+    disabled-checks:
+      - commentedOutCode
     enabled-tags:
       - performance
       - style
       - diagnostic
+   
 
 # Issues configuration
 issues:

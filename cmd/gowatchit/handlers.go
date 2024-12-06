@@ -28,6 +28,7 @@ func processWebhook(ctx context.Context, eventChan chan models.Event, c *gin.Con
 func processHealthcheckWebhookGin(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
+
 // // TODO: use sqllite
 // func GenConfigPaths() (string, string) {
 // 	ex, err := os.Executable()

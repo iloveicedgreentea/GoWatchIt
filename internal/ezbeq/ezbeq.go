@@ -77,9 +77,9 @@ func NewClient() (*BeqClient, error) {
 }
 
 // NewRequest returns a new request for ezbeq
-func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, mediaType models.MediaType, edition models.Edition, TMDB string, codec models.CodecName) *models.BeqSearchRequest {
+func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, mediaType models.MediaType, edition models.Edition, tmdb string, codec models.CodecName) *models.BeqSearchRequest {
 	log := logger.GetLoggerFromContext(ctx)
-	var deviceNames []string
+	deviceNames := make([]string, 0, len(c.DeviceInfo))
 
 	for _, k := range c.DeviceInfo {
 		log.Debug("adding device to request",
@@ -103,7 +103,7 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 		SkipSearch:      skipSearch,
 		Year:            year,
 		MediaType:       mediaType,
-		TMDB:            TMDB,
+		TMDB:            tmdb,
 		Codec:           codec,
 		Edition:         edition,
 	}
@@ -227,14 +227,12 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	var req *retryablehttp.Request
 	var err error
 
-	// log.Debugf("Using method %s", methodType)
 	switch methodType {
 	case http.MethodPut:
 		setHeader = true
 	case http.MethodPatch:
 		setHeader = true
 	}
-	// log.Debugf("Header is set to %v", setHeader)
 
 	u := url.URL{
 		Scheme: c.Scheme,
@@ -280,7 +278,9 @@ func (c *BeqClient) makeCallWithRetry(req *retryablehttp.Request, maxRetries int
 			time.Sleep(time.Second * 2)
 			continue
 		}
-		defer res.Body.Close()
+		if err := res.Body.Close(); err != nil {
+			logger.GetLogger().Warn("error closing response body: %v")
+		}
 
 		resp, err = io.ReadAll(res.Body)
 		if err != nil {
@@ -324,7 +324,7 @@ func hasAuthor(s string) bool {
 }
 
 // buildAuthorWhitelist returns a string of authors to search for
-func buildAuthorWhitelist(preferredAuthors string, endpoint string) string {
+func buildAuthorWhitelist(preferredAuthors, endpoint string) string {
 	authors := strings.Split(preferredAuthors, ",")
 	for _, v := range authors {
 		endpoint += fmt.Sprintf("&authors=%s", strings.TrimSpace(v))
@@ -358,7 +358,8 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 	}
 
 	// search through results and find match
-	for _, val := range payload {
+	for i := range payload {
+		val := payload[i]
 		// if skipping TMDB, set the IDs to match
 		if config.IsJellyfinSkipTMDB() {
 			if m.Title == "" {
@@ -399,7 +400,7 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 				slog.Any("codecs", val.AudioTypes),
 			)
 			// if it matches, check edition
-			if checkEdition(val, m.Edition) {
+			if checkEdition(&val, m.Edition) {
 				log.Info("Found a match in catalog",
 					slog.String("author", val.Author),
 				)
@@ -414,7 +415,7 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 }
 
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
-func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
+func checkEdition(val *models.BeqCatalog, edition models.Edition) bool {
 	// skip if matching disabled
 	if config.IsBeqSkipEditionMatching() {
 		return true
@@ -423,7 +424,7 @@ func checkEdition(val models.BeqCatalog, edition models.Edition) bool {
 	editionLower := strings.ToLower(string(edition))
 
 	// if edition from beq is empty, any match will do
-	if len(val.Edition) == 0 {
+	if val.Edition == "" {
 		return true
 	}
 
@@ -489,7 +490,8 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 	// skip searching when resuming for speed
 	if !m.SkipSearch {
 		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
-		if m.Codec == "AtmosMaybe" {
+		switch m.Codec {
+		case "AtmosMaybe":
 			m.Codec = "TrueHD 7.1"
 			catalog, err = c.searchCatalog(m)
 			if err != nil {
@@ -500,7 +502,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 				}
 			}
 			// most metadata contains DD+5.1 or something but its actually DD+ Atmos, so try a few options
-		} else if m.Codec == "DD+Atmos5.1Maybe" {
+		case "DD+Atmos5.1Maybe":
 			m.Codec = "DD+ Atmos"
 			catalog, err = c.searchCatalog(m)
 			// else try DD+ 5.1
@@ -515,7 +517,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 					}
 				}
 			}
-		} else if m.Codec == "DD+Atmos7.1Maybe" {
+		case "DD+Atmos7.1Maybe":
 			m.Codec = "DD+ Atmos"
 			catalog, err = c.searchCatalog(m)
 			// else try DD+ 7.1
@@ -530,12 +532,13 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 					}
 				}
 			}
-		} else {
+		default:
 			catalog, err = c.searchCatalog(m)
 			if err != nil {
 				return err
 			}
 		}
+
 		// get the values from catalog search
 		m.EntryID = catalog.ID
 		m.MVAdjust = catalog.MvAdjust

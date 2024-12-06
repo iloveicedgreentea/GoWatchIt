@@ -69,14 +69,14 @@ func TestMain(m *testing.M) {
 
 // TestMuteCmds send commands to minidsp
 func TestMuteCmds(t *testing.T) {
-	assert := assert.New(t)
+	a := assert.New(t)
 
 	c, err := NewClient()
-	assert.NoError(err)
+	a.NoError(err)
 
 	// send mute commands
-	assert.NoError(c.MuteCommand(true))
-	assert.NoError(c.MuteCommand(false))
+	a.NoError(c.MuteCommand(true))
+	a.NoError(c.MuteCommand(false))
 }
 
 func TestCheckEdition(t *testing.T) {
@@ -114,7 +114,7 @@ func TestCheckEdition(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		match := checkEdition(models.BeqCatalog{Edition: test.beqEdition}, test.edition)
+		match := checkEdition(&models.BeqCatalog{Edition: test.beqEdition}, test.edition)
 		assert.Equal(t, test.expected, match, "Expected: ", test.expected, "Got: ", match, "for ", test.beqEdition)
 	}
 }
@@ -258,7 +258,8 @@ func TestSingleDevice(t *testing.T) {
 
 	payload, err := mapToBeqDevice([]byte(rawJson))
 	assert.NoError(t, err)
-	var deviceInfo []models.BeqDevices
+
+	deviceInfo := make([]models.BeqDevices, 0, len(payload))
 	for _, v := range payload {
 		deviceInfo = append(deviceInfo, v)
 	}
@@ -451,7 +452,8 @@ func TestDualDevice(t *testing.T) {
 
 	payload, err := mapToBeqDevice([]byte(rawJson))
 	assert.NoError(t, err)
-	var deviceInfo []models.BeqDevices
+	// preallocate memory
+	deviceInfo := make([]models.BeqDevices, 0, len(payload))
 	for _, v := range payload {
 		deviceInfo = append(deviceInfo, v)
 	}
@@ -469,7 +471,7 @@ func TestUrlEncode(t *testing.T) {
 }
 
 func TestHasAuthor(t *testing.T) {
-	assert := assert.New(t)
+	a := assert.New(t)
 	type testStruct struct {
 		author   string
 		expected bool
@@ -501,9 +503,8 @@ func TestHasAuthor(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
-		tc := tc
 		s := hasAuthor(tc.author)
-		assert.Equal(tc.expected, s)
+		a.Equal(tc.expected, s)
 	}
 }
 
@@ -513,12 +514,12 @@ func TestBuildAuthorWhitelist(t *testing.T) {
 }
 
 func TestSearchCatalog(t *testing.T) {
-	assert := assert.New(t)
+	a := assert.New(t)
 	// TODO: test searching
 
 	c, err := NewClient()
-	assert.NotNil(c)
-	assert.NoError(err)
+	a.NotNil(c)
+	a.NoError(err)
 
 	// list of testing structs
 	type testStruct struct {
@@ -616,7 +617,7 @@ func TestSearchCatalog(t *testing.T) {
 			expectedDigest:  "73a1eef9ce33abba7df0a9d2b4cec41254f6a521d521e104fa3cd2e7297c26d9",
 		},
 		{
-			// return 7.1 version with mutliple authors
+			// return 7.1 version with multiple authors
 			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
@@ -629,7 +630,7 @@ func TestSearchCatalog(t *testing.T) {
 			expectedMvAdjust: -3.5,
 		},
 		{
-			// return 7.1 version with mutliple authors
+			// return 7.1 version with multiple authors
 			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
@@ -723,13 +724,12 @@ func TestSearchCatalog(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		// should be TrueHD 7.1
 		res, err := c.searchCatalog(&tc.m)
-		assert.NoError(err)
-		assert.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
-		assert.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
-		assert.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
+		a.NoError(err)
+		a.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
+		a.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
+		a.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
 	}
 
 	_, err = c.searchCatalog(&models.BeqSearchRequest{
@@ -739,17 +739,17 @@ func TestSearchCatalog(t *testing.T) {
 		PreferredAuthor: "none",
 		Edition:         "",
 	})
-	assert.Error(err)
+	a.Error(err)
 }
 
 // load and unload a profile. Watch ezbeq UI to confirm, but if it doesnt error it probably loaded fine
 // ezbeq doesnt expose a failure if the entry_id is wrong, so need to look at UI for now
 // I could write a scraper to find instance of fast five in slot one, thats a lot of work for a small test
 func TestLoadProfile(t *testing.T) {
-	assert := assert.New(t)
+	a := assert.New(t)
 
 	c, err := NewClient()
-	assert.NoError(err)
+	a.NoError(err)
 
 	tt := []models.BeqSearchRequest{
 		{
@@ -826,11 +826,10 @@ func TestLoadProfile(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		err = c.LoadBeqProfile(&tc)
-		assert.NoError(err)
+		a.NoError(err)
 
 		err = c.UnloadBeqProfile(&tc)
-		assert.NoError(err)
+		a.NoError(err)
 	}
 }

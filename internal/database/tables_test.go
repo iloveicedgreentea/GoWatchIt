@@ -2,10 +2,9 @@ package database
 
 import (
 	"database/sql"
-	"testing"
-
 	"fmt"
 	"reflect"
+	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,9 @@ func setupTestDB(t *testing.T) *sql.DB {
 
 func TestMigrateTable(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		require.NoError(t, db.Close())
+	}()
 
 	err := migrateTable(db, &TestStruct{})
 	assert.NoError(t, err)
@@ -60,7 +61,9 @@ func TestMigrateTable(t *testing.T) {
 
 func TestUpdateTableSchema(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		require.NoError(t, db.Close())
+	}()
 
 	// Create initial table
 	_, err := db.Exec("CREATE TABLE teststruct (id INTEGER PRIMARY KEY, name TEXT);")
@@ -81,7 +84,7 @@ func TestUpdateTableSchema(t *testing.T) {
 }
 
 func TestGenerateTableSQL(t *testing.T) {
-	sql := generateTableSQL(&TestStruct{})
+	s := generateTableSQL(&TestStruct{})
 	expectedSQL := `CREATE TABLE IF NOT EXISTS teststruct (
 	id INTEGER,
 	name TEXT,
@@ -91,13 +94,13 @@ func TestGenerateTableSQL(t *testing.T) {
 	extra_info TEXT,
 	PRIMARY KEY (id)
 );`
-	assert.Equal(t, expectedSQL, sql)
+	assert.Equal(t, expectedSQL, s)
 }
 
 func TestGenerateIndexSQL(t *testing.T) {
-	sql := generateIndexSQL(&TestStruct{})
+	s := generateIndexSQL(&TestStruct{})
 	expectedSQL := "CREATE INDEX IF NOT EXISTS idx_teststruct_extra_info ON teststruct(extra_info);"
-	assert.Equal(t, expectedSQL, sql)
+	assert.Equal(t, expectedSQL, s)
 }
 
 func TestGetSQLType(t *testing.T) {
@@ -109,7 +112,9 @@ func TestGetSQLType(t *testing.T) {
 
 func TestRunMigrations(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		require.NoError(t, db.Close())
+	}()
 
 	// Set up our test models
 	testModels := []interface{}{&TestStruct{}}

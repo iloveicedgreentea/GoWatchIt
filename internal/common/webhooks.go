@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -28,7 +29,6 @@ func DecodeWebhook(payload []string) (models.PlexWebhookPayload, int, error) {
 
 	return pwhPayload, 0, nil
 }
-
 
 // only used for tests
 // func decodeJfWebhook(data []byte) (out models.JellyfinWebhook, err error) {

@@ -20,7 +20,7 @@ func IsAtmosCodecPlaying(codec, expectedCodec string) (bool, error) {
 }
 
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(ctx context.Context, waitTime int, entType string, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func ReadAttrAndWait(ctx context.Context, waitTime int, entType, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
 	log := logger.GetLoggerFromContext(ctx)

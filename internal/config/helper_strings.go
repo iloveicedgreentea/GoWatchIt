@@ -159,6 +159,7 @@ func GetEZBeqUrl() string {
 	}
 	return config.URL
 }
+
 func GetEZBeqScheme() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
