@@ -1,5 +1,4 @@
-.PHONY: build test run docker-run docker-build
-SHELL := /bin/bash
+
 build: 
 	cd cmd/gowatchit && go build -o ../../build/gowatchit
 test:

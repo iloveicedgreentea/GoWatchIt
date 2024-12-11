@@ -31,11 +31,14 @@ type GUID0 struct {
 }
 
 type PlexMetadata struct {
-	LibrarySectionType  string  `json:"librarySectionType"`
-	RatingKey           string  `json:"ratingKey"`
-	Key                 string  `json:"key"`
-	Type                string  `json:"type"`
-	Title               string  `json:"title"`
+	LibrarySectionType string `json:"librarySectionType"`
+	RatingKey          string `json:"ratingKey"`
+	Key                string `json:"key"`
+	Type               string `json:"type"`
+	Title              string `json:"title"`
+	// yes plex returns two fields with the same name
+	Guid string `json:"guid"`
+	// this is where tmbd is
 	GUID0               []GUID0 `json:"Guid"`
 	LibrarySectionTitle string  `json:"librarySectionTitle"`
 	LibrarySectionID    int     `json:"librarySectionID"`

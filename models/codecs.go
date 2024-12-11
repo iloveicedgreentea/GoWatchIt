@@ -11,9 +11,9 @@ const (
 	CodecAtmos    CodecName = "Atmos"
 	CodecDDPAtmos CodecName = "DD+ Atmos"
 
-	CodecTrueHD71   CodecName = "TRUEHD 7.1"
-	CodecTrueHD51   CodecName = "TRUEHD 5.1"
-	CodecTrueHD61   CodecName = "TRUEHD 6.1"
+	CodecTrueHD71   CodecName = "TrueHD 7.1"
+	CodecTrueHD51   CodecName = "TrueHD 5.1"
+	CodecTrueHD61   CodecName = "TrueHD 6.1"
 	CodecSurround71 CodecName = "Surround 7.1"
 
 	CodecDTSX      CodecName = "DTS-X"

@@ -43,12 +43,13 @@ func createJellyfinWebhookTestRequest() *http.Request {
 }
 
 func TestRequestToEvent(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	t.Run("Plex event", func(t *testing.T) {
 		req := createMockMultipartRequest(plexPayload)
 		event, err := RequestToEvent(ctx, req)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, models.ActionPlay, event.Action)
 		assert.Equal(t, "/library/metadata/3019", event.Metadata.Key)
 		assert.Equal(t, "Player", event.PlayerTitle)
@@ -58,7 +59,7 @@ func TestRequestToEvent(t *testing.T) {
 	t.Run("Jellyfin event", func(t *testing.T) {
 		req := createJellyfinWebhookTestRequest()
 		event, err := RequestToEvent(ctx, req)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, models.ActionPlay, event.Action)
 		assert.Equal(t, "Living Room TV", event.PlayerTitle)
 		assert.Equal(t, "123456789", event.PlayerUUID)
@@ -73,6 +74,7 @@ func TestRequestToEvent(t *testing.T) {
 }
 
 func TestIsPlexType(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	t.Run("Valid Plex request", func(t *testing.T) {
@@ -93,6 +95,7 @@ func TestIsPlexType(t *testing.T) {
 }
 
 func TestIsJellyfinType(t *testing.T) {
+	t.Parallel()
 	t.SkipNow() // TODO: skipped
 	t.Run("Valid Jellyfin request", func(t *testing.T) {
 		req := createJellyfinWebhookTestRequest()
@@ -113,6 +116,7 @@ func TestIsJellyfinType(t *testing.T) {
 }
 
 func TestParseJellyfinWebhook(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	t.Run("Valid Jellyfin webhook", func(t *testing.T) {
@@ -144,6 +148,7 @@ func TestParseJellyfinWebhook(t *testing.T) {
 }
 
 func TestIsValidWebhook(t *testing.T) {
+	t.Parallel()
 	t.SkipNow() // TODO: skipped
 	t.Run("Valid webhook", func(t *testing.T) {
 		webhook := models.JellyfinWebhook{
@@ -168,6 +173,7 @@ func TestIsValidWebhook(t *testing.T) {
 }
 
 func TestIsHomeassistantType(t *testing.T) {
+	t.Parallel()
 	t.Run("Not implemented", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", http.NoBody)
 		assert.False(t, isHomeassistantType(req))

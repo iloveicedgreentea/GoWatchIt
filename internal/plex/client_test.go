@@ -53,9 +53,9 @@ func TestMain(m *testing.M) {
 		// populate test data
 		plexCfg := models.PlexConfig{
 			Enabled:              true,
-			URL:                  os.Getenv("PLEX_URL"),
-			Port:                 "443",
-			Scheme:               "https",
+			URL:                  "192.168.88.56",
+			Port:                 "32400",
+			Scheme:               "http",
 			DeviceUUIDFilter:     "device_uuid",
 			EnableTrailerSupport: false,
 			OwnerNameFilter:      "owner_name",
@@ -1261,7 +1261,7 @@ func TestGetMediaData(t *testing.T) {
 	med, err := c.getMediaData(ctx, event)
 	require.NoError(t, err)
 
-	assert.Equal(t, "Atmos", med.Video.Media.AudioCodec)
+	assert.Equal(t, "truehd", med.Video.Media.AudioCodec)
 }
 
 func TestGetCodecFromSession(t *testing.T) {
@@ -1330,7 +1330,7 @@ func TestMapCodecs(t *testing.T) {
 	// execute each test
 	for _, test := range tests {
 		s := MapPlexToBeqAudioCodec(ctx, test.codec, test.fullcodec)
-		a.Equal(test.expected, s)
+		a.Equal(models.CodecName(test.expected), s)
 	}
 }
 

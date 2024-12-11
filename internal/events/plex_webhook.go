@@ -25,7 +25,7 @@ func parsePlexMultipartForm(payload []string) (models.PlexWebhookPayload, error)
 		// unmarshall error
 		case errors.As(err, &unmarshalTypeError):
 			msg := fmt.Sprintf("Request has an invalid value in %q field at position %d", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-			return pwhPayload, errors.New(msg)
+			return pwhPayload, errors.New(msg + " " + err.Error())
 
 		default:
 			return pwhPayload, err
