@@ -133,7 +133,7 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 		return err
 	}
 	//  remove notify. if present
-	name := strings.ReplaceAll(config.GetEZBeqNotifyEndpointName(), "notify.", "")
+	name := strings.ReplaceAll(config.GetHomeAssistantNotifyEndpointName(), "notify.", "")
 	endpoint := fmt.Sprintf("/api/services/notify/%s", name)
 	_, err = c.doRequest(endpoint, jsonPayload, http.MethodPost)
 	return err
@@ -141,18 +141,20 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 
 // HAAttributeResponse is an interface for anything that implements these functions
 type HAAttributeResponse interface {
-	GetState() string
+	GetState() models.HomeAssistantMediaPlayerState
 	GetSignalStatus() bool
+	GetAttributes() models.Attributes
 }
 
-func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType, entName string, attrResp HAAttributeResponse) (bool, error) {
+func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType models.HomeAssistantEntity, entName string, attrResp HAAttributeResponse) (bool, error) {
 	var err error
 	var isSignal bool
+	var attributes models.Attributes
 	log := logger.GetLoggerFromContext(ctx)
 
 	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
-		isSignal, err = c.ReadAttributes(entName, attrResp, entType)
+		attributes, err = c.ReadAttributes(entName, attrResp, entType)
 		if err != nil {
 			log.Error("Error reading attributes",
 				slog.String("entity", entName),
@@ -160,6 +162,7 @@ func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int,
 			)
 			return false, err
 		}
+		isSignal = attributes.SignalStatus
 		log.Debug("Signal value",
 			slog.String("entity", entName),
 			slog.Bool("isSignal", isSignal),
@@ -176,29 +179,39 @@ func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int,
 	return false, err
 }
 
+// TODO: read this once and then read the fields from the object instead of two calls
+
 // ReadAttributes generic function to read attribute. entType remote || binary_sensor
-func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttributeResponse, entType string) (bool, error) {
+func (c *HomeAssistantClient) ReadState(entityName string, respObj HAAttributeResponse, entType models.HomeAssistantEntity) (models.HomeAssistantMediaPlayerState, error) {
 	endpoint := fmt.Sprintf("/api/states/%s.%s", entType, entityName)
 	resp, err := c.doRequest(endpoint, nil, http.MethodGet)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	// unmarshal
 	err = json.Unmarshal(resp, respObj)
-
-	switch entType {
-	case "remote":
-		if respObj.GetState() == "off" {
-			return false, fmt.Errorf("entity state is %s", respObj.GetState())
-		}
-
-		return respObj.GetSignalStatus(), err
-	case "binary_sensor":
-		return respObj.GetState() == "on", err
-	default:
-		return false, err
+	if err != nil {
+		return "", err
 	}
+	return respObj.GetState(), nil
+}
+
+// ReadAttributes generic function to read attribute.
+func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttributeResponse, entType models.HomeAssistantEntity) (models.Attributes, error) {
+	endpoint := fmt.Sprintf("/api/states/%s.%s", entType, entityName)
+	resp, err := c.doRequest(endpoint, nil, http.MethodGet)
+	if err != nil {
+		return models.Attributes{}, err
+	}
+	log := logger.GetLogger()
+	log.Debug("Response", slog.String("response", string(resp)))
+	// unmarshal
+	err = json.Unmarshal(resp, respObj)
+	if err != nil {
+		return models.Attributes{}, err
+	}
+	return respObj.GetAttributes(), nil
 }
 
 func (c *HomeAssistantClient) SendEvent(eventType string, eventData map[string]interface{}) error {

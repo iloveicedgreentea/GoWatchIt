@@ -101,53 +101,13 @@ func GetHomeAssistantRemoteEntityName() string {
 	return config.RemoteEntityName
 }
 
-// MQTT
-func GetMQTTTopic(topicName string) string {
-	var config models.MQTTConfig
+func GetHomeAssistantNotifyEndpointName() string {
+	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load MQTT config", "error", err)
+		logger.Error("Failed to load EZBEQ config", "error", err)
 		return ""
 	}
-	switch topicName {
-	case "volume":
-		return config.TopicVolume
-	case "lights":
-		return config.TopicLights
-	case "minidspmutestatus":
-		return config.TopicMiniDSPMuteStatus
-	case "beqcurrentprofile":
-		return config.TopicBEQCurrentProfile
-	case "playingstatus":
-		return config.TopicPlayingStatus
-	}
-	return ""
-}
-
-func GetMQTTURL() string {
-	var config models.MQTTConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load MQTT config", "error", err)
-		return ""
-	}
-	return config.URL
-}
-
-func GetMQTTUsername() string {
-	var config models.MQTTConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load MQTT config", "error", err)
-		return ""
-	}
-	return config.Username
-}
-
-func GetMQTTPassword() string {
-	var config models.MQTTConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load MQTT config", "error", err)
-		return ""
-	}
-	return config.Password
+	return config.NotifyEndpointName
 }
 
 // EZBeq
@@ -199,15 +159,6 @@ func GetEZBeqPreferredAuthor() string {
 	return config.PreferredAuthor
 }
 
-func GetEZBeqNotifyEndpointName() string {
-	var config models.EZBEQConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
-		return ""
-	}
-	return config.NotifyEndpointName
-}
-
 // Plex
 
 func GetPlexUrl() string {
@@ -235,6 +186,15 @@ func GetPlexPort() string {
 		return ""
 	}
 	return config.Port
+}
+
+func GetPlexScheme() string {
+	var config models.PlexConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load Plex config", "error", err)
+		return ""
+	}
+	return config.Scheme
 }
 
 func GetPlexDeviceUUIDFilter() string {

@@ -19,7 +19,7 @@ var (
 	dbOnce sync.Once
 )
 
-// TODO: move this to a test utils pkg
+// TestMain sets up the database and runs the tests
 func TestMain(m *testing.M) {
 	var code int
 	dbOnce.Do(func() {
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 		var err error
 
 		// Open SQLite database connection
-		db, err = database.GetDB("../../db-test.sqlite3")
+		db, err = database.GetDB(":memory:")
 		if err != nil {
 			l.Fatalf("Failed to open database: %v", err)
 		}
@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 			LooseEditionMatching: true,
 			SkipEditionMatching:  false,
 		}
-		err = cf.SaveEzbeqConfig(&beqCfg)
+		err = cf.SaveConfig(&beqCfg)
 		if err != nil {
 			l.Fatalf("Failed to save ezbeq config: %v", err)
 		}

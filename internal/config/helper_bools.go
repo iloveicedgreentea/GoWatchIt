@@ -84,16 +84,6 @@ func IsBeqSkipEditionMatching() bool {
 	return config.SkipEditionMatching
 }
 
-// MQTT
-func IsMQTTEnabled() bool {
-	var config models.MQTTConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load MQTT config", "error", err)
-		return false
-	}
-	return config.Enabled
-}
-
 // Jellyfin
 func IsJellyfinEnabled() bool {
 	var config models.JellyfinConfig
@@ -112,24 +102,6 @@ func IsHomeAssistantEnabled() bool {
 		return false
 	}
 	return config.Enabled
-}
-
-func IsHomeAssistantTriggerAVRMasterVolumeChangeOnEvent() bool {
-	var config models.HomeAssistantConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
-		return false
-	}
-	return config.TriggerAVRMasterVolumeChangeOnEvent && config.Enabled
-}
-
-func IsHomeAssistantTriggerLightsOnEvent() bool {
-	var config models.HomeAssistantConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
-		return false
-	}
-	return config.TriggerLightsOnEvent && config.Enabled
 }
 
 func IsJellyfinSkipTMDB() bool {

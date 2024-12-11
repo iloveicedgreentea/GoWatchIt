@@ -11,24 +11,26 @@ import (
 
 // GetDB returns a connection to the database
 func GetDB(path string) (*sql.DB, error) {
-	// Check if the file exists
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		// Create the directory if it doesn't exist
-		dir := filepath.Dir(path)
-		if err := os.MkdirAll(dir, 0o750); err != nil {
-			return nil, err
-		}
+	if path != ":memory:" {
+		// Check if the file exists
+		_, err := os.Stat(path)
+		if os.IsNotExist(err) {
+			// Create the directory if it doesn't exist
+			dir := filepath.Dir(path)
+			if err := os.MkdirAll(dir, 0o750); err != nil {
+				return nil, err
+			}
 
-		// Create an empty file
-		// TODO: is path ever user supplied? potential directory traversal
-		file, err := os.Create(path) // #nosec
-		if err != nil {
-			return nil, err
-		}
-		err = file.Close()
-		if err != nil {
-			return nil, err
+			// Create an empty file
+			// TODO: is path ever user supplied? potential directory traversal
+			file, err := os.Create(path) // #nosec
+			if err != nil {
+				return nil, err
+			}
+			err = file.Close()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -54,6 +56,7 @@ func GetDB(path string) (*sql.DB, error) {
 func RunMigrations(db *sql.DB) error {
 	structs := getDbModels()
 	for _, model := range structs {
+		// create tables if they dont exist and add new columns if they exist
 		if err := migrateTable(db, model); err != nil {
 			return fmt.Errorf("failed to migrate table for %T: %v", model, err)
 		}

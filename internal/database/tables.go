@@ -128,7 +128,7 @@ func getTableName(structType interface{}) string {
 	return strings.ToLower(t.Name())
 }
 
-// Generates a CREATE TABLE SQL statement for the given struct
+// Generates a CREATE TABLE SQL statement for the given struct based on db tags
 func generateTableSQL(structType interface{}) string {
 	t := reflect.TypeOf(structType)
 	if t.Kind() == reflect.Ptr {
@@ -141,6 +141,7 @@ func generateTableSQL(structType interface{}) string {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		dbTag := field.Tag.Get("db")
+		// skip fields without db tag
 		if dbTag == "" {
 			continue
 		}
@@ -213,7 +214,6 @@ func getDbModels() []interface{} {
 		&models.HomeAssistantConfig{},
 		&models.JellyfinConfig{},
 		&models.MainConfig{},
-		&models.MQTTConfig{},
 		&models.PlexConfig{},
 		&models.HDMISyncConfig{},
 	}

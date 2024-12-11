@@ -1,12 +1,23 @@
 package models
 
-import (
-	"strconv"
+type HomeAssistantEntity string
 
-	"github.com/iloveicedgreentea/go-plex/internal/logger"
+const (
+	HomeAssistantEntityMediaPlayer  HomeAssistantEntity = "media_player"
+	HomeAssistantEntityBinarySensor HomeAssistantEntity = "binary_sensor"
+	HomeAssistantEntityRemote       HomeAssistantEntity = "remote"
 )
 
-var log = logger.GetLogger()
+type HomeAssistantMediaPlayerState string
+
+const (
+	HomeAssistantMediaPlayerStatePlaying HomeAssistantMediaPlayerState = "playing"
+	HomeAssistantMediaPlayerStateStandby HomeAssistantMediaPlayerState = "standby"
+	HomeAssistantMediaPlayerStatePaused  HomeAssistantMediaPlayerState = "paused"
+	HomeAssistantMediaPlayerStateIdle    HomeAssistantMediaPlayerState = "idle"
+	HomeAssistantMediaPlayerStateOff     HomeAssistantMediaPlayerState = "off"
+	HomeAssistantMediaPlayerStateOn      HomeAssistantMediaPlayerState = "on"
+)
 
 type HomeAssistantScriptReq struct {
 	EntityID string `json:"entity_id"`
@@ -18,21 +29,32 @@ type HomeAssistantNotificationReq struct {
 
 type HomeAssistantWebhookPayload struct{}
 
-type HAEnvyResponse struct {
-	EntityID   string         `json:"entity_id"`
-	State      string         `json:"state"`
-	Attributes EnvyAttributes `json:"attributes"`
+// HAMediaPlayerResponse is a struct that contains the payload of a media player
+type HAMediaPlayerResponse struct {
+	EntityID   string                        `json:"entity_id"`
+	State      HomeAssistantMediaPlayerState `json:"state"`
+	Attributes Attributes                    `json:"attributes"`
 }
-type EnvyAttributes struct {
-	SignalStatus bool `json:"is_signal"`
+
+// Attributes are media player attributes
+type Attributes struct {
+	SignalStatus     bool             `json:"is_signal"`
+	MediaContentID   MediaContentID   `json:"media_content_id"`
+	MediaContentType MediaContentType `json:"media_content_type"`
+	MediaTitle       string           `json:"media_title"`
 }
-type HAjvcResponse struct {
-	EntityID   string        `json:"entity_id"`
-	State      string        `json:"state"`
-	Attributes JVCAttributes `json:"attributes"`
-}
-type JVCAttributes struct {
-	SignalStatus string `json:"signal_status"`
+
+type MediaContentType string
+
+const (
+	MediaContentTypeMovie MediaContentType = "movie"
+	MediaContentTypeShow  MediaContentType = "show"
+)
+
+type MediaContentID struct {
+	IMDB string `json:"imdb"`
+	TMDB string `json:"tmdb"`
+	TVDB string `json:"tvdb"`
 }
 
 type HABinaryResponse struct {
@@ -44,28 +66,17 @@ func (r *HABinaryResponse) GetState() string {
 }
 
 func (r *HABinaryResponse) GetSignalStatus() bool {
-	return false
+	return false // TODO: implement
 }
 
-func (r *HAEnvyResponse) GetState() string {
+func (r *HAMediaPlayerResponse) GetState() HomeAssistantMediaPlayerState {
 	return r.State
 }
 
-func (r *HAEnvyResponse) GetSignalStatus() bool {
+func (r *HAMediaPlayerResponse) GetSignalStatus() bool {
 	return r.Attributes.SignalStatus
 }
 
-func (r *HAjvcResponse) GetState() string {
-	return r.State
-}
-
-func (r *HAjvcResponse) GetSignalStatus() bool {
-	s, err := strconv.ParseBool(r.Attributes.SignalStatus)
-	if err != nil {
-		log.Error("error parsing JVC signal attribute",
-			"error", err,
-		)
-		return false
-	}
-	return s
+func (r *HAMediaPlayerResponse) GetAttributes() Attributes {
+	return r.Attributes
 }

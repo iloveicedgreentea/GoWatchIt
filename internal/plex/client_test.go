@@ -2,25 +2,93 @@ package plex
 
 import (
 	"context"
+	"database/sql"
+	"os"
+	"sync"
 	"testing"
+
+	l "log"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iloveicedgreentea/go-plex/internal/database"
 )
 
-func getNewClient() (*PlexClient, error) {
-	return NewClient("https", config.GetPlexUrl(), config.GetPlexPort())
+var (
+	db     *sql.DB
+	dbOnce sync.Once
+	c      *PlexClient
+)
+
+// TestMain sets up the database and runs the tests
+func TestMain(m *testing.M) {
+	var code int
+	dbOnce.Do(func() {
+		// Setup code before tests
+		var err error
+
+		// Open SQLite database connection
+		db, err = database.GetDB(":memory:")
+		if err != nil {
+			l.Fatalf("Failed to open database: %v", err)
+		}
+
+		// run migrations
+		err = database.RunMigrations(db)
+		if err != nil {
+			l.Fatalf("Failed to run migrations: %v", err)
+		}
+
+		// Initialize the config with the database
+		err = config.InitConfig(db)
+		if err != nil {
+			l.Fatalf("Failed to initialize config: %v", err)
+		}
+
+		cf := config.GetConfig()
+
+		// populate test data
+		plexCfg := models.PlexConfig{
+			Enabled:              true,
+			URL:                  os.Getenv("PLEX_URL"),
+			Port:                 "443",
+			Scheme:               "https",
+			DeviceUUIDFilter:     "device_uuid",
+			EnableTrailerSupport: false,
+			OwnerNameFilter:      "owner_name",
+		}
+		err = cf.SaveConfig(&plexCfg)
+		if err != nil {
+			l.Fatalf("Failed to save ezbeq config: %v", err)
+		}
+
+		c, err = NewClient(config.GetPlexScheme(), config.GetPlexUrl(), config.GetPlexPort())
+		if err != nil {
+			l.Fatalf("Failed to create plex client: %v for values - %s, %s, %s", err, config.GetPlexScheme(), config.GetPlexUrl(), config.GetPlexPort())
+		}
+
+		// Run the tests
+		code = m.Run()
+
+		// Cleanup code after tests
+		err = db.Close()
+		if err != nil {
+			l.Printf("Error closing database: %v", err)
+		}
+	})
+	// Exit with the test result code
+	os.Exit(code)
 }
 
 // test to ensure server is white listed
 func TestGetPlexReq(t *testing.T) {
-	c, err := getNewClient()
+	t.Parallel()
 	ctx := context.Background()
-	require.NoError(t, err)
 	d, err := c.makePlexReq(ctx, "/library/metadata/70390")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	res := string(d)
 
 	if !assert.NotContains(t, res, "Unauthorized", "Client is not authorized in plex server") {
@@ -29,6 +97,7 @@ func TestGetPlexReq(t *testing.T) {
 }
 
 func TestGetEdition(t *testing.T) {
+	t.Parallel()
 	type test struct {
 		dataObj  models.MediaContainer
 		expected models.Edition
@@ -1174,15 +1243,14 @@ func TestGetEdition(t *testing.T) {
 
 	for _, test := range tests {
 		edition, err := getEdition(&test.dataObj)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, test.expected, edition, "Expected: ", string(test.expected), "Got: ", edition, "for ", test.dataObj.Video.Media.Part.File, test.dataObj.Video.EditionTitle)
 	}
 }
 
 func TestGetMediaData(t *testing.T) {
-	c, err := getNewClient()
+	t.Parallel()
 	ctx := context.Background()
-	require.NoError(t, err)
 
 	// no time to die
 	event := &models.Event{
@@ -1191,19 +1259,17 @@ func TestGetMediaData(t *testing.T) {
 		},
 	}
 	med, err := c.getMediaData(ctx, event)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "Atmos", med.Video.Media.AudioCodec)
 }
 
 func TestGetCodecFromSession(t *testing.T) {
 	t.SkipNow()
-	c, err := getNewClient()
 	ctx := context.Background()
-	require.NoError(t, err)
 
 	codec, err := c.GetCodecFromSession(ctx, config.GetPlexDeviceUUIDFilter())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Log(codec)
 }
@@ -1215,6 +1281,7 @@ type codecTest struct {
 }
 
 func TestMapCodecs(t *testing.T) {
+	t.Parallel()
 	a := assert.New(t)
 	ctx := context.Background()
 	tests := []codecTest{

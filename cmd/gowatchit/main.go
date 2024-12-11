@@ -18,6 +18,7 @@ import (
 
 // static files are cached which causes issues displaying configs
 func noCache() gin.HandlerFunc {
+	// TODO: cache specific resources just not
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
 		c.Header("Pragma", "no-cache")
@@ -35,19 +36,27 @@ func main() {
 	logger.AddLoggerToContext(ctx, log)
 
 	log.Info("Starting up please wait until the server is ready...")
+
+	// set program to debug mode
 	debug := os.Getenv("LOG_LEVEL") == "debug"
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	baseDir := os.Getenv("BASE_DIR")
+	if baseDir == "" {
+		baseDir = "."
 	}
 
 	// TODO: use const for sql file location
 	// TODO: file needs to be docker-compatible
 	// Create the database connection
 	log.Info("Connecting to the database...")
-	db, err := database.GetDB("db.sqlite3")
+	db, err := database.GetDB(fmt.Sprintf("%s/db.sqlite3", baseDir))
 	if err != nil {
 		logger.Fatal("Failed to connect to the database: ", err)
 	}
+	// close db when done
 	defer func() {
 		if err := db.Close(); err != nil {
 			logger.Fatal("Failed to close the database: ", err)
@@ -76,16 +85,8 @@ func main() {
 
 	// init event channel
 	log.Info("Creating workers...")
+	// all webhook events are sent to this channel
 	eventChan := make(chan models.Event)
-
-	// TODO: use ready signal chans
-	// plexReady := make(chan bool)
-
-	// log.Info("Waiting for workers to be ready...")
-	// <-plexReady
-	// <-minidspReady
-	// <-jfReady
-	// log.Info("All workers are ready.")
 
 	router.Static("/web", "./web")
 	router.NoRoute(func(c *gin.Context) {

@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
-	"github.com/iloveicedgreentea/go-plex/models"
 )
 
 var (
@@ -24,29 +23,9 @@ type Config struct {
 
 // InitConfig initializes the global config instance
 func InitConfig(db *sql.DB) error {
-	var err error
 	once.Do(func() {
 		globalConfig = &Config{db: db}
-		// Initialize tables if they don't exist
-		err = globalConfig.initTables()
 	})
-	return err
-}
-
-func (c *Config) initTables() error {
-	tables := []interface{}{
-		&models.EZBEQConfig{},
-		&models.HomeAssistantConfig{},
-		&models.JellyfinConfig{},
-		&models.MQTTConfig{},
-		&models.HDMISyncConfig{},
-	}
-
-	for _, table := range tables {
-		if err := c.CreateConfigTable(table); err != nil {
-			return fmt.Errorf("failed to create table for %T: %v", table, err)
-		}
-	}
 	return nil
 }
 
@@ -69,33 +48,29 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 
 	var columns []string
 	var scanDest []interface{}
+	// Map to store slice field indices and their corresponding scan destinations
+	sliceFields := make(map[int]*string)
+
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
 		dbTag := field.Tag.Get("db")
 		if dbTag != "" && dbTag != "-" {
 			columns = append(columns, dbTag)
 
-			// Special handling for slices - use string placeholder
+			// Special handling for slices because sqlite doesn't support them
 			if v.Field(i).Kind() == reflect.Slice {
+				log.Debug("Loading slice field", "field", field.Name)
 				var jsonStr string
+				// Store the pointer to the JSON string in the map
+				sliceFields[i] = &jsonStr
+				// data will be written to the pointer
 				scanDest = append(scanDest, &jsonStr)
-				// Store the field index and scan destination for later processing
-				if jsonStr != "" {
-					var sliceValue reflect.Value
-					slicePtr := reflect.New(v.Field(i).Type())
-					if err := json.Unmarshal([]byte(jsonStr), slicePtr.Interface()); err == nil {
-						sliceValue = slicePtr.Elem()
-						v.Field(i).Set(sliceValue)
-					}
-				}
 			} else {
 				scanDest = append(scanDest, v.Field(i).Addr().Interface())
 			}
 		}
 	}
-	// yes this is theoretically vulnerable to SQL injection, but I control table names and its just not a major risk
-	// its more complicated to use prepared statements here because I dynamically get columns from struct tags
-	// #nosec
+	// #nosec - yes this is theoretically vulnerable to SQL injection, but I control table names and its just not a major risk
 	query := fmt.Sprintf("SELECT %s FROM %s LIMIT 1", strings.Join(columns, ", "), tableName)
 	err := c.db.QueryRowContext(ctx, query).Scan(scanDest...)
 	if err != nil {
@@ -104,6 +79,20 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 			return nil
 		}
 		return fmt.Errorf("failed to scan row: %v", err)
+	}
+
+	// Process slice fields after successful scan
+	for fieldIndex, jsonStrPtr := range sliceFields {
+		if jsonStrPtr != nil && *jsonStrPtr != "" {
+			sliceField := v.Field(fieldIndex)
+			// Create a new slice value of the correct type
+			newSlice := reflect.New(sliceField.Type())
+			if err := json.Unmarshal([]byte(*jsonStrPtr), newSlice.Interface()); err != nil {
+				return fmt.Errorf("failed to unmarshal slice for field %s: %v", t.Field(fieldIndex).Name, err)
+			}
+			// Set the slice value in the struct
+			sliceField.Set(newSlice.Elem())
+		}
 	}
 
 	log.Debug("Loaded configuration", "table", tableName)
@@ -140,11 +129,15 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 
 			// Special handling for slices - convert to JSON string
 			if v.Field(i).Kind() == reflect.Slice {
+				log := logger.GetLogger()
+				log.Debug("Saving slice field", "field", field.Name, "value", v.Field(i).Interface())
 				jsonBytes, err := json.Marshal(v.Field(i).Interface())
 				if err != nil {
 					return fmt.Errorf("failed to marshal slice field %s: %v", field.Name, err)
 				}
+				log.Debug("JSON bytes", "bytes", string(jsonBytes))
 				values = append(values, string(jsonBytes))
+				log.Debug("Saved values", "values", values)
 			} else {
 				values = append(values, v.Field(i).Interface())
 			}
@@ -155,7 +148,6 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	// #nosec
 	query := fmt.Sprintf("INSERT OR REPLACE INTO %s (%s) VALUES (%s)",
 		tableName, strings.Join(columns, ", "), strings.Join(placeholders, ", "))
-
 	_, err := c.db.Exec(query, values...)
 	if err != nil {
 		return fmt.Errorf("failed to save config: %v", err)
@@ -164,61 +156,7 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	return nil
 }
 
-// CreateConfigTable creates a table for the given config struct if it doesn't exist
-func (c *Config) CreateConfigTable(cfg interface{}) error {
-	v := reflect.ValueOf(cfg)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("cfg must be a pointer to a struct")
-	}
-	v = v.Elem()
-	t := v.Type()
-	tableName := t.Name()
-
-	var columns []string
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		dbTag := field.Tag.Get("db")
-		if dbTag != "" && dbTag != "-" {
-			columns = append(columns, fmt.Sprintf("%s %s", dbTag, getSQLType(field.Type)))
-		}
-	}
-
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableName, strings.Join(columns, ", "))
-
-	_, err := c.db.Exec(query)
-	if err != nil {
-		return fmt.Errorf("failed to create table: %v", err)
-	}
-
-	return nil
-}
-
-func getSQLType(t reflect.Type) string {
-	switch t.Kind() {
-	case reflect.Bool:
-		return "BOOLEAN"
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return "INTEGER"
-	case reflect.String:
-		return "TEXT"
-	default:
-		return "TEXT"
-	}
-}
-
-// Example usage functions
-func (c *Config) GetEzbeqConfig() (*models.EZBEQConfig, error) {
-	cfg := &models.EZBEQConfig{}
-	err := c.LoadConfig(context.Background(), cfg)
-	return cfg, err
-}
-
-func (c *Config) SaveEzbeqConfig(cfg *models.EZBEQConfig) error {
-	return c.SaveConfig(cfg)
-}
-
-// Implement similar methods for other config types
-
+// TODO: Implement similar methods for other config types
 // GetConfig is a helper function to get the global config instance
 func GetConfig() *Config {
 	return globalConfig

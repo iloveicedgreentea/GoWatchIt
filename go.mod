@@ -3,7 +3,6 @@ module github.com/iloveicedgreentea/go-plex
 go 1.22.4
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/mattn/go-sqlite3 v1.14.22
@@ -23,7 +22,6 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
@@ -39,7 +37,6 @@ require (
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect

@@ -37,14 +37,16 @@
 ## Features
 
 Main features:
-* Load/unload BEQ profiles automatically, without user action and the correct codec detected
+* Load/unload BEQ profiles automatically, without user action and the correct codec/edition detected
 * HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen in front of your friends)
 * Web based UI
 
 Players Supported:
-* Plex 
-* Jellyfin (no support given, but tested)
+* Kodi (through Home Assistant)
+* Plex (Webhooks and through Home Assistant)
+* Jellyfin (through Home Assistant)
 * Emby (may work due to jellyfin support, no support given and not tested)
+* Apple TV and technically any player that exposes the correct metadata (title, year, codec, edition, tmdb)
 
 Other cool stuff:
 * Mute/Unmute Minidsp
@@ -78,11 +80,12 @@ You can configure this to only load BEQ profiles, or do everything else besides 
 5) You can change logging timezone by setting the `TZ` env var to your desired timezone 
 
 ### Triggering
-There are three ways to trigger an action:
+There are two ways to trigger an action:
 
 1) Home Assistant
-2) Plex
-3) Jellyfin/emby
+2) Plex webhooks
+
+Home Assistant is recommended due to speed and compatibility.
 
 #### Home Assistant
 You need to create a rest_commannd and an automation

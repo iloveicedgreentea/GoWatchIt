@@ -26,6 +26,7 @@ import (
 type PlexClient struct {
 	URL        string
 	Port       string
+	Scheme     string
 	HTTPClient http.Client
 	MachineID  string
 	ClientIP   string
@@ -37,14 +38,10 @@ var _ mediaplayer.MediaAPIClient = (*PlexClient)(nil)
 
 // return a new instance of a plex client
 func NewClient(scheme, servUrl, port string) (*PlexClient, error) {
-	// remove scheme
-	if !utils.ValidateHttpScheme(scheme) {
-		return nil, fmt.Errorf("invalid http scheme: %s", scheme)
-	}
-	servUrl = strings.ReplaceAll(servUrl, scheme, "")
 	return &PlexClient{
-		URL:  servUrl,
-		Port: port,
+		URL:    servUrl,
+		Port:   port,
+		Scheme: scheme,
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -56,7 +53,7 @@ func parseMediaContainer(payload []byte) (models.MediaContainer, error) {
 	var data models.MediaContainer
 	err := xml.Unmarshal(payload, &data)
 	if err != nil {
-		return data, err
+		return data, parseXMLError(err, string(payload))
 	}
 
 	return data, nil
@@ -66,7 +63,7 @@ func parseSessionMediaContainer(payload []byte) (models.SessionMediaContainer, e
 	var data models.SessionMediaContainer
 	err := xml.Unmarshal(payload, &data)
 	if err != nil {
-		return data, err
+		return data, fmt.Errorf("error unmarshalling parseSessionMediaContainer xml: %v", err)
 	}
 
 	return data, nil
@@ -79,10 +76,11 @@ func (c *PlexClient) getRunningSession(ctx context.Context) (models.SessionMedia
 	var err error
 
 	// loop until not empty for 30s
+	// TODO: use go-retryable
 	for i := 0; i < 30; i++ {
 		res, err := c.makePlexReq(ctx, string(APIStatusSession))
 		if err != nil {
-			return models.SessionMediaContainer{}, err
+			return models.SessionMediaContainer{}, fmt.Errorf("error getting session data: %v", err)
 		}
 		// if no response, keep trying
 		if len(res) == 0 {
@@ -95,7 +93,7 @@ func (c *PlexClient) getRunningSession(ctx context.Context) (models.SessionMedia
 		}
 		data, err = parseSessionMediaContainer(res)
 		if err != nil {
-			return models.SessionMediaContainer{}, err
+			return models.SessionMediaContainer{}, fmt.Errorf("error parsing getRunningSession session data: %v", err)
 		}
 
 		break
@@ -106,10 +104,10 @@ func (c *PlexClient) getRunningSession(ctx context.Context) (models.SessionMedia
 
 // GetCodecFromSession gets the codec from a running session
 func (c *PlexClient) GetCodecFromSession(ctx context.Context, uuid string) (models.CodecName, error) {
-	sess, err := c.getRunningSession(ctx)
 	log := logger.GetLoggerFromContext(ctx)
+	sess, err := c.getRunningSession(ctx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error getting GetCodecFromSession session data: %v", err)
 	}
 	// log.Debugf("Session data: %#v", sess.Video)
 	// filter by uuid
@@ -359,7 +357,7 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 		// this MUST use the CLIENT IP and 32500 port not server
 		// god forbid plex makes any documentation for their APIs they dont want you using
 		u = &url.URL{
-			Scheme: "http",
+			Scheme: c.Scheme,
 			Host:   fmt.Sprintf("%s:%s", playerIP, "32500"),
 			Path:   path,
 		}
@@ -376,7 +374,7 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 		)
 	} else {
 		u = &url.URL{
-			Scheme: "http",
+			Scheme: c.Scheme,
 			Host:   fmt.Sprintf("%s:%s", c.URL, c.Port),
 			Path:   path,
 		}
