@@ -141,6 +141,24 @@ func GetEZBeqPort() string {
 	return config.Port
 }
 
+func GetEZBeqAvrURL() string {
+	var config models.EZBEQConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load EZBEQ config", "error", err)
+		return ""
+	}
+	return config.AVRURL
+}
+
+func GetEZBeqAvrBrand() string {
+	var config models.EZBEQConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load EZBEQ config", "error", err)
+		return ""
+	}
+	return config.AVRBrand
+}
+
 func GetEZBeqSlots() []int {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
