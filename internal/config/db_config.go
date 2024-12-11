@@ -129,15 +129,11 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 
 			// Special handling for slices - convert to JSON string
 			if v.Field(i).Kind() == reflect.Slice {
-				log := logger.GetLogger()
-				log.Debug("Saving slice field", "field", field.Name, "value", v.Field(i).Interface())
 				jsonBytes, err := json.Marshal(v.Field(i).Interface())
 				if err != nil {
 					return fmt.Errorf("failed to marshal slice field %s: %v", field.Name, err)
 				}
-				log.Debug("JSON bytes", "bytes", string(jsonBytes))
 				values = append(values, string(jsonBytes))
-				log.Debug("Saved values", "values", values)
 			} else {
 				values = append(values, v.Field(i).Interface())
 			}

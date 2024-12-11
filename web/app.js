@@ -7,7 +7,6 @@ function populateFields(config) {
     document.getElementById('ezbeq-avrip').value = config.ezbeq.avrip;
     document.getElementById('ezbeq-dryrun').checked = config.ezbeq.dryrun;
     document.getElementById('ezbeq-enabletvbeq').checked = config.ezbeq.enabletvbeq;
-    document.getElementById('ezbeq-notifyendpointname').value = config.ezbeq.notifyendpointname;
     document.getElementById('ezbeq-notifyonload').checked = config.ezbeq.notifyonload;
     document.getElementById('ezbeq-port').value = config.ezbeq.port;
     document.getElementById('ezbeq-preferredauthor').value = config.ezbeq.preferredauthor;
@@ -26,12 +25,8 @@ function populateFields(config) {
     document.getElementById('homeassistant-url').value = config.homeassistant.url;
     document.getElementById('homeassistant-port').value = config.homeassistant.port;
     document.getElementById('homeassistant-token').value = config.homeassistant.token;
-    document.getElementById('homeassistant-triggerlightsonevent').checked = config.homeassistant.triggerlightsonevent;
-    document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked = config.homeassistant.triggeravrmastervolumechangeonevent;
+    document.getElementById('homeassistant-notifyendpointname').value = config.homeassistant.notifyendpointname;
     // document.getElementById('homeassistant-remoteentityname').value = config.homeassistant.remoteentityname;
-    document.getElementById('homeassistant-playscriptname').value = config.homeassistant.playscriptname;
-    document.getElementById('homeassistant-pausescriptname').value = config.homeassistant.pausescriptname;
-    document.getElementById('homeassistant-stopscriptname').value = config.homeassistant.stopscriptname;
 
     // MQTT
     document.getElementById('mqtt-enabled').checked = config.mqtt.enabled;
@@ -84,7 +79,6 @@ function buildFinalConfig() {
         "avrip": document.getElementById('ezbeq-avrip').value,
         "dryrun": document.getElementById('ezbeq-dryrun').checked,
         "enabletvbeq": document.getElementById('ezbeq-enabletvbeq').checked,
-        "notifyendpointname": document.getElementById('ezbeq-notifyendpointname').value,
         "notifyonload": document.getElementById('ezbeq-notifyonload').checked,
         "port": document.getElementById('ezbeq-port').value,
         "preferredauthor": document.getElementById('ezbeq-preferredauthor').value,
@@ -99,24 +93,8 @@ function buildFinalConfig() {
         "url": document.getElementById('homeassistant-url').value,
         "port": document.getElementById('homeassistant-port').value,
         "token": document.getElementById('homeassistant-token').value,
-        "triggerlightsonevent": document.getElementById('homeassistant-triggerlightsonevent').checked,
-        "triggeravrmastervolumechangeonevent": document.getElementById('homeassistant-triggeravrmastervolumechangeonevent').checked,
+        "notifyendpointname": document.getElementById('homeassistant-notifyendpointname').value,
         // "remoteentityname": document.getElementById('homeassistant-remoteentityname').value,
-        "playscriptname": document.getElementById('homeassistant-playscriptname').value,
-        "pausescriptname": document.getElementById('homeassistant-pausescriptname').value,
-        "stopscriptname": document.getElementById('homeassistant-stopscriptname').value
-    };
-
-    const mqttConfig = {
-        "enabled": document.getElementById('mqtt-enabled').checked,
-        "url": document.getElementById('mqtt-url').value,
-        "username": document.getElementById('mqtt-username').value,
-        "password": document.getElementById('mqtt-password').value,
-        "topiclights": document.getElementById('mqtt-topiclights').value,
-        "topicvolume": document.getElementById('mqtt-topicvolume').value,
-        "topicbeqcurrentprofile": document.getElementById('mqtt-topicbeqcurrentprofile').value,
-        "topicminidspmutestatus": document.getElementById('mqtt-topicminidspmutestatus').value,
-        "topicplayingstatus": document.getElementById('mqtt-topicplayingstatus').value
     };
 
     const plexConfig = {
@@ -149,10 +127,9 @@ function buildFinalConfig() {
     const finalConfig = {
         "ezbeq": ezbeqConfig,
         "homeassistant": homeAssistantConfig,
-        "mqtt": mqttConfig,
         "plex": plexConfig,
         "jellyfin": jellyfinConfig,
-        "signal": signalConfig
+        // "signal": signalConfig
     };
 
     return finalConfig;
@@ -162,7 +139,7 @@ function buildFinalConfig() {
 
 document.addEventListener('DOMContentLoaded', function () {
     async function loadConfig() {
-        const response = await fetch('/get-config');
+        const response = await fetch('/config');
         if (response.ok) {
             return await response.json();
         } else {
@@ -197,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 async function submitConfig(data) {
     try {
-        const response = await fetch('/save-config', {
+        const response = await fetch('/config', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

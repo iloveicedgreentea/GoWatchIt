@@ -58,15 +58,6 @@
                     <input type="checkbox" id="ezbeq-enabletvbeq" name="ezbeq.enabletvbeq">
                 </div>
                 <div>
-                    <label for="ezbeq-notifyendpointname">Notify Endpoint
-                        <span class="description">
-                            Name of the Home Assistant notify endpoint (like your phone)
-                        </span>
-                    </label>
-
-                    <input type="text" id="ezbeq-notifyendpointname" name="ezbeq.notifyendpointname">
-                </div>
-                <div>
                     <label for="ezbeq-notifyonload">Notify On Load
                         <span class="description">
                             Notify you on BEQ Load/Unload/Issues
@@ -193,25 +184,16 @@
                 </div>
 
                 <div>
-                    <label for="homeassistant-triggerlightsonevent">Trigger Light Change On Event
+                    <label for="homeassistant-notifyendpointname">Notify Endpoint
                         <span class="description">
-                            Send state change to MQTT when play/pause/stop for lights
+                            Name of the Home Assistant notify endpoint (like your phone)
                         </span>
                     </label>
 
-                    <input type="checkbox" id="homeassistant-triggerlightsonevent"
-                        name="homeassistant.triggerlightsonevent">
+                    <input type="text" id="homeassistant-notifyendpointname" name="homeassistant.notifyendpointname">
                 </div>
-                <div>
-                    <label for="homeassistant-triggeravrmastervolumechangeonevent">Trigger Volume Change On Event
-                        <span class="description">
-                            Send state change to MQTT when play/pause/stop for volume based on movie or tv
-                        </span>
-                    </label>
 
-                    <input type="checkbox" id="homeassistant-triggeravrmastervolumechangeonevent"
-                        name="homeassistant.triggeravrmastervolumechangeonevent">
-                </div>
+
                 <!-- <div>
                     <label for="homeassistant-remoteentityname">Remote Entity Name
                         <span class="description">
@@ -223,36 +205,7 @@
                     <input type="text" id="homeassistant-remoteentityname" name="homeassistant.remoteentityname">
                 </div> -->
 
-                <div>
-                    <label for="homeassistant-playscriptname">Play Script Name
-                        <span class="description">
-                            optional: set only if plex.enabled is false. names of scripts which call Home assistant
-                            scripts
-                            to play/pause/stop
-                        </span>
-                    </label>
-                    <input type="text" id="homeassistant-playscriptname" name="homeassistant.playscriptname">
-                </div>
-                <div>
-                    <label for="homeassistant-pausescriptname">Pause Script Name
-                        <span class="description">
-                            optional: set only if plex.enabled is false. names of scripts which call Home assistant
-                            scripts
-                            to play/pause/stop
-                        </span>
-                    </label>
-                    <input type="text" id="homeassistant-pausescriptname" name="homeassistant.pausescriptname">
-                </div>
-                <div>
-                    <label for="homeassistant-stopscriptname">Stop Script Name
-                        <span class="description">
-                            optional: set only if plex.enabled is false. names of scripts which call Home assistant
-                            scripts
-                            to play/pause/stop
-                        </span>
-                    </label>
-                    <input type="text" id="homeassistant-stopscriptname" name="homeassistant.stopscriptname">
-                </div>
+
             </div>
 
             <!-- MQTT Section -->
