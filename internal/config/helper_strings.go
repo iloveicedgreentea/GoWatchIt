@@ -71,6 +71,11 @@ func GetHomeAssistantUrl() string {
 		logger.Error("Failed to load HomeAssistant config", "error", err)
 		return ""
 	}
+
+	if config.URL == "" {
+		return "homeassistant.local"
+	}
+
 	return config.URL
 }
 
@@ -89,6 +94,11 @@ func GetHomeAssistantPort() string {
 		logger.Error("Failed to load HomeAssistant config", "error", err)
 		return ""
 	}
+
+	if config.Port == "" {
+		return "8123"
+	}
+
 	return config.Port
 }
 
@@ -104,7 +114,7 @@ func GetHomeAssistantRemoteEntityName() string {
 func GetHomeAssistantNotifyEndpointName() string {
 	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load HomeAssistant config", "error", err)
 		return ""
 	}
 	return config.NotifyEndpointName
@@ -117,6 +127,11 @@ func GetEZBeqUrl() string {
 		logger.Error("Failed to load EZBEQ config", "error", err)
 		return ""
 	}
+
+	if config.URL == "" {
+		return "ezbeq.local"
+	}
+
 	return config.URL
 }
 
@@ -126,9 +141,11 @@ func GetEZBeqScheme() string {
 		logger.Error("Failed to load EZBEQ config", "error", err)
 		return ""
 	}
+
 	if config.Scheme == "" {
 		return "http"
 	}
+
 	return config.Scheme
 }
 
@@ -138,6 +155,11 @@ func GetEZBeqPort() string {
 		logger.Error("Failed to load EZBEQ config", "error", err)
 		return ""
 	}
+
+	if config.Port == "" {
+		return "8080"
+	}
+
 	return config.Port
 }
 
@@ -203,6 +225,11 @@ func GetPlexPort() string {
 		logger.Error("Failed to load Plex config", "error", err)
 		return ""
 	}
+
+	if config.Port == "" {
+		return "32400"
+	}
+
 	return config.Port
 }
 
@@ -212,6 +239,11 @@ func GetPlexScheme() string {
 		logger.Error("Failed to load Plex config", "error", err)
 		return ""
 	}
+
+	if config.Scheme == "" {
+		return "http"
+	}
+
 	return config.Scheme
 }
 

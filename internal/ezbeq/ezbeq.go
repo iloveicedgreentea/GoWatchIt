@@ -459,7 +459,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 
 	var err error
 	var catalog models.BeqCatalog
-
+	// TODO: cache these in DB for faster lookup. Purge cache on new BEQ entry
 	// if provided stuff is blank, we cant skip search
 	if m.EntryID == "" || m.MVAdjust == 0 {
 		m.SkipSearch = false
