@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { cn } from "../../lib/utils";
-import { Alert } from '../ui/alert';
 import { Container } from '../layout/Container';
 import { ConfigSection } from './Section';
-import { CONFIG_SCHEMA, ConfigValue, Notification } from '../../types/config';
+import { CONFIG_SCHEMA, ConfigValue } from '../../types/config';
 import { Form, FloatingButton, SaveButton } from '../ui/form';
 import { PageHeader } from '../layout/PageHeader';
+import { useToast } from '../providers/toast';
 
 const API_BASE_URL = 'http://localhost:9999';
 
 export default function ConfigurationPage() {
   const [config, setConfig] = useState<ConfigValue>({});
-  const [notification, setNotification] = useState<Notification | null>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/config`)
@@ -19,12 +18,13 @@ export default function ConfigurationPage() {
       .then(setConfig)
       .catch(error => {
         console.error('Error loading config:', error);
-        setNotification({
-          message: 'Failed to load configuration: ' + error.message,
-          type: 'error'
+        addToast({
+          title: 'Error',
+          description: 'Failed to load configuration: ' + error.message,
+          variant: 'destructive',
         });
       });
-  }, []);
+  }, [addToast]);
 
   const handleChange = (section: string, key: string, value: any) => {
     setConfig(prev => ({
@@ -47,14 +47,16 @@ export default function ConfigurationPage() {
 
       if (!response.ok) throw new Error(response.statusText);
 
-      setNotification({
-        message: 'Configuration saved successfully',
-        type: 'success'
+      addToast({
+        title: 'Success',
+        description: 'Configuration saved successfully',
+        variant: 'success',
       });
     } catch (error) {
-      setNotification({
-        message: 'Failed to save configuration',
-        type: 'error'
+      addToast({
+        title: 'Error',
+        description: 'Failed to save configuration',
+        variant: 'destructive',
       });
     }
   };
@@ -62,18 +64,6 @@ export default function ConfigurationPage() {
   return (
     <Container>
       <PageHeader title="Configuration" />
-
-      {notification && (
-        <Alert 
-          className={cn(
-            "mb-6",
-            notification.type === 'success' ? "bg-primary/20" : "bg-destructive/20"
-          )}
-        >
-          {notification.message}
-        </Alert>
-      )}
-
       <Form onSubmit={handleSubmit}>
         {CONFIG_SCHEMA.map(section => (
           <ConfigSection
@@ -84,7 +74,6 @@ export default function ConfigurationPage() {
             onChange={handleChange}
           />
         ))}
-
         <FloatingButton>
           <SaveButton>Save Configuration</SaveButton>
         </FloatingButton>

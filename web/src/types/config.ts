@@ -21,10 +21,6 @@ export interface ConfigSection {
     options: ConfigOption[];
 }
 
-export interface Notification {
-    message: string;
-    type: 'success' | 'error';
-}
 
 export const CONFIG_SCHEMA: ConfigSection[] = [
     {
