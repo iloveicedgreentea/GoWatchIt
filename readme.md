@@ -28,10 +28,11 @@
 
 ## Table of Contents
 - [Features](#features)
-- [Setup](#docs/setup.md)
+<!-- TODO: add other pages here -->
+- [Setup](./docs/setup.md)
 - [Usage](#usage)
 - [Home Assistant Quickstart](#Home-Assistant-Quickstart)
-- [How BEQ Support Works](#docs/beq.md)
+- [How BEQ Support Works](./docs/beq.md)
 - [Help](#help)
 
 ## Features

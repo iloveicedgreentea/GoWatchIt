@@ -1,3 +1,4 @@
+<!-- TODO: add TOC here back to main page -->
 
 ## How BEQ Support Works
 On play and resume, it will load the profile. On pause and stop, it will unload it (so you don't forget to). It has some logic to cache the profile so if you pause and unpause, the profile will get loaded much faster as it skips searching the DB and stuff. 

@@ -48,16 +48,23 @@ func main() {
 		baseDir = "."
 	}
 
+	dbDir := fmt.Sprintf("%s/db.sqlite3", baseDir)
+	log.Debug("Base directory", slog.String("dbDir", dbDir))
+
 	// TODO: use const for sql file location
 	// TODO: file needs to be docker-compatible
 	// Create the database connection
 	log.Info("Connecting to the database...")
-	db, err := database.GetDB(fmt.Sprintf("%s/db.sqlite3", baseDir))
+	db, err := database.GetDB(dbDir)
 	if err != nil {
 		logger.Fatal("Failed to connect to the database: ", err)
 	}
+	if db == nil {
+		logger.Fatal("db is nil")
+	}
 	// close db when done
 	defer func() {
+		log.Debug("Closing the database connection")
 		if err := db.Close(); err != nil {
 			logger.Fatal("Failed to close the database: ", err)
 		}

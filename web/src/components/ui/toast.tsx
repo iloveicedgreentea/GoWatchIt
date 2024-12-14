@@ -5,6 +5,7 @@ import { X } from "lucide-react"
 import { cn } from "../../lib/utils"
 const ToastProvider = ToastPrimitives.Provider
 
+// TODO: dont block stuff and dont show more than one
 const ToastViewport = React.forwardRef<
     React.ComponentRef<typeof ToastPrimitives.Viewport>,
     React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>

@@ -3,23 +3,33 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // GetDB returns a connection to the database
 func GetDB(path string) (*sql.DB, error) {
+	log := logger.GetLogger()
 	if path != ":memory:" {
+
 		// Check if the file exists
-		_, err := os.Stat(path)
+		dirInfo, err := os.Stat(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to stat database file: %w", err)
+		}
+		log.Debug("Directory info", slog.Any("dirInfo", dirInfo))
+		log.Debug("Checking if database file exists", slog.String("path", path))
 		if os.IsNotExist(err) {
 			// Create the directory if it doesn't exist
 			dir := filepath.Dir(path)
 			if err := os.MkdirAll(dir, 0o750); err != nil {
 				return nil, err
 			}
+			log.Debug("Creating database directory", slog.String("dir", dir))
 
 			// Create an empty file
 			// TODO: is path ever user supplied? potential directory traversal
@@ -27,6 +37,7 @@ func GetDB(path string) (*sql.DB, error) {
 			if err != nil {
 				return nil, err
 			}
+			log.Debug("File created", slog.String("path", path))
 			err = file.Close()
 			if err != nil {
 				return nil, err
@@ -40,12 +51,22 @@ func GetDB(path string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	log.Debug("Database connection opened", slog.String("path", path), slog.Any("db", db))
+
 	// Ping the database to verify the connection
 	err = db.Ping()
 	if err != nil {
-		err = db.Close()
-		return nil, err
+		log.Error("Failed to ping the database", slog.Any("error", err))
+		err2 := db.Close()
+		return nil, fmt.Errorf("failed to ping the database: %w %w", err, err2)
 	}
+
+	var count int
+	err = db.QueryRow("SELECT 1").Scan(&count)
+	if err != nil {
+		logger.Fatal("Failed to run test query: ", err)
+	}
+	log.Debug("Successfully ran test query")
 
 	return db, nil
 }
