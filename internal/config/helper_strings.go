@@ -2,10 +2,17 @@ package config
 
 import (
 	"context"
+	"strings"
 
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
+
+func santizeURL(url string) string {
+	url = strings.ReplaceAll(url, "http://", "")
+	url = strings.ReplaceAll(url, "https://", "")
+	return url
+}
 
 // Main
 func GetMainListenPort() string {
@@ -72,6 +79,8 @@ func GetHomeAssistantUrl() string {
 		return ""
 	}
 
+	config.URL = santizeURL(config.URL)
+
 	if config.URL == "" {
 		return "homeassistant.local"
 	}
@@ -127,6 +136,8 @@ func GetEZBeqUrl() string {
 		logger.Error("Failed to load EZBEQ config", "error", err)
 		return ""
 	}
+
+	config.URL = santizeURL(config.URL)
 
 	if config.URL == "" {
 		return "ezbeq.local"
@@ -207,6 +218,9 @@ func GetPlexUrl() string {
 		logger.Error("Failed to load Plex config", "error", err)
 		return ""
 	}
+
+	config.URL = santizeURL(config.URL)
+
 	return config.URL
 }
 

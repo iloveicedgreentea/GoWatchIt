@@ -137,12 +137,9 @@ func main() {
 	go eventHandler(ctx, eventChan, beqClient, homeAssistantClient)
 
 	// init the router
-	port := config.GetMainListenPort()
-	if port == "" {
-		port = "9999"
-	}
-	log.Info("Starting server")
+	port := "9999"
 	log.Debug("Listening on port", slog.String("port", port))
+	log.Info("Started server")
 	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
 		logger.Fatal(err.Error())
 	}

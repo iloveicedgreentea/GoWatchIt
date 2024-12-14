@@ -18,6 +18,15 @@ func Fatal(msg string, args ...any) {
 	os.Exit(1)
 }
 
+func getLogFilePath() string {
+	env := os.Getenv("LOG_ENV")
+	if env == "" {
+		return "/data/app.log"
+	}
+
+	return "./app.log"
+}
+
 // AddLoggerToContext adds a slog.Logger to the context
 func AddLoggerToContext(ctx context.Context, logger *slog.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, logger)
@@ -46,20 +55,22 @@ func GetLogger() *slog.Logger {
 
 		// Set up logging to file if LOG_FILE is "true"
 		if os.Getenv("LOG_FILE") == "true" {
+			logFilePath := getLogFilePath()
 			// Remove old log file
-			err := os.Remove("/data/application.log")
+			err := os.Remove(logFilePath)
 			if err != nil && !os.IsNotExist(err) {
 				slog.Error("Failed to remove log file", "error", err)
 			}
 
 			// Open a new log file
-			file, err := os.OpenFile("/data/application.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+			// #nosec G304 - We are not using user input to create the file
+			file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 			if err != nil {
 				slog.Error("Failed to open log file", "error", err)
 			} else {
 				// Create a multi-writer for both file and stdout
 				multiWriter := io.MultiWriter(file, os.Stdout)
-				handler = slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
+				handler = slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
 					Level:     level,
 					AddSource: true,
 				})

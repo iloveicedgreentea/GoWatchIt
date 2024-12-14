@@ -123,6 +123,14 @@ func SaveConfig(c *gin.Context) {
 
 // GetLogs returns application logs (implement based on your logging system)
 func GetLogs(c *gin.Context) {
-	// TODO: Implement log retrieval from your logging system
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Log retrieval not implemented"})
+	entries, err := logger.GetLogEntries()
+	if err != nil {
+		logger.GetLogger().Error("Failed to retrieve logs",
+			"error", err,
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, entries)
 }

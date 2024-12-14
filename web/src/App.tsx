@@ -4,6 +4,7 @@ import { ThemeProvider } from "./components/ThemeProvider"
 import { AppLayout } from "./components/layout/AppLayout"
 import { Dashboard } from "./pages/Dashboard"
 import ConfigurationPage from "./pages/ConfigurationPage"
+import Logs from "./pages/Logs"
 import { ToastContextProvider } from "./components/providers/toast";
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/configuration" element={<ConfigurationPage />} />
+              <Route path="/logs" element={<Logs />} />
             </Routes>
           </AppLayout>
         </ToastContextProvider>

@@ -10,4 +10,5 @@ docker-push:
 docker-run:
 	LOG_FILE=false LOG_LEVEL=debug docker-compose -f docker-compose-test.yml up
 run: 
-	LOG_FILE=false LOG_LEVEL=debug go run ./cmd/gowatchit/
+	LOG_ENV=local LOG_FILE=true LOG_LEVEL=debug go run ./cmd/gowatchit/
+

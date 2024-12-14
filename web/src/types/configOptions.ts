@@ -15,35 +15,11 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 section: 'ezbeq'
             },
             {
-                key: 'adjustmastervolumewithprofile',
-                label: 'Adjust Master Volume With Profile',
-                description: 'Most BEQ profiles have a Master Volume adjustment. Most lower the MV but some raise it. I recommend this on because the BEQ is created with MV in mind.',
-                type: 'checkbox',
-                defaultValue: true,
-                section: 'ezbeq'
-            },
-            {
-                key: 'dryrun',
-                label: 'Dryrun',
-                description: 'Keep EzBEQ in dryrun mode',
-                type: 'checkbox',
-                defaultValue: false,
-                section: 'ezbeq'
-            },
-            {
-                key: 'enabletvbeq',
-                label: 'TV BEQ',
-                description: 'Check TV media types for BEQ',
-                type: 'checkbox',
-                defaultValue: false,
-                section: 'ezbeq'
-            },
-            {
-                key: 'notifyonload',
-                label: 'Notify On Load',
-                description: 'Notify you on BEQ Load/Unload/Issues',
-                type: 'checkbox',
-                defaultValue: false,
+                key: 'url',
+                label: 'EzBEQ URL',
+                description: 'EzBEQ hostname or IP',
+                type: 'text',
+                placeholder: 'ezbeq.local',
                 section: 'ezbeq'
             },
             {
@@ -55,60 +31,89 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 section: 'ezbeq'
             },
             {
+                key: 'adjustmastervolumewithprofile',
+                label: 'Adjust Master Volume With Profile',
+                description: 'Most BEQ profiles have a Master Volume adjustment. Many lower the MV but some raise it. I recommend this on because the BEQ is created with MV in mind.',
+                type: 'checkbox',
+                defaultValue: true,
+                section: 'ezbeq'
+            },
+            {
+                key: 'dryrun',
+                label: 'Dryrun',
+                description: 'Load EzBEQ in dryrun mode which will not actually load the profile but will just show you what it would do.',
+                type: 'checkbox',
+                defaultValue: false,
+                section: 'ezbeq'
+            },
+            {
+                key: 'enabletvbeq',
+                label: 'TV BEQ',
+                description: 'Enable searching BEQ for TV Shows (player dependent)',
+                type: 'checkbox',
+                defaultValue: false,
+                section: 'ezbeq'
+            },
+            {
+                key: 'notifyonload',
+                label: 'Notify On Load',
+                description: 'Notify you on BEQ Load/Unload/Issues (requires Home Assistant)',
+                type: 'checkbox',
+                defaultValue: false,
+                section: 'ezbeq'
+            },
+
+            {
                 key: 'preferredauthor',
                 label: 'BEQ Preferred Author',
-                description: 'A whitelist of authors. Comma separated. Leave blank to use the first one returned.',
+                description: 'A whitelist of authors. Comma separated. Leave blank to use any.',
                 type: 'text',
+                placeholder: 'author1, author2',
                 section: 'ezbeq'
             },
             {
                 key: 'slots',
                 label: 'MiniDSP Slots',
-                description: 'Which slot(s) to load into',
+                description: 'Which slot(s) to load into. Set this to your MiniDSP preset slot.',
                 type: 'numberArray',
                 defaultValue: [1],
                 section: 'ezbeq'
             },
-            {
-                key: 'stopplexifmismatch',
-                label: 'Stop Plex On Mismatch',
-                description: 'Send a Stop to Plex if its transcoding incorrectly',
-                type: 'checkbox',
-                defaultValue: false,
-                section: 'ezbeq'
-            },
-            {
-                key: 'url',
-                label: 'EzBEQ URL',
-                description: 'EzBEQ URL - Must have http://',
-                type: 'text',
-                placeholder: 'http://x.x.x.x',
-                section: 'ezbeq'
-            },
-            {
-                key: 'useavrcodecsearch',
-                label: 'Use AVR For Codec Lookup',
-                description: 'Use a supported AVR to get the codec instead of Plex metadata. Could be more accurate.',
-                type: 'checkbox',
-                defaultValue: false,
-                section: 'ezbeq'
-            },
-            {
-                key: 'avrbrand',
-                label: 'Source',
-                description: 'Supported AVR brands - Currently only supports "denon" for all Denon and Marantz',
-                type: 'select',
-                options: [{ label: 'Denon', value: 'denon' }],
-                section: 'ezbeq'
-            },
-            {
-                key: 'avrip',
-                label: 'AVR IP address',
-                description: 'IP Address for your AVR - "x.x.x.x"',
-                type: 'text',
-                placeholder: 'x.x.x.x',
-                section: 'ezbeq'
-            }
+            // TODO: maybe support this
+            // {
+            //     key: 'stopplexifmismatch',
+            //     label: 'Stop Plex On Mismatch',
+            //     description: 'Send a Stop to Plex if its transcoding incorrectly',
+            //     type: 'checkbox',
+            //     defaultValue: false,
+            //     section: 'ezbeq'
+            // },
+
+            // TODO: maybe support this
+            // {
+            //     key: 'useavrcodecsearch',
+            //     label: 'Use AVR For Codec Lookup',
+            //     description: 'Use a supported AVR to get the codec instead of Plex metadata. Could be more accurate.',
+            //     type: 'checkbox',
+            //     defaultValue: false,
+            //     section: 'ezbeq'
+            // },
+            // {
+            //     key: 'avrbrand',
+            //     label: 'Source',
+            //     description: 'Supported AVR brands - Currently only supports "denon" for all Denon and Marantz',
+            //     type: 'select',
+            //     options: [{ label: 'Denon', value: 'denon' }],
+            //     section: 'ezbeq'
+            // },
+            // {
+            //     key: 'avrip',
+            //     label: 'AVR IP address',
+            //     description: 'IP Address for your AVR - "x.x.x.x"',
+            //     type: 'text',
+            //     placeholder: 'x.x.x.x',
+            //     section: 'ezbeq'
+            // }
         ]
     },
     {
@@ -126,15 +131,15 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
             {
                 key: 'url',
                 label: 'Home Assistant URL',
-                description: 'URL - Must have http://',
+                description: 'URL - host name or IP',
                 type: 'text',
-                placeholder: 'http://x.x.x.x',
+                placeholder: 'homeassistant.local',
                 section: 'homeassistant'
             },
             {
                 key: 'port',
-                label: 'Home Assistant port',
-                description: 'port - "8123"',
+                label: 'Home Assistant Port',
+                description: 'Port',
                 type: 'text',
                 defaultValue: '8123',
                 section: 'homeassistant'
@@ -142,15 +147,16 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
             {
                 key: 'token',
                 label: 'Home Assistant token',
-                description: 'token - "ey.xyz" get a token from your user profile',
+                description: 'HA User token - "ey.xyz" get a token from your user profile',
                 type: 'text',
                 section: 'homeassistant'
             },
             {
                 key: 'notifyendpointname',
-                label: 'Notify Endpoint',
+                label: 'Notify Endpoint Name',
                 description: 'Name of the Home Assistant notify endpoint (like your phone)',
                 type: 'text',
+                placeholder: 'notify.mobile_app_iphone',
                 section: 'homeassistant'
             }
         ]
@@ -162,7 +168,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
             {
                 key: 'enabled',
                 label: 'Enabled',
-                description: 'Use plex',
+                description: 'Use Native Plex integration (webhooks)',
                 type: 'checkbox',
                 defaultValue: false,
                 section: 'plex'
@@ -172,13 +178,13 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 label: 'Plex URL',
                 description: 'IP or domain of your plex server',
                 type: 'text',
-                placeholder: 'x.x.x.x',
+                placeholder: 'plex.local',
                 section: 'plex'
             },
             {
                 key: 'port',
                 label: 'Plex port',
-                description: 'port - "32400"',
+                description: 'port',
                 type: 'text',
                 defaultValue: '32400',
                 section: 'plex'
@@ -186,35 +192,27 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
             {
                 key: 'ownernamefilter',
                 label: 'Owner Name Filter',
-                description: 'Your primary account, will filter webhooks so others don\'t trigger. Leave blank if you don\'t want to filter on accounts',
+                description: 'Your primary account, will filter webhooks so others don\'t trigger. Leave blank if you don\'t want to filter on any accounts',
                 type: 'text',
                 section: 'plex'
             },
             {
                 key: 'deviceuuidfilter',
                 label: 'Device UUID Filter',
-                description: 'The client identifier of the device to filter webhooks for. You should set this to your theater player UUID, or a comma separated string (filter1,filter2) if you have multiple devices.',
+                description: 'The client identifier of the device to filter webhooks for. You should set this to your theater player UUID so other players don\'t trigger BEQ.',
                 type: 'text',
-                section: 'plex'
-            },
-            {
-                key: 'enabletrailersupport',
-                label: 'Enable Trailer Support',
-                description: 'If you enable trailers before movies, it can process it like turn off lights. No beq obviously.',
-                type: 'checkbox',
-                defaultValue: false,
                 section: 'plex'
             }
         ]
     },
     {
-        name: 'Generic Media Player',
+        name: 'Generic Media Player WIP - Not Supported',
         enabled: false,
         options: [
             {
                 key: 'enabled',
                 label: 'Enabled',
-                description: 'Use jellyfin',
+                description: 'WIP',
                 type: 'checkbox',
                 defaultValue: false,
                 section: 'jellyfin'
@@ -274,7 +272,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
         ]
     },
     {
-        name: 'signal',
+        name: 'signal WIP - Not Supported',
         enabled: false,
         options: [
             {
