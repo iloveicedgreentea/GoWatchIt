@@ -24,7 +24,7 @@ func getLogFilePath() string {
 		return "/data/app.log"
 	}
 
-	return "./app.log"
+	return "./applog.log"
 }
 
 // AddLoggerToContext adds a slog.Logger to the context

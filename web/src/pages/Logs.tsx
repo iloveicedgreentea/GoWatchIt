@@ -9,6 +9,7 @@ import type { LogEntry } from '../types/logs';
 
 const API_BASE_URL = 'http://localhost:9999';
 const TITLE = 'Logs';
+const REFRESH_INTERVAL = 1000; // 1 second
 
 export default function Logs() {
     const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -33,11 +34,15 @@ export default function Logs() {
     };
 
     useEffect(() => {
+        // Initial fetch
         fetchLogs();
-        // Only fetch once on mount
-    }, []); // Empty dependency array
 
+        // Set up interval for auto-refresh
+        const intervalId = setInterval(fetchLogs, REFRESH_INTERVAL);
 
+        // Cleanup on unmount
+        return () => clearInterval(intervalId);
+    }, []);
 
     const getLevelColor = (level: string): "destructive" | "default" | "secondary" | "outline" => {
         switch (level) {
@@ -49,31 +54,11 @@ export default function Logs() {
         }
     };
 
-
-
-
     return (
         <Container>
             <PageHeader title={TITLE} />
             <Card>
                 <CardContent className="p-4">
-                    {/* <div className="flex items-center gap-4 mb-4">
-                        <Select value={levelFilter} onValueChange={setLevelFilter}>
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="Select Level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Levels</SelectItem>
-                                <SelectItem value="info">Info</SelectItem>
-                                <SelectItem value="warn">Warning</SelectItem>
-                                <SelectItem value="error">Error</SelectItem>
-                                <SelectItem value="debug">Debug</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button onClick={handleRefresh} variant="outline">
-                            Refresh
-                        </Button>
-                    </div> */}
                     <ScrollArea className="h-[600px] w-full rounded-md border">
                         {logs.map((log, index) => (
                             <div key={index} className="p-4 border-b last:border-0">
@@ -93,9 +78,6 @@ export default function Logs() {
                                 {log.source && (
                                     <pre className="mt-2 text-xs bg-muted p-2 rounded-md overflow-x-auto">
                                         Source: {log.source.file}:{log.source.line}
-                                        {/* <p className="text-sm">{log.source.Line}</p> */}
-                                        {/* <p className="text-sm">{log.source.Function}</p> */}
-                                        {/* {JSON.stringify(log.source, null, 2)} */}
                                     </pre>
                                 )}
                             </div>

@@ -23,3 +23,4 @@ coverage.*
 
 *.db
 *.sqlite3
+applog.log
