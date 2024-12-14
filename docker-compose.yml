@@ -8,11 +8,7 @@ services:
       - '3000:3000'
     environment: 
       LOG_LEVEL: 'debug'
-      LOG_TO_FILE: 'true'
+      LOG_FILE: 'true'
       BASE_DIR: '/data'
     volumes:
-      - data_volume:/data 
-
-volumes:
-  data_volume: 
-    driver: local 
+      - ./docker/data/:/data 

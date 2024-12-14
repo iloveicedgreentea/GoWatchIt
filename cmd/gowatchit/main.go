@@ -30,9 +30,19 @@ func noCache() gin.HandlerFunc {
 func main() {
 	// init context
 	ctx := context.Background()
-	log := logger.GetLoggerFromContext(ctx)
 
 	// reuse logger object in calls
+	err := logger.InitLoggerFile()
+	if err != nil {
+		logger.Fatal("Failed to initialize the logger: ", err)
+	}
+	defer func() {
+		if err := logger.CleanupLogger(); err != nil {
+			logger.Fatal("Failed to close the logger: ", err)
+		}
+	}()
+
+	log := logger.GetLogger()
 	logger.AddLoggerToContext(ctx, log)
 
 	log.Info("Starting up please wait until the server is ready...")
@@ -62,8 +72,12 @@ func main() {
 	if db == nil {
 		logger.Fatal("db is nil")
 	}
+
 	// close db when done
 	defer func() {
+		if err := logger.CleanupLogger(); err != nil {
+			logger.Fatal("Failed to close the logger: ", err)
+		}
 		log.Debug("Closing the database connection")
 		if err := db.Close(); err != nil {
 			logger.Fatal("Failed to close the database: ", err)
@@ -92,7 +106,18 @@ func main() {
 
 	// cors
 	router.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		origin := c.Request.Header.Get("Origin")
+
+		// Define allowed origins
+		allowedOrigins := map[string]bool{
+			"http://localhost:5173": true, // bun
+			"http://localhost:3000": true, // nginx
+		}
+
+		// Check if origin is allowed and set the header
+		if allowedOrigins[origin] {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")

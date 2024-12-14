@@ -15,19 +15,20 @@ import (
 func GetDB(path string) (*sql.DB, error) {
 	log := logger.GetLogger()
 	if path != ":memory:" {
-
+		log.Debug("not using in-memory database", slog.String("path", path))
 		// Check if the file exists
-		dirInfo, err := os.Stat(path)
+		_, err := os.Stat(path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to stat database file: %w", err)
+			if !os.IsNotExist(err) {
+				return nil, fmt.Errorf("failed to stat database file: %w", err)
+			}
+			log.Debug("Database file does not exist", slog.String("path", path))
 		}
-		log.Debug("Directory info", slog.Any("dirInfo", dirInfo))
-		log.Debug("Checking if database file exists", slog.String("path", path))
 		if os.IsNotExist(err) {
 			// Create the directory if it doesn't exist
 			dir := filepath.Dir(path)
 			if err := os.MkdirAll(dir, 0o750); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to create database directory: %w", err)
 			}
 			log.Debug("Creating database directory", slog.String("dir", dir))
 
@@ -35,12 +36,12 @@ func GetDB(path string) (*sql.DB, error) {
 			// TODO: is path ever user supplied? potential directory traversal
 			file, err := os.Create(path) // #nosec
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to create database file: %w", err)
 			}
 			log.Debug("File created", slog.String("path", path))
 			err = file.Close()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to close created database file: %w", err)
 			}
 		}
 	}

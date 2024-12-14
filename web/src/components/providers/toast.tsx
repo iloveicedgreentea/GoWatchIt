@@ -35,7 +35,7 @@ export function ToastContextProvider({
 }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [isConnected, setIsConnected] = useState(true);
-    const [retryDelay, setRetryDelay] = useState(INITIAL_RETRY_DELAY);
+    const [_, setRetryDelay] = useState<number>(INITIAL_RETRY_DELAY);
 
     // Remove old toasts when we exceed the limit
     useEffect(() => {
