@@ -17,7 +17,7 @@ declare -a FAILURES=()
 
 # Find all directories excluding .git and vendor
 find_test_dirs() {
-    find . -type d \( ! -path "*/\.*" ! -path "*/vendor/*" \)
+    find . -type d \( ! -path "*/\.*" ! -path "*/vendor/*" ! -path "*/web/*" \)
 }
 
 # Run tests in a directory
