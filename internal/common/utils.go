@@ -4,6 +4,6 @@ import (
 	"strings"
 )
 
-func InsensitiveContains(s string, sub string) bool {
+func InsensitiveContains(s, sub string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
 }

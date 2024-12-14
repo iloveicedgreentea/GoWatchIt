@@ -3,6 +3,7 @@ package avr
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -27,7 +28,6 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 		return "", err
 	}
 	cmd := fmt.Sprintf("%s\r", command)
-	log.Debugf("Sending command: %s", cmd)
 
 	// send cmd
 	_, err = conn.Write([]byte(cmd))
@@ -62,17 +62,13 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 		}
 	}
 
-	if err != nil {
-		return "", err
-	}
-
-	log.Debugf("Got result: %s", string(result))
+	log.Debug("result", slog.String("result", string(result)))
 
 	return string(result), nil
 }
 
 // MapDenonToBeq takes denon codec names and Client codecs and normalizes it to BEQ mappings
-func MapDenonToBeq(denonCodec string, clientCodec string) string {
+func MapDenonToBeq(denonCodec, clientCodec string) string {
 	// take plex data also to get channel info. AVR can only say truehd, not 7.1 or 5.1
 	// TODO: check if atmos, otherwise check dtsx, , etc, truehd and compare to plex data, etc
 	switch {
@@ -112,8 +108,8 @@ func MapDenonToBeq(denonCodec string, clientCodec string) string {
 	//     "DOLBY AUDIO-DSUR",
 	//     "DOLBY AUDIO-DD+DSUR",
 	//     "DOLBY PRO LOGIC",
-	//DTS-HD MSTR
-	//DTS-HD
+	// DTS-HD MSTR
+	// DTS-HD
 	// DTS
 	// DTS SURROUND
 	case common.InsensitiveContains(denonCodec, "DTS-HD MA 7.1") && !common.InsensitiveContains(denonCodec, "DTS:X") && !common.InsensitiveContains(denonCodec, "DTS-X"):
@@ -151,13 +147,12 @@ func MapDenonToBeq(denonCodec string, clientCodec string) string {
 	default:
 		return "Empty"
 	}
-
 }
 
 // GetAudioMode returns the current audio mode like dolby atmos, stereo, etc. Best used to detect atmos from truehd
 func (c *DenonClient) GetCodec() (string, error) {
 	mode, err := c.makeReq("MS?")
 	res := strings.ToLower(mode[1:])
-	log.Debugf("res: %s", res)
+	log.Debug("res", slog.Any("resp", res))
 	return res, err
 }

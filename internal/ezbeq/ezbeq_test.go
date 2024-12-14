@@ -1,42 +1,152 @@
 package ezbeq
 
 import (
+	"database/sql"
 	"fmt"
+	l "log"
+	"os"
+	"sync"
 	"testing"
 
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/database"
 	"github.com/iloveicedgreentea/go-plex/models"
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	db     *sql.DB
+	dbOnce sync.Once
+)
+
+// TestMain sets up the database and runs the tests
+func TestMain(m *testing.M) {
+	var code int
+	dbOnce.Do(func() {
+		// Setup code before tests
+		var err error
+
+		// Open SQLite database connection
+		db, err = database.GetDB(":memory:")
+		if err != nil {
+			l.Fatalf("Failed to open database: %v", err)
+		}
+
+		// run migrations
+		err = database.RunMigrations(db)
+		if err != nil {
+			l.Fatalf("Failed to run migrations: %v", err)
+		}
+
+		// Initialize the config with the database
+		err = config.InitConfig(db)
+		if err != nil {
+			l.Fatalf("Failed to initialize config: %v", err)
+		}
+
+		cf := config.GetConfig()
+
+		// populate test data
+		beqCfg := models.EZBEQConfig{
+			Enabled:              true,
+			DryRun:               true,
+			URL:                  "ezbeq.local",
+			Port:                 "8080",
+			Scheme:               "http",
+			LooseEditionMatching: true,
+			SkipEditionMatching:  false,
+		}
+		err = cf.SaveConfig(&beqCfg)
+		if err != nil {
+			l.Fatalf("Failed to save ezbeq config: %v", err)
+		}
+		// Run the tests
+		code = m.Run()
+
+		// Cleanup code after tests
+		err = db.Close()
+		if err != nil {
+			l.Printf("Error closing database: %v", err)
+		}
+	})
+	// Exit with the test result code
+	os.Exit(code)
+}
+
 // TestMuteCmds send commands to minidsp
 func TestMuteCmds(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
+	a := assert.New(t)
 
-	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
-	assert.NoError(err)
+	c, err := NewClient()
+	a.NoError(err)
 
 	// send mute commands
-	assert.NoError(c.MuteCommand(true))
-	assert.NoError(c.MuteCommand(false))
+	a.NoError(c.MuteCommand(true))
+	a.NoError(c.MuteCommand(false))
 }
-func TestGetStatus(t *testing.T) {
-	c := &BeqClient{
-		ServerURL: config.GetString("ezbeq.url"),
-		Port:      config.GetString("ezbeq.port"),
+
+func TestCheckEdition(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		beqEdition string
+		edition    models.Edition
+		expected   bool
 	}
+	tests := []test{
+		{
+			beqEdition: "Extended",
+			edition:    models.EditionExtended,
+			expected:   true,
+		},
+		{
+			beqEdition: "ex",
+			edition:    models.EditionExtended,
+			expected:   true,
+		},
+		{
+			beqEdition: "EX",
+			edition:    models.EditionExtended,
+			expected:   true,
+		},
+		{
+			beqEdition: "DC",
+			edition:    models.EditionDirectorsCut,
+			expected:   true,
+		},
+		{
+			beqEdition: "DC+SE+TC",
+			edition:    models.EditionDirectorsCut,
+			expected:   true,
+		},
+	}
+
+	for i := range tests {
+		test := tests[i] // Capture range variable
+		t.Run(fmt.Sprintf("Edition_%s", test.beqEdition), func(t *testing.T) {
+			t.Parallel()
+			match := checkEdition(&models.BeqCatalog{Edition: test.beqEdition}, test.edition)
+			assert.Equal(t, test.expected, match, "Expected: ", test.expected, "Got: ", match, "for ", test.beqEdition)
+		})
+	}
+}
+
+func TestGetStatus(t *testing.T) {
+	t.Parallel()
+	c, err := NewClient()
+	assert.NoError(t, err)
 
 	// send mute commands
 	assert.NotEmpty(t, c.Port)
 	assert.NotEmpty(t, c.ServerURL)
 
-	err := c.GetStatus()
+	err = c.GetStatus()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, c.DeviceInfo)
-
 }
 
 func TestSingleDevice(t *testing.T) {
+	t.Parallel()
 	rawJson := `{
 		"master": {
 		  "type": "minidsp",
@@ -162,7 +272,8 @@ func TestSingleDevice(t *testing.T) {
 
 	payload, err := mapToBeqDevice([]byte(rawJson))
 	assert.NoError(t, err)
-	var deviceInfo []models.BeqDevices
+
+	deviceInfo := make([]models.BeqDevices, 0, len(payload))
 	for _, v := range payload {
 		deviceInfo = append(deviceInfo, v)
 	}
@@ -174,7 +285,9 @@ func TestSingleDevice(t *testing.T) {
 		t.Log(v.Name)
 	}
 }
+
 func TestDualDevice(t *testing.T) {
+	t.Parallel()
 	rawJson := `{
 		"master": {
 		  "name": "master",
@@ -354,7 +467,8 @@ func TestDualDevice(t *testing.T) {
 
 	payload, err := mapToBeqDevice([]byte(rawJson))
 	assert.NoError(t, err)
-	var deviceInfo []models.BeqDevices
+	// preallocate memory
+	deviceInfo := make([]models.BeqDevices, 0, len(payload))
 	for _, v := range payload {
 		deviceInfo = append(deviceInfo, v)
 	}
@@ -365,72 +479,82 @@ func TestDualDevice(t *testing.T) {
 		t.Log(v.Name)
 	}
 }
-func TestUrlEncode(t *testing.T) {
-	s := urlEncode("DTS-HD MA 7.1")
-	assert.Equal(t, "DTS-HD+MA+7.1", s)
-}
 
 func TestHasAuthor(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
+	a := assert.New(t)
 	type testStruct struct {
-		author string
+		author   string
 		expected bool
 	}
 	tt := []testStruct{
 		{
-			author: "aron7awol",
+			author:   "aron7awol",
 			expected: true,
 		},
 		{
-			author: "None",
+			author:   "None",
 			expected: false,
 		},
 		{
-			author: " ",
+			author:   " ",
 			expected: false,
 		},
 		{
-			author: "",
+			author:   "",
 			expected: false,
 		},
 		{
-			author: "none",
+			author:   "none",
 			expected: false,
 		},
 		{
-			author: "aron7awol, mobe1969",
+			author:   "aron7awol, mobe1969",
 			expected: true,
 		},
 	}
-	for _, tc := range tt {
-		tc := tc
-		s := hasAuthor(tc.author)
-		assert.Equal(tc.expected, s)
+	for i := range tt {
+		tc := tt[i] // Capture range variable
+		t.Run(fmt.Sprintf("Author_%s", tc.author), func(t *testing.T) {
+			t.Parallel()
+			s := hasAuthor(tc.author)
+			a.Equal(tc.expected, s)
+		})
 	}
-}
-
-func TestBuildAuthorWhitelist(t *testing.T) {
-
-	s := buildAuthorWhitelist("aron7awol, mobe1969", "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345")
-	assert.Equal(t, "/api/1/search?audiotypes=dts-x&years=2011&tmdbid=12345&authors=aron7awol&authors=mobe1969", s)
 }
 
 func TestSearchCatalog(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
+	a := assert.New(t)
+	// TODO: test searching
 
-	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
-	assert.NoError(err)
+	c, err := NewClient()
+	a.NotNil(c)
+	a.NoError(err)
 
 	// list of testing structs
 	type testStruct struct {
-		m                               models.SearchRequest
+		m                               models.BeqSearchRequest
 		expectedEdition, expectedDigest string
 		expectedMvAdjust                float64
 	}
 	tt := []testStruct{
 		{
+			// Stargate (1994) {edition-Extended Edition} Remux 1080p
+			m: models.BeqSearchRequest{
+				TMDB:            "2164",
+				Year:            1994,
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "none",
+				Edition:         "Extended",
+			},
+			expectedEdition:  "Extended Cut",
+			expectedDigest:   "6d9cfaed8335a348491eebae27f7f5fb11752e32df64b46d24d6f995dd74d96d",
+			expectedMvAdjust: 0,
+		},
+		{
 			// fast five extended
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "51497",
 				Year:            2011,
 				Codec:           "DTS-X",
@@ -443,7 +567,7 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			// Jung E
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "843794",
 				Year:            2023,
 				Codec:           "DD+ Atmos",
@@ -454,7 +578,7 @@ func TestSearchCatalog(t *testing.T) {
 			expectedDigest:  "1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0",
 		},
 		{
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "51497",
 				Year:            2011,
 				Codec:           "DTS-X",
@@ -466,7 +590,7 @@ func TestSearchCatalog(t *testing.T) {
 			expectedMvAdjust: -1.5,
 		},
 		{
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "51497",
 				Year:            2011,
 				Codec:           "DTS-X",
@@ -480,7 +604,7 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing
 			// return 7.1 version of aron7awol
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
 				Codec:           "DTS-HD MA 7.1",
@@ -493,7 +617,7 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			// return 7.1 version of mobe1969
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
 				Codec:           "DTS-HD MA 7.1",
@@ -504,35 +628,35 @@ func TestSearchCatalog(t *testing.T) {
 			expectedDigest:  "73a1eef9ce33abba7df0a9d2b4cec41254f6a521d521e104fa3cd2e7297c26d9",
 		},
 		{
-			// return 7.1 version with mutliple authors
-			m: models.SearchRequest{
+			// return 7.1 version with multiple authors
+			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
 				Codec:           "DTS-HD MA 7.1",
 				PreferredAuthor: "mobe1969, aron7awol",
 				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest:  "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedEdition:  "",
+			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
 			expectedMvAdjust: -3.5,
 		},
 		{
-			// return 7.1 version with mutliple authors
-			m: models.SearchRequest{
+			// return 7.1 version with multiple authors
+			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
 				Codec:           "DTS-HD MA 7.1",
 				PreferredAuthor: "aron7awol,mobe1969",
 				Edition:         "",
 			},
-			expectedEdition: "",
-			expectedDigest:  "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
+			expectedEdition:  "",
+			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
 			expectedMvAdjust: -3.5,
 		},
 		{
 			// 12 strong has multiple codecs AND authors, so good for testing
 			// return 7.1 version of aron7awol
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
 				Codec:           "DTS-HD MA 7.1",
@@ -545,7 +669,7 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			// return 5.1 version of aron7awol
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "429351",
 				Year:            2018,
 				Codec:           "DTS-HD MA 5.1",
@@ -558,7 +682,7 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			// return 5.1 version of aron7awol
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "547016",
 				Year:            2020,
 				Codec:           "DD+ Atmos",
@@ -571,7 +695,7 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			// should be TrueHD 7.1
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "56292",
 				Year:            2011,
 				Codec:           "TrueHD 7.1",
@@ -584,7 +708,7 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			//  spiderman universe
-			m: models.SearchRequest{
+			m: models.BeqSearchRequest{
 				TMDB:            "56292",
 				Year:            2011,
 				Codec:           "TrueHD 7.1",
@@ -595,38 +719,57 @@ func TestSearchCatalog(t *testing.T) {
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
 			expectedMvAdjust: 0.0,
 		},
+		{
+			//  Star Wars (1977) {edition-Project 4K77} Remux 2160p DTS-HD MA
+			m: models.BeqSearchRequest{
+				TMDB:            "11",
+				Year:            1977,
+				Codec:           "DTS-HD MA 5.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "Project 4K77",
+			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",
+			expectedMvAdjust: 1.0,
+		},
 	}
 
-	for _, tc := range tt {
-		tc := tc
-		// should be TrueHD 7.1
-		res, err := c.searchCatalog(&tc.m)
-		assert.NoError(err)
-		assert.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
-		assert.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
-		assert.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.m.Title, func(t *testing.T) {
+			t.Parallel()
+			res, err := c.searchCatalog(&tc.m)
+			a.NoError(err)
+			a.Equal(tc.expectedDigest, res.Digest, fmt.Sprintf("digest did not match %s", res.Digest))
+			a.Equal(tc.expectedEdition, res.Edition, fmt.Sprintf("edition did not match %s", res.Digest))
+			a.Equal(tc.expectedMvAdjust, res.MvAdjust, fmt.Sprintf("MV did not match %s", res.Digest))
+		})
 	}
-
-	_, err = c.searchCatalog(&models.SearchRequest{
+	// should always fail
+	_, err = c.searchCatalog(&models.BeqSearchRequest{
 		TMDB:            "ojdsfojnekfw",
 		Year:            2018,
 		Codec:           "DTS-HD MA 5.1",
 		PreferredAuthor: "none",
 		Edition:         "",
 	})
-	assert.Error(err)
+	a.Error(err)
 }
 
 // load and unload a profile. Watch ezbeq UI to confirm, but if it doesnt error it probably loaded fine
 // ezbeq doesnt expose a failure if the entry_id is wrong, so need to look at UI for now
 // I could write a scraper to find instance of fast five in slot one, thats a lot of work for a small test
 func TestLoadProfile(t *testing.T) {
-	assert := assert.New(t)
+	t.Parallel()
+	if os.Getenv("RUN_INTEGRATION") != "true" {
+		t.Skip("skipping TestLoadProfile test")
+	}
+	a := assert.New(t)
 
-	c, err := NewClient(config.GetString("ezbeq.url"), config.GetString("ezbeq.port"))
-	assert.NoError(err)
+	c, err := NewClient()
+	a.NoError(err)
 
-	tt := []models.SearchRequest{
+	tt := []models.BeqSearchRequest{
 		{
 			TMDB:            "51497",
 			Year:            2011,
@@ -700,13 +843,12 @@ func TestLoadProfile(t *testing.T) {
 		},
 	}
 
+	// this should not be parallel
 	for _, tc := range tt {
-		tc := tc
 		err = c.LoadBeqProfile(&tc)
-		assert.NoError(err)
+		a.NoError(err)
 
 		err = c.UnloadBeqProfile(&tc)
-		assert.NoError(err)
+		a.NoError(err)
 	}
-
 }

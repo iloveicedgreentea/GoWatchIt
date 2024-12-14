@@ -2,15 +2,12 @@ package common
 
 // all common actions
 import (
-	"fmt"
-	"strconv"
-	"strings"
-	"sync"
+	"context"
+	"log/slog"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
-	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -23,120 +20,28 @@ func IsAtmosCodecPlaying(codec, expectedCodec string) (bool, error) {
 	return false, nil
 }
 
-// trigger HA for MV change per type
-func ChangeMasterVolume(mediaType string) {
-	if config.GetBool("homeassistant.triggeravrmastervolumechangeonevent") && config.GetBool("homeassistant.enabled") {
-		log.Debug("changeMasterVolume: Changing volume")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicvolume"))
-		if err != nil {
-			log.Error()
-		}
-	}
-}
-
-// trigger HA for light change given entity and desired state
-func ChangeLight(state string) {
-	if config.GetBool("homeassistant.triggerlightsonevent") && config.GetBool("homeassistant.enabled") {
-		log.Debug("changeLight: Changing light")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topiclights"))
-		if err != nil {
-			log.Errorf("Error changing light: %v", err)
-		}
-	}
-}
-
-// waitForHDMISync will pause until the source reports HDMI sync is complete
-func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
-	// if called and disabled, skip
-	// stop processing webhooks because if we call pause, that will fire another one and then we get into a loop
-	*skipActions = true
-
-	if !config.GetBool("signal.enabled") {
-		*skipActions = false
-		wg.Done()
-		return
-	}
-	log.Debug("Running HDMI sync wait")
-
-	defer func() {
-		// play item no matter what happens
-		err := PlaybackInterface("play", mediaClient)
-		if err != nil {
-			log.Errorf("Error playing client: %v", err)
-			return
-		}
-
-		// continue processing webhooks when done/
-		// if webhook is delayed, resume will get processed so wait
-		time.Sleep(10 * time.Second)
-		*skipActions = false
-		wg.Done()
-	}()
-
-	signalSource := config.GetString("signal.source")
-	var err error
-	var signal bool
-
-	// pause client
-	log.Debug("pausing client")
-	err = PlaybackInterface("pause", mediaClient)
-	if err != nil {
-		log.Errorf("Error pausing client: %v", err)
-		return
-	}
-
-	// check signal source
-	switch signalSource {
-	case "envy":
-		log.Debug("using envy for hdmi sync")
-		// read envy attributes until its not nosignal
-		envyName := config.GetString("signal.envy")
-		// remove remote. if present
-		if strings.Contains(envyName, "remote") {
-			envyName = strings.ReplaceAll(envyName, "remote.", "")
-		}
-		signal, err = readAttrAndWait(60, "remote", envyName, &models.HAEnvyResponse{}, haClient)
-		// will break out here
-	case "time":
-		seconds := config.GetString("signal.time")
-		log.Debugf("using %v seconds for hdmi sync", seconds)
-		sec, err := strconv.Atoi(seconds)
-		if err != nil {
-			log.Errorf("waitforHDMIsync enabled but no valid source provided. Make sure you have 'time' set as a plain number: %v -- %v", signalSource, err)
-			return
-		}
-		time.Sleep(time.Duration(sec) * time.Second)
-		return
-	case "jvc":
-		// read jvc attributes until its not nosignal
-		log.Warn("jvc HDMI sync is not implemented")
-	case "sensor":
-		log.Warn("sensor HDMI sync is not implemented")
-	default:
-		log.Warn("No valid source provided for hdmi sync")
-	}
-
-	log.Debugf("HDMI Signal value is %v", signal)
-
-	if err != nil {
-		log.Errorf("error getting HDMI signal: %v", err)
-	}
-
-}
-
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entType string, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func ReadAttrAndWait(ctx context.Context, waitTime int, entType models.HomeAssistantEntity, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
+	var attributes models.Attributes
+	log := logger.GetLoggerFromContext(ctx)
 
 	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
-		isSignal, err = haClient.ReadAttributes(entName, attrResp, entType)
+		attributes, err = haClient.ReadAttributes(entName, attrResp, entType)
 		if err != nil {
-			log.Errorf("Error reading %s attributes: %v", entName, err)
+			log.Error("Error reading attributes",
+				slog.String("entity", entName),
+				slog.String("error", err.Error()),
+			)
 			return false, err
 		}
-		log.Debugf("%s signal value is %v", entName, isSignal)
+		isSignal = attributes.SignalStatus
+		log.Debug("Signal value",
+			slog.String("entity", entName),
+			slog.Bool("isSignal", isSignal),
+		)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
@@ -147,12 +52,11 @@ func readAttrAndWait(waitTime int, entType string, entName string, attrResp home
 	}
 
 	return false, err
-
 }
 
 // common function for all supported players
 // TODO: add generic plex/jf client
-// func commonPlay(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, mediaClient Client, avrClient avr.AVRClient, payload interface{}, m *models.SearchRequest, skipActions *bool, wg *sync.WaitGroup) {
+// func commonPlay(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, mediaClient Client, avrClient avr.AVRClient, payload interface{}, m *models.BeqSearchRequest, skipActions *bool, wg *sync.WaitGroup) {
 // 	if payload == nil {
 // 		log.Error("Payload is nil")
 // 		return
