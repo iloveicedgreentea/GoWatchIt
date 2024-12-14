@@ -10,6 +10,7 @@ RUN CGO_ENABLED=0 go build -o /go/bin/app
 
 FROM alpine:20240923
 
+
 RUN apk add --no-cache tzdata supervisor
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/watch.py /watch.py
