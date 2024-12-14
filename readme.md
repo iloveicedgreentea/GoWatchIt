@@ -58,18 +58,16 @@ Other cool stuff:
 ## Usage
 
 ### Web UI
-The web UI is the primary way to configure this application. It is available at `http://(your-server-ip):9999`
+The web UI mainly serves to configure this application. It is available at `http://(your-server-ip):9999`
 
-It will automatically restart the application when you save.
+Each section has an enable/disable toggle. If you disable a section, it will not be used. For example, if you disable BEQ, it will not load BEQ profiles. Options will not be shown if the section is disabled.
 
-Each section has an enable/disable toggle. If you disable a section, it will not be used. For example, if you disable BEQ, it will not load BEQ profiles. If you disable MQTT, it will not send MQTT messages.
-
-### General Usage
-This application will load BEQ profiles automatically when you play something in Plex. It will also set volume, lights, and mute/unmute minidsp if you enable those options. The application itself is not controlling things like lights but relies on Home Assistant to perform the action via MQTT. In theory, you could use any home automation system but Home Assistant is the only one officially supported but anything that can receive MQTT messages should work.
+You can also check application logs. It will fetch logs on the page automatically.
 
 ## Home Assistant Quickstart
 
-### Handlers
+### Endpoints
+
 `/plexwebhook`
 
 `/jellyfin` 
@@ -108,17 +106,16 @@ You must whitelist your server IP in "List of IP addresses and networks that are
 Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I may eventually implement their auth flow but it is not a priority.
 
 ### Logs
-`/logs`
-It will return the current logs as of the last request. It will not stream logs. You can use this to get logs for debugging. Refresh the page to get the latest logs.
+Look at the Logs view in the UI, query the `/logs` endpoint, check stdout, or read the log in `/data`
 
 ### Debugging
 These are environment variables you can set to get more info
 
 `LOG_LEVEL=debug` to have it print out debug logs while running
-
-`SUPER_DEBUG=true` for each line to also have a trace to its call site and line number
+`LOG_FILE=true` to have it write logs to a file
+`LOG_ENV=local` leave blank when using docker
 
 ## Help
-First check your logs to see whats happening via the `/logs` endpoint.
+First check your logs to see whats happening in the Logs view.
 
 If you need help or support due to an error or bug, you must file an issue. If you have a general question, you can ask in the Discussions tab or the AVS Forum post (linked as website above)
