@@ -13,7 +13,8 @@ const REFRESH_INTERVAL = 1000; // 1 second
 
 export default function Logs() {
     const [logs, setLogs] = useState<LogEntry[]>([]);
-    const { addToast } = useToast();
+    const { addToast, isConnected, handleConnectionChange } = useToast();
+    const [lastError, setLastError] = useState<string | null>(null);
 
     const fetchLogs = async () => {
         try {
@@ -23,26 +24,40 @@ export default function Logs() {
             }
             const data = await response.json();
             setLogs(data);
+
+            // Reset error state on successful fetch
+            if (lastError) {
+                setLastError(null);
+            }
+
+            // Signal successful connection
+            handleConnectionChange(false);
+
         } catch (error) {
-            console.error('Error loading logs:', error);
-            addToast({
-                title: 'Error',
-                description: 'Failed to load logs: ' + (error as Error).message,
-                variant: 'destructive',
-            });
+            const errorMessage = (error as Error).message;
+
+            // Only show error toast if it's a new error
+            if (errorMessage !== lastError) {
+                setLastError(errorMessage);
+                addToast({
+                    title: 'Error',
+                    description: 'Failed to load logs: ' + errorMessage,
+                    variant: 'destructive',
+                });
+            }
+
+            // Signal connection error
+            handleConnectionChange(true);
         }
     };
 
     useEffect(() => {
-        // Initial fetch
         fetchLogs();
 
-        // Set up interval for auto-refresh
-        const intervalId = setInterval(fetchLogs, REFRESH_INTERVAL);
+        const intervalId = setInterval(fetchLogs, isConnected ? REFRESH_INTERVAL : 30000);
 
-        // Cleanup on unmount
         return () => clearInterval(intervalId);
-    }, []);
+    }, [isConnected]); // Add isConnected to dependency array
 
     const getLevelColor = (level: string): "destructive" | "default" | "secondary" | "outline" => {
         switch (level) {
@@ -57,9 +72,12 @@ export default function Logs() {
     return (
         <Container>
             <PageHeader title={TITLE} />
+            {!isConnected && (
+                <Badge variant="destructive">Disconnected</Badge>
+            )}
             <Card>
                 <CardContent className="p-4">
-                    <ScrollArea className="h-[600px] w-full rounded-md border">
+                    <ScrollArea className="h-[calc(100vh-8rem)] w-full rounded-md border">
                         {logs.map((log, index) => (
                             <div key={index} className="p-4 border-b last:border-0">
                                 <div className="flex items-center gap-2 mb-1">
@@ -70,11 +88,14 @@ export default function Logs() {
                                         {new Date(log.timestamp).toLocaleString()}
                                     </span>
                                 </div>
-                                <p className="text-sm">{log.msg} {log.Extra && Object.entries(log.Extra).map(([key, value]) => (
-                                    <p key={key} className="">
-                                        {key}: {JSON.stringify(value)}
-                                    </p>
-                                ))}</p>
+                                <p className="text-sm">
+                                    {log.msg}
+                                    {log.Extra && Object.entries(log.Extra).map(([key, value]) => (
+                                        <p key={key} className="">
+                                            {key}: {JSON.stringify(value)}
+                                        </p>
+                                    ))}
+                                </p>
                                 {log.source && (
                                     <pre className="mt-2 text-xs bg-muted p-2 rounded-md overflow-x-auto">
                                         Source: {log.source.file}:{log.source.line}
