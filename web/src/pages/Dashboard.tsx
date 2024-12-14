@@ -1,6 +1,6 @@
-import { Container } from "../layout/Container";
-import { DashboardCard } from "./DashboardCard";
-import { PageHeader } from "../layout/PageHeader";
+import { Container } from "../components/layout/Container";
+import { DashboardCard } from "../components/dashboard/DashboardCard";
+import { PageHeader } from "../components/layout/PageHeader";
 
 export function Dashboard() {
     return (
@@ -9,7 +9,7 @@ export function Dashboard() {
 
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 <DashboardCard title="Current BEQ Profile">
-                    <p className="text-muted-foreground">Loading...</p>
+                    <p className="text-muted-foreground">Loading...</p> TODO: fetch current BEQ profile
                 </DashboardCard>
 
                 <DashboardCard title="Media Info">

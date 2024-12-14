@@ -1,17 +1,24 @@
 import { NavLink } from "react-router-dom";
-import { Layout, LayoutDashboard, Settings } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { Layout, LayoutDashboard, Settings, Logs } from "lucide-react";
+import { cn } from "../lib/utils";
 
+// TODO: move this to a separate file
 const navItems = [
   {
     title: "Dashboard",
     href: "/",
     icon: LayoutDashboard
   },
+  //   TODO: add logs page
   {
     title: "Configuration",
     href: "/configuration",
     icon: Settings
+  },
+  {
+    title: "Logs",
+    href: "/logs",
+    icon: Logs
   }
 ] as const;
 
@@ -22,10 +29,10 @@ export function Sidebar() {
         <div className="flex items-center gap-2 mb-6">
           <Layout className="h-6 w-6 text-primary" />
           <span className="text-lg font-semibold text-foreground">
-            Home Theater
+            GoWatchIt
           </span>
         </div>
-        
+
         <nav className="space-y-2">
           {navItems.map((item) => (
             <NavLink

@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Container } from '../layout/Container';
-import { ConfigSection } from './Section';
-import { CONFIG_SCHEMA, ConfigValue } from '../../types/config';
-import { Form, FloatingButton, SaveButton } from '../ui/form';
-import { PageHeader } from '../layout/PageHeader';
-import { useToast } from '../providers/toast';
+import { Container } from '../components/layout/Container';
+import { ConfigSection } from '../components/config/Section';
+import { ConfigValue } from '../types/config';
+import { CONFIG_SCHEMA } from '../types/configOptions';
+import { Form, FloatingButton, SaveButton } from '../components/ui/form';
+import { PageHeader } from '../components/layout/PageHeader';
+import { useToast } from '../components/providers/toast';
 
+// the backend API base URL
 const API_BASE_URL = 'http://localhost:9999';
+const TITLE = 'Configuration';
+const SAVE_BUTTON_TEXT = 'Save Configuration';
 
 export default function ConfigurationPage() {
   const [config, setConfig] = useState<ConfigValue>({});
   const { addToast } = useToast();
 
+  // get config
   useEffect(() => {
     fetch(`${API_BASE_URL}/config`)
       .then(res => res.json())
@@ -36,6 +41,7 @@ export default function ConfigurationPage() {
     }));
   };
 
+  // submit changes
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -63,7 +69,7 @@ export default function ConfigurationPage() {
 
   return (
     <Container>
-      <PageHeader title="Configuration" />
+      <PageHeader title={TITLE} />
       <Form onSubmit={handleSubmit}>
         {CONFIG_SCHEMA.map(section => (
           <ConfigSection
@@ -75,7 +81,7 @@ export default function ConfigurationPage() {
           />
         ))}
         <FloatingButton>
-          <SaveButton>Save Configuration</SaveButton>
+          <SaveButton>{SAVE_BUTTON_TEXT}</SaveButton>
         </FloatingButton>
       </Form>
     </Container>
