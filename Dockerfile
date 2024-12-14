@@ -11,6 +11,7 @@ RUN go build -o /go/bin/app
 FROM oven/bun:1 AS frontend-build
 WORKDIR /usr/src/app
 COPY web/package.json web/bun.lockb ./
+COPY web/tsconfig*.json ./
 RUN bun install --frozen-lockfile
 COPY web/ ./
 RUN bun run build
