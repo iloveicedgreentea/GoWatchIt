@@ -23,12 +23,6 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-      # Add debug steps
-      - name: List web directory
-        run: |
-          ls -la web/
-          cat web/tsconfig.json
-
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3.3.0
 
