@@ -6,9 +6,9 @@ import { CONFIG_SCHEMA } from '../types/configOptions';
 import { Form, FloatingButton, SaveButton } from '../components/ui/form';
 import { PageHeader } from '../components/layout/PageHeader';
 import { useToast } from '../components/providers/toast';
+import { API_BASE_URL } from '../lib/const';
 
 // the backend API base URL
-const API_BASE_URL = 'http://localhost:9999';
 const TITLE = 'Configuration';
 const SAVE_BUTTON_TEXT = 'Save Configuration';
 

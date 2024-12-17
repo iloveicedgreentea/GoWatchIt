@@ -110,8 +110,10 @@ func main() {
 
 		// Define allowed origins
 		allowedOrigins := map[string]bool{
-			"http://localhost:5173": true, // bun
-			"http://localhost:3000": true, // nginx
+			"http://localhost:5173":            true, // bun
+			"http://localhost:3000":            true, // nginx
+			"http://host.docker.internal:3000": true, // docker
+			"http://host.docker.internal:5173": true, // docker
 		}
 
 		// Check if origin is allowed and set the header

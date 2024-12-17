@@ -6,8 +6,8 @@ import { Card, CardContent } from '../components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import type { LogEntry } from '../types/logs';
+import { API_BASE_URL } from '../lib/const';
 
-const API_BASE_URL = 'http://localhost:9999';
 const TITLE = 'Logs';
 const REFRESH_INTERVAL = 1000; // 1 second
 
