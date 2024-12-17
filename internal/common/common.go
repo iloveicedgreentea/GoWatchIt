@@ -2,163 +2,61 @@ package common
 
 // all common actions
 import (
-	"fmt"
-	"strconv"
-	"sync"
+	"context"
+	"log/slog"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/avr"
-	"github.com/iloveicedgreentea/go-plex/internal/config"
-
-	// "github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
-
-	"github.com/iloveicedgreentea/go-plex/internal/mqtt"
-
-	// "github.com/iloveicedgreentea/go-plex/internal/plex"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
-// IsExpectedCodecPlaying checks if AVR is playing expectedCodec (mapped and normalized string)
-func IsExpectedCodecPlayingAVR(avrClient avr.AVRClient, expectedCodec string) (bool, error) {
-	// get the codec from avr
-	codec, err := avrClient.GetCodec()
-	if err != nil {
-		log.Errorf("error getting codec from denon, can't continue: %s", err)
-		return false, err
-	}
-
+// IsAtmosodecPlaying checks if Atmos (mapped and normalized from the player -> eg plex codec name into BEQ name) is being decoded instead of multi ch in (plex bug I believe)
+func IsAtmosCodecPlaying(codec, expectedCodec string) (bool, error) {
 	if codec == expectedCodec {
 		return true, nil
 	}
 
 	return false, nil
-}
-
-// IsExpectedCodecPlaying checks if codec (mapped and normalized from the player -> eg plex codec name into BEQ name) is playing expectedCodec (mapped and normalized string)
-func IsExpectedCodecPlaying(codec, expectedCodec string) (bool, error) {
-	if codec == expectedCodec {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-// trigger HA for MV change per type
-func ChangeMasterVolume(mediaType string) {
-	if config.GetBool("homeassistant.triggeravrmastervolumechangeonevent") && config.GetBool("homeassistant.enabled") {
-		log.Debug("changeMasterVolume: Changing volume")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"type\":\"%s\"}", mediaType)), config.GetString("mqtt.topicvolume"))
-		if err != nil {
-			log.Error()
-		}
-	}
-}
-
-// trigger HA for light change given entity and desired state
-func ChangeLight(state string) {
-	if config.GetBool("homeassistant.triggerlightsonevent") && config.GetBool("homeassistant.enabled") {
-		log.Debug("changeLight: Changing light")
-		err := mqtt.Publish([]byte(fmt.Sprintf("{\"state\":\"%s\"}", state)), config.GetString("mqtt.topiclights"))
-		if err != nil {
-			log.Errorf("Error changing light: %v", err)
-		}
-	}
-}
-
-// TODO: test this
-// waitForHDMISync will wait until the envy reports a signal to assume hdmi sync. No API to do this with denon afaik
-func WaitForHDMISync(wg *sync.WaitGroup, skipActions *bool, haClient *homeassistant.HomeAssistantClient, mediaClient Client) {
-	if !config.GetBool("signal.enabled") {
-		*skipActions = false
-		wg.Done()
-		return
-	}
-
-	log.Debug("Running HDMI sync wait")
-	defer func() {
-		// play item no matter what
-		err := PlaybackInterface("play", mediaClient)
-		if err != nil {
-			log.Errorf("Error playing plex: %v", err)
-			return
-		}
-
-		// continue processing webhooks when done
-		*skipActions = false
-		wg.Done()
-	}()
-
-	signalSource := config.GetString("signal.source")
-	var err error
-	var signal bool
-
-	// pause plex
-	log.Debug("pausing plex")
-	err = PlaybackInterface("pause", mediaClient)
-	if err != nil {
-		log.Errorf("Error pausing plex: %v", err)
-		return
-	}
-
-	switch signalSource {
-	case "envy":
-		// read envy attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAEnvyResponse{}, haClient)
-	case "jvc":
-		// read jvc attributes until its not nosignal
-		signal, err = readAttrAndWait(30, "remote", &models.HAjvcResponse{}, haClient)
-	case "sensor":
-		signal, err = readAttrAndWait(30, "binary_sensor", &models.HABinaryResponse{}, haClient)
-	default:
-		// TODO: maybe use a 15 sec delay?
-		log.Debug("using seconds for hdmi sync")
-		sec, err := strconv.Atoi(signalSource)
-		if err != nil {
-			log.Errorf("waitforHDMIsync enabled but no valid source provided: %v -- %v", signalSource, err)
-			return
-		}
-		time.Sleep(time.Duration(sec) * time.Second)
-
-	}
-
-	log.Debugf("HDMI Signal value is %v", signal)
-	if err != nil {
-		log.Errorf("error getting HDMI signal: %v", err)
-	}
-
 }
 
 // readAttrAndWait is a generic func to read attr from HA
-func readAttrAndWait(waitTime int, entType string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
+func ReadAttrAndWait(ctx context.Context, waitTime int, entType models.HomeAssistantEntity, entName string, attrResp homeassistant.HAAttributeResponse, haClient *homeassistant.HomeAssistantClient) (bool, error) {
 	var err error
 	var isSignal bool
+	var attributes models.Attributes
+	log := logger.GetLoggerFromContext(ctx)
 
+	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
-		isSignal, err = haClient.ReadAttributes(haClient.EntityName, attrResp, entType)
+		attributes, err = haClient.ReadAttributes(entName, attrResp, entType)
+		if err != nil {
+			log.Error("Error reading attributes",
+				slog.String("entity", entName),
+				slog.String("error", err.Error()),
+			)
+			return false, err
+		}
+		isSignal = attributes.SignalStatus
+		log.Debug("Signal value",
+			slog.String("entity", entName),
+			slog.Bool("isSignal", isSignal),
+		)
 		if isSignal {
 			log.Debug("HDMI sync complete")
 			return isSignal, nil
 		}
-		if err != nil {
-			log.Errorf("Error reading envy attributes: %v", err)
-			return false, err
-		}
+
 		// otherwise continue
-		time.Sleep(1 * time.Second)
-	}
-	if err != nil {
-		log.Errorf("Error reading envy attributes: %v", err)
-		return false, err
+		time.Sleep(200 * time.Millisecond)
 	}
 
 	return false, err
-
 }
 
 // common function for all supported players
 // TODO: add generic plex/jf client
-// func commonPlay(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, mediaClient Client, avrClient avr.AVRClient, payload interface{}, m *models.SearchRequest, skipActions *bool, wg *sync.WaitGroup) {
+// func commonPlay(beqClient *ezbeq.BeqClient, haClient *homeassistant.HomeAssistantClient, mediaClient Client, avrClient avr.AVRClient, payload interface{}, m *models.BeqSearchRequest, skipActions *bool, wg *sync.WaitGroup) {
 // 	if payload == nil {
 // 		log.Error("Payload is nil")
 // 		return

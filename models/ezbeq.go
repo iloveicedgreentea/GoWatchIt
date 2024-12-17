@@ -1,16 +1,16 @@
 package models
 
-type SearchRequest struct {
+type BeqSearchRequest struct {
 	TMDB            string
 	Year            int
-	Codec           string
+	Codec           CodecName
 	PreferredAuthor string
-	Edition         string
+	Edition         Edition
 	SkipSearch      bool
 	EntryID         string
 	MVAdjust        float64
 	DryrunMode      bool
-	MediaType       string
+	MediaType       MediaType
 	Devices         []string
 	Slots           []int
 	Title           string

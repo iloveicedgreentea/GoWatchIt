@@ -1,20 +1,39 @@
 package common
 
 // import (
-// 	"os"
-// 	// "sync"
+// 	// "os"
+// 	"sync"
 // 	"testing"
-// 	"fmt"
 
-// 	"github.com/iloveicedgreentea/go-plex/internal/avr"
+// 	// "fmt"
+
+// 	// "github.com/iloveicedgreentea/go-plex/internal/avr"
 // 	"github.com/iloveicedgreentea/go-plex/internal/config"
-// 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
+// 	// "github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 // 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 // 	// "github.com/iloveicedgreentea/go-plex/internal/jellyfin"
 // 	"github.com/iloveicedgreentea/go-plex/internal/plex"
 // 	"github.com/iloveicedgreentea/go-plex/models"
 // 	"github.com/stretchr/testify/assert"
 // )
+
+// func TestReadAndWait(t *testing.T) {
+// 	waitTime := 30
+// 	haClient := homeassistant.NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.remoteentityname"))
+// 	sync, err := readAttrAndWait(waitTime, "remote", "envy", &models.HAEnvyResponse{}, haClient)
+// 	assert.NoError(t, err)
+// 	t.Log(sync)
+// }
+
+// func TestWaitForHDMI(t *testing.T) {
+// 	haClient := homeassistant.NewClient(config.GetString("homeAssistant.url"), config.GetString("homeAssistant.port"), config.GetString("homeAssistant.token"), config.GetString("homeAssistant.remoteentityname"))
+// 	wg := new(sync.WaitGroup)
+// 	wg.Add(1)
+// 	skipActions := false
+// 	plexClient := plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"))
+// 	t.Log(plexClient.MachineID)
+// 	WaitForHDMISync(wg, &skipActions, haClient, plexClient)
+// }
 
 // type TestDeps struct {
 // 	BeqClient *ezbeq.BeqClient
@@ -41,7 +60,7 @@ package common
 // 	case models.JellyfinWebhook:
 // 		return nil
 // 		// Initialize and return a Jellyfin client
-// 		// return jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"), config.GetString(""), config.GetString("")) // Replace with the actual constructor function
+// 		return jellyfin.NewClient(config.GetString("jellyfin.url"), config.GetString("jellyfin.port"), config.GetString(""), config.GetString("")) // Replace with the actual constructor function
 // 	case models.PlexWebhookPayload:
 // 		// Initialize and return a Plex client
 // 		return plex.NewClient(config.GetString("plex.url"), config.GetString("plex.port"), config.GetString("plex.playermachineidentifier"), config.GetString("plex.playerip")) // Replace with the actual constructor function
@@ -52,7 +71,7 @@ package common
 // 	}
 // }
 
-// // TODO; modify to ouput the payload
+// // TODO; modify to output the payload
 // func getJFPayload() (out models.JellyfinWebhook, err error) {
 // 	// open testing file
 // 	jsonFile, err := os.ReadFile("testdata/jf_pause.json")
@@ -69,7 +88,6 @@ package common
 // 	return payload, nil
 
 // }
-
 
 // func TestJFPayload(t *testing.T) {
 // 	payload, err := getJFPayload()
@@ -112,7 +130,7 @@ package common
 // 		t.Run(tc.description, func(t *testing.T) {
 // 			var wg sync.WaitGroup
 // 			skipActions := false
-// 			searchRequest := new(models.SearchRequest)
+// 			searchRequest := new(models.BeqSearchRequest)
 // 			mediaClient := InitializeMediaClient(tc.payload)
 // 			if mediaClient == nil {
 // 				t.Fatalf("Failed to initialize media client for payload: %v", tc.payload)

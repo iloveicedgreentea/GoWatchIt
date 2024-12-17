@@ -1,0 +1,1 @@
+I didnt want to delete the code but native JF support is not a priority. You can use HA to send webhook events to gowatchit via media_player
