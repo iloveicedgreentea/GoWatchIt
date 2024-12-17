@@ -137,11 +137,6 @@ func main() {
 	// all webhook events are sent to this channel
 	eventChan := make(chan models.Event)
 
-	router.Static("/web", "./web")
-	router.NoRoute(func(c *gin.Context) {
-		c.File("./web/index.html")
-	})
-
 	// register routes
 	RegisterRoutes(router, eventChan)
 	err = router.SetTrustedProxies(nil)
