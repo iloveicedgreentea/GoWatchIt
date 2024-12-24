@@ -58,5 +58,6 @@ EXPOSE 3000
 ENV TZ=America/New_York
 ENV GIN_MODE=release
 ENV LOG_FILE=true
+ENV BASE_DIR=/data
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

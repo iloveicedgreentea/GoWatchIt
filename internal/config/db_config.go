@@ -100,6 +100,7 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 }
 
 func (c *Config) SaveConfig(cfg interface{}) error {
+	// TODO: add safety checks for URLs make sure they are reachable
 	if c == nil {
 		return fmt.Errorf("config is nil")
 	}

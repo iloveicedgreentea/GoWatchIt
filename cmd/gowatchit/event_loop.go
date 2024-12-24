@@ -148,4 +148,5 @@ func eventRouter(ctx context.Context, cancel context.CancelFunc, event *models.E
 			logger.GetLogger().Error("Error handling play event", slog.Any("error", err))
 		}
 	}
+	// TODO: add other actions like pause
 }

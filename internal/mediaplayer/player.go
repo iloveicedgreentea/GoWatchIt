@@ -15,6 +15,8 @@ import (
 
 // Implement MediaEventHandler methods
 func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
+	defer wg.Done()
+
 	log := logger.GetLoggerFromContext(ctx)
 	// Check if context is already cancelled before starting lets say you play but then stop, this should stop processing
 	if ctx.Err() != nil {
@@ -26,24 +28,26 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.
 	}
 
 	var err error
+	var innerWg sync.WaitGroup
 
-	// TODO: check if sync enabled
 	// Perform HDMI sync
 	// Call the sync function which will check if its enabled
-	if !strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeMovie)) && config.IsSignalSourceTime() {
-		log.Debug("skipping sync for non-movie type and time source")
-	} else {
-		// wg.Add(1) // TODO: enable
-		go func() {
-			if ctx.Err() != nil {
-				log.Debug("mediaPlay was cancelled before hdmi sync")
-				return // Exit early if context is cancelled
-			}
+	if config.IsHDMISyncEnabled() {
+		if !strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeMovie)) && config.IsSignalSourceTime() {
+			log.Debug("skipping sync for non-movie type and time source")
+		} else {
+			// innerWg.Add(1) // TODO: enable
+			go func() {
+				if ctx.Err() != nil {
+					log.Debug("mediaPlay was cancelled before hdmi sync")
+					return // Exit early if context is cancelled
+				}
 
-			// optimistically try to hdmi sync. Will return if disabled
-			// TODO: implement this
-			// common.WaitForHDMISync(wg, skipActions, haClient, client)
-		}()
+				// optimistically try to hdmi sync. Will return if disabled
+				// TODO: implement this
+				// common.WaitForHDMISync(wg, skipActions, haClient, client)
+			}()
+		}
 	}
 
 	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
@@ -92,7 +96,7 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.
 	}
 
 	log.Debug("Waiting for goroutines")
-	wg.Wait()
+	innerWg.Wait()
 	log.Debug("Goroutines complete")
 
 	return nil

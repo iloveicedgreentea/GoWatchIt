@@ -24,3 +24,4 @@ coverage.*
 *.db
 *.sqlite3
 applog.log
+test_web.sh

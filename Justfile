@@ -13,3 +13,5 @@ run:
 	LOG_ENV=local LOG_FILE=true LOG_LEVEL=debug go run ./cmd/gowatchit/
 run-ui:
 	cd web && bun run dev
+live-test:
+	./test_web.sh

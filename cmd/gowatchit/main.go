@@ -146,6 +146,7 @@ func main() {
 
 	// init clients
 	log.Info("Creating clients...")
+	// TODO: this should never block UI from loading
 	beqClient, err := ezbeq.NewClient()
 	if err != nil {
 		log.Error("Error creating beq client",
@@ -154,6 +155,7 @@ func main() {
 		return
 	}
 
+	// TODO: this should never block UI from loading
 	homeAssistantClient, err := homeassistant.NewClient()
 	if err != nil {
 		log.Error("Error creating HA client",
