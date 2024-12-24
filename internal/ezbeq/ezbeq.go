@@ -90,7 +90,6 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 	}
 	if len(deviceNames) == 0 {
 		log.Error("no devices found in DeviceInfo")
-		// TODO: ensure caller knows to check for nil
 		return nil
 	}
 
@@ -452,7 +451,6 @@ func checkEdition(val *models.BeqCatalog, edition models.Edition) bool {
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
-	// TODO: config isEditionEnabled to ignore edition matching
 	if !config.IsBeqEnabled() {
 		log.Debug("BEQ is disabled, skipping")
 		return nil
@@ -618,6 +616,5 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 		}
 	}
 
-	// TODO: use a wrapper function
 	return nil
 }

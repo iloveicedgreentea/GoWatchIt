@@ -153,7 +153,6 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	return nil
 }
 
-// TODO: Implement similar methods for other config types
 // GetConfig is a helper function to get the global config instance
 func GetConfig() *Config {
 	return globalConfig

@@ -45,7 +45,7 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 		action = models.ActionPlay
 	case "PlaybackStop":
 		action = models.ActionStop
-		// TODO: is paused and stuff
+		// JF does not send pause/resume events only "progress" events which include pause/resume status
 	}
 	paused, err := strconv.ParseBool(webhook.IsPaused)
 	if err != nil {

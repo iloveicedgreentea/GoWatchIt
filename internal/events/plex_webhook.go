@@ -94,7 +94,6 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 			)
 		}
 	} else {
-		// TODO: this seems to be hitting even when the filter matches
 		log.Debug("userID does not match filter",
 			slog.String("account_title", decodedPayload.Account.Title),
 			slog.String("filter", userID),

@@ -71,7 +71,6 @@ package common
 // 	}
 // }
 
-// // TODO; modify to output the payload
 // func getJFPayload() (out models.JellyfinWebhook, err error) {
 // 	// open testing file
 // 	jsonFile, err := os.ReadFile("testdata/jf_pause.json")
@@ -101,8 +100,6 @@ package common
 // 	deps := InitializeTestDependencies()
 
 // 	// Example payload data - ensure these are suitable for real clients
-// 	// TODO: add test data of a webhook here
-// 	// TODO: read from json
 // 	jellyfinPayload, err := getJFPayload()
 // 	if err != nil {
 // 		t.Fatalf("Error getting Jellyfin payload: %v", err)

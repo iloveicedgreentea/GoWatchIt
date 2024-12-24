@@ -119,7 +119,6 @@ func eventHandler(ctx context.Context, c <-chan models.Event) {
 			log := logger.GetLoggerFromContext(eventCtx)
 
 			// Get edition
-			// TODO: config isEditionEnabled to ignore edition matching
 			edition, err := client.GetEdition(eventCtx, &payload)
 			if err != nil {
 				log.Error("Error getting edition", slog.Any("error", err))

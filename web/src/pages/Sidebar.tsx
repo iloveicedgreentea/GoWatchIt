@@ -2,14 +2,12 @@ import { NavLink } from "react-router-dom";
 import { Layout, LayoutDashboard, Settings, Logs } from "lucide-react";
 import { cn } from "../lib/utils";
 
-// TODO: move this to a separate file
 const navItems = [
   {
     title: "Dashboard",
     href: "/",
     icon: LayoutDashboard
   },
-  //   TODO: add logs page
   {
     title: "Configuration",
     href: "/configuration",

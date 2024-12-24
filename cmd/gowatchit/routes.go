@@ -14,7 +14,4 @@ func RegisterRoutes(router *gin.Engine, webhookChan chan models.Event) {
 	router.POST("/api/webhook", func(c *gin.Context) {
 		processWebhook(c.Request.Context(), webhookChan, c)
 	})
-
-	// TODO: route to export config as json
-	// TODO: route to import config from json
 }

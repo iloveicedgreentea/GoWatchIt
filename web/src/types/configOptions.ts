@@ -19,6 +19,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 label: 'EzBEQ URL',
                 description: 'EzBEQ hostname or IP',
                 type: 'text',
+                defaultValue: 'ezbeq.local',
                 placeholder: 'ezbeq.local',
                 section: 'ezbeq'
             },
@@ -28,6 +29,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 description: 'EzBEQ Port',
                 type: 'text',
                 defaultValue: '8080',
+                placeholder: '8080',
                 section: 'ezbeq'
             },
             {
@@ -70,7 +72,22 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 defaultValue: false,
                 section: 'ezbeq'
             },
-
+            {
+                key: 'looseeditionmatching',
+                label: 'Loose Edition Matching',
+                description: 'Less strict matching for editions. Useful for matching BEQs that are not in the database.',
+                type: 'checkbox',
+                defaultValue: false,
+                section: 'ezbeq'
+            },
+            {
+                key: 'skipeditionmatching',
+                label: 'Skip Edition Matching',
+                description: 'Skip edition matching entirely. Not recommended.',
+                type: 'checkbox',
+                defaultValue: false,
+                section: 'ezbeq'
+            },
             {
                 key: 'preferredauthor',
                 label: 'BEQ Preferred Author',
@@ -87,7 +104,6 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 defaultValue: [1],
                 section: 'ezbeq'
             },
-            // TODO: other options like loose matching
 
             // TODO: maybe support this
             // {
@@ -143,6 +159,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 label: 'Home Assistant URL',
                 description: 'URL - host name or IP',
                 type: 'text',
+                defaultValue: 'homeassistant.local',
                 placeholder: 'homeassistant.local',
                 section: 'homeassistant'
             },
@@ -152,6 +169,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 description: 'Port',
                 type: 'text',
                 defaultValue: '8123',
+                placeholder: '8123',
                 section: 'homeassistant'
             },
             {
@@ -159,6 +177,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 label: 'Home Assistant token',
                 description: 'HA User token - "ey.xyz" get a token from your user profile',
                 type: 'text',
+                placeholder: 'ey.xyz',
                 section: 'homeassistant'
             },
             {

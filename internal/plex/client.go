@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mediaplayer"
@@ -27,7 +28,7 @@ type PlexClient struct {
 	URL        string
 	Port       string
 	Scheme     string
-	HTTPClient http.Client
+	HTTPClient *retryablehttp.Client
 	MachineID  string
 	ClientIP   string
 	MediaType  string
@@ -38,14 +39,18 @@ var _ mediaplayer.MediaAPIClient = (*PlexClient)(nil)
 
 // return a new instance of a plex client
 func NewClient(scheme, servUrl, port string) (*PlexClient, error) {
-	return &PlexClient{
-		URL:    servUrl,
-		Port:   port,
-		Scheme: scheme,
-		HTTPClient: http.Client{
-			Timeout: 5 * time.Second,
-		},
-	}, nil
+	c := &PlexClient{
+		URL:        servUrl,
+		Port:       port,
+		Scheme:     scheme,
+		HTTPClient: retryablehttp.NewClient(),
+	}
+	// set timeout
+	c.HTTPClient.HTTPClient.Timeout = time.Second * 10
+	log := logger.GetLogger()
+	c.HTTPClient.Logger = log
+
+	return c, nil
 }
 
 // unmarshal xml into a struct
@@ -70,33 +75,17 @@ func parseSessionMediaContainer(payload []byte) (models.SessionMediaContainer, e
 }
 
 func (c *PlexClient) getRunningSession(ctx context.Context) (models.SessionMediaContainer, error) {
-	log := logger.GetLoggerFromContext(ctx)
 	// Get session object
 	var data models.SessionMediaContainer
 	var err error
 
-	// loop until not empty for 30s
-	// TODO: use go-retryable
-	for i := 0; i < 30; i++ {
-		res, err := c.makePlexReq(ctx, string(APIStatusSession))
-		if err != nil {
-			return models.SessionMediaContainer{}, fmt.Errorf("error getting session data: %v", err)
-		}
-		// if no response, keep trying
-		if len(res) == 0 {
-			log.Debug("Plex session empty, waiting",
-				slog.Int("time_remaining", 30-i),
-			)
-
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		data, err = parseSessionMediaContainer(res)
-		if err != nil {
-			return models.SessionMediaContainer{}, fmt.Errorf("error parsing getRunningSession session data: %v", err)
-		}
-
-		break
+	res, err := c.makePlexReq(ctx, string(APIStatusSession))
+	if err != nil {
+		return models.SessionMediaContainer{}, fmt.Errorf("error getting session data: %v", err)
+	}
+	data, err = parseSessionMediaContainer(res)
+	if err != nil {
+		return models.SessionMediaContainer{}, fmt.Errorf("error parsing getRunningSession session data: %v", err)
 	}
 
 	return data, err
@@ -380,7 +369,7 @@ func (c *PlexClient) makePlexReq(ctx context.Context, path string) ([]byte, erro
 		}
 	}
 	// Create the request
-	req, err := http.NewRequest("GET", u.String(), http.NoBody)
+	req, err := retryablehttp.NewRequest("GET", u.String(), http.NoBody)
 	if err != nil {
 		return nil, err
 	}

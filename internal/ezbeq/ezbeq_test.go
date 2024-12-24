@@ -526,7 +526,6 @@ func TestHasAuthor(t *testing.T) {
 func TestSearchCatalog(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	// TODO: test searching
 
 	c, err := NewClient()
 	a.NotNil(c)

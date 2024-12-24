@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
@@ -93,6 +94,7 @@ func updateTableSchema(db *sql.DB, structType interface{}) error {
 
 // getExistingColumns returns a map of existing columns in a table
 func getExistingColumns(db *sql.DB, tableName string) (map[string]bool, error) {
+	log := logger.GetLogger()
 	query := fmt.Sprintf("PRAGMA table_info(%s);", tableName)
 	rows, err := db.Query(query)
 	if err != nil {
@@ -100,7 +102,7 @@ func getExistingColumns(db *sql.DB, tableName string) (map[string]bool, error) {
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			fmt.Println(err) // TODO: use logger
+			log.Error("Failed to close rows", "error", err)
 		}
 	}()
 

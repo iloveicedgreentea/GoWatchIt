@@ -82,8 +82,6 @@ func IsBeqDryRun() bool {
 	return config.DryRun
 }
 
-// TODO: implement a way to automatically grab configs and add to UI
-// TODO: implement in UI
 func IsBeqLooseEditionMatching() bool {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
@@ -93,7 +91,6 @@ func IsBeqLooseEditionMatching() bool {
 	return config.LooseEditionMatching
 }
 
-// TODO: implement in ui
 func IsBeqSkipEditionMatching() bool {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {

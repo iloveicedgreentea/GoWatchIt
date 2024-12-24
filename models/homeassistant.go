@@ -66,7 +66,7 @@ func (r *HABinaryResponse) GetState() string {
 }
 
 func (r *HABinaryResponse) GetSignalStatus() bool {
-	return false // TODO: implement
+	return false // TODO: implement hdmi sync
 }
 
 func (r *HAMediaPlayerResponse) GetState() HomeAssistantMediaPlayerState {
