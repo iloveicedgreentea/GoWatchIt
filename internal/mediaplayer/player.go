@@ -3,6 +3,7 @@ package mediaplayer
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -15,8 +16,6 @@ import (
 
 // Implement MediaEventHandler methods
 func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
-	defer wg.Done()
-
 	log := logger.GetLoggerFromContext(ctx)
 	// Check if context is already cancelled before starting lets say you play but then stop, this should stop processing
 	if ctx.Err() != nil {
@@ -26,6 +25,9 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.
 		)
 		return nil
 	}
+	log.Debug("handleplay searchRequest",
+		slog.Any("searchRequest", searchRequest),
+	)
 
 	var err error
 	var innerWg sync.WaitGroup

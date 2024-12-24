@@ -141,6 +141,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		PlayerIP:    decodedPayload.Player.PublicAddress,
 		Metadata: models.Metadata{
 			TMDB:                tmdb,
+			Year:                decodedPayload.Metadata.Year,
 			LibrarySectionType:  decodedPayload.Metadata.LibrarySectionType,
 			Key:                 decodedPayload.Metadata.Key,
 			Type:                models.MediaType(decodedPayload.Metadata.Type),

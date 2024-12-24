@@ -36,6 +36,7 @@ type PlexMetadata struct {
 	Key                string `json:"key"`
 	Type               string `json:"type"`
 	Title              string `json:"title"`
+	Year               int    `json:"year"`
 	// yes plex returns two fields with the same name
 	Guid string `json:"guid"`
 	// this is where tmbd is

@@ -308,9 +308,19 @@ func buildAuthorWhitelist(preferredAuthors string, q url.Values) url.Values {
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog, error) {
 	// build query
+	log := logger.GetLogger()
+	log.Debug("Searching ezbeq catalog",
+		slog.String("title", m.Title),
+		slog.String("codec", string(m.Codec)),
+		slog.Int("year", m.Year),
+		slog.String("tmdb", m.TMDB),
+	)
 	q := url.Values{}
 	q.Add("audiotypes", string(m.Codec))
 	q.Add("years", strconv.Itoa(m.Year))
+	log.Debug("converted year to string",
+		slog.String("year", strconv.Itoa(m.Year)),
+	)
 	q.Add("tmdbid", m.TMDB)
 
 	// Add authors if present

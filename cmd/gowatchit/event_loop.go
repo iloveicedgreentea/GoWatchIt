@@ -59,6 +59,7 @@ func getClient(payload *models.Event) (client mediaplayer.MediaAPIClient, err er
 func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient) {
 	log := logger.GetLoggerFromContext(ctx)
 	for payload := range c {
+		log.Debug("Received event", slog.Any("event", payload))
 		client, err := getClient(&payload)
 		if err != nil {
 			log.Error("Error getting client for payload", slog.Any("error", err))
@@ -125,6 +126,7 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 					log.Error("Error creating BEQ search request. Unable to proceed with BEQ operations. Check your config.")
 					return
 				}
+				log.Debug("created new searchRequest", slog.Any("searchRequest", searchRequest))
 
 				// Unload BEQ profile
 				if err := beqClient.UnloadBeqProfile(searchRequest); err != nil {
