@@ -573,7 +573,13 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 	}
 
 	// write payload to each device
+	log.Debug("Sending BEQ payload to devices",
+		slog.Int("device_count", len(m.Devices)),
+	)
 	for _, v := range m.Devices {
+		log.Debug("Sending payload to device",
+			slog.String("device_name", v),
+		)
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
 		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
