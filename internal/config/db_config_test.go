@@ -64,6 +64,7 @@ func TestEZBEQConfig(t *testing.T) {
 		Enabled:                       true,
 		EnableTVBEQ:                   true,
 		NotifyOnLoad:                  true,
+		NotifyOnUnLoad:                true,
 		Port:                          "8081",
 		PreferredAuthor:               "TestAuthor",
 		Slots:                         []int{1, 2, 3},
@@ -81,6 +82,7 @@ func TestEZBEQConfig(t *testing.T) {
 	assert.True(t, IsBeqEnabled())
 	assert.True(t, IsBeqTVEnabled())
 	assert.True(t, IsBeqNotifyOnLoadEnabled())
+	assert.True(t, IsBeqNotifyOnUnLoadEnabled())
 	assert.False(t, IsBeqDryRun())
 
 	// Test loading full config
@@ -94,6 +96,7 @@ func TestEZBEQConfig(t *testing.T) {
 	assert.Equal(t, ezbeqConfig.Enabled, loadedConfig.Enabled)
 	assert.Equal(t, ezbeqConfig.EnableTVBEQ, loadedConfig.EnableTVBEQ)
 	assert.Equal(t, ezbeqConfig.NotifyOnLoad, loadedConfig.NotifyOnLoad)
+	assert.Equal(t, ezbeqConfig.NotifyOnUnLoad, loadedConfig.NotifyOnUnLoad)
 	assert.Equal(t, ezbeqConfig.Port, loadedConfig.Port)
 	assert.Equal(t, ezbeqConfig.PreferredAuthor, loadedConfig.PreferredAuthor)
 	assert.Equal(t, ezbeqConfig.Slots, loadedConfig.Slots, "Slots should be equal to %v but got %v", ezbeqConfig.Slots, loadedConfig.Slots)

@@ -56,25 +56,63 @@ func getClient(payload *models.Event) (client mediaplayer.MediaAPIClient, err er
 	return client, nil
 }
 
-func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient) {
+func eventHandler(ctx context.Context, c <-chan models.Event) {
 	log := logger.GetLoggerFromContext(ctx)
+	var currentCancel context.CancelFunc
+
+	// Make sure we cleanup on exit
+	defer func() {
+		if currentCancel != nil {
+			currentCancel()
+		}
+	}()
+
 	for payload := range c {
+		// If we have a current operation, cancel it
+		if currentCancel != nil {
+			log.Debug("New event received, cancelling current operation")
+			currentCancel()
+			currentCancel = nil
+
+		}
+
 		log.Debug("Received event", slog.Any("event", payload))
+
 		client, err := getClient(&payload)
 		if err != nil {
 			log.Error("Error getting client for payload", slog.Any("error", err))
 			continue
 		}
 
+		// init common clients
+		log.Debug("Creating clients...")
+		beqClient, err := ezbeq.NewClient()
+		if err != nil {
+			log.Error("Error creating beq client",
+				slog.Any("error", err),
+			)
+			continue
+		}
+
+		homeAssistantClient, err := homeassistant.NewClient()
+		if err != nil {
+			log.Error("Error creating HA client",
+				slog.Any("error", err),
+			)
+			continue
+		}
+
 		// Create a new context for each event, but don't cancel it immediately
 		eventCtx, eventCancel := context.WithCancel(ctx)
+		currentCancel = eventCancel
 
 		// Use a WaitGroup to ensure all goroutines complete before moving to the next event
 		var wg sync.WaitGroup
 
 		// Process the event in a separate goroutine
+		// wg can be used inside eventrouter and its functions if it needs to block this coroutine but Handlers must not wait on this wg or it will halt
 		wg.Add(1)
-		go func() {
+		go func(p models.Event) {
 			defer wg.Done()
 			defer eventCancel() // Ensure the context is canceled when this goroutine exits
 
@@ -134,21 +172,41 @@ func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.B
 				}
 			}
 
-			// Route event
-			eventRouter(eventCtx, eventCancel, &payload, &wg, beqClient, homeAssistantClient, searchRequest)
-		}()
+			// Route event with a copy of the payload
+			eventRouter(eventCtx, &p, &wg, beqClient, homeAssistantClient, searchRequest)
+		}(payload)
 
 		// Wait for all goroutines to complete before processing the next event
+		// this prevents thrash
 		wg.Wait()
 	}
 }
 
-func eventRouter(ctx context.Context, cancel context.CancelFunc, event *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) {
-	if event.Action == models.ActionPlay {
-		err := mediaplayer.HandlePlay(ctx, cancel, event, wg, beqClient, homeAssistantClient, searchRequest)
+func eventRouter(ctx context.Context, event *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) {
+	log := logger.GetLoggerFromContext(ctx)
+	switch event.Action {
+	case models.ActionPlay:
+		err := mediaplayer.HandlePlay(ctx, event, wg, beqClient, homeAssistantClient, searchRequest)
 		if err != nil {
-			logger.GetLogger().Error("Error handling play event", slog.Any("error", err))
+			log.Error("Error handling play event", slog.Any("error", err))
 		}
+	case models.ActionPause:
+		err := mediaplayer.HandlePause(ctx, event, wg, beqClient, homeAssistantClient, searchRequest)
+		if err != nil {
+			log.Error("Error handling pause event", slog.Any("error", err))
+		}
+	case models.ActionStop:
+		err := mediaplayer.HandleStop(ctx, event, wg, beqClient, homeAssistantClient, searchRequest)
+		if err != nil {
+			log.Error("Error handling stop event", slog.Any("error", err))
+		}
+	case models.ActionResume:
+		err := mediaplayer.HandleResume(ctx, event, wg, beqClient, homeAssistantClient, searchRequest)
+		if err != nil {
+			log.Error("Error handling resume event", slog.Any("error", err))
+		}
+	case models.ActionScrobble:
+		log.Info("Scrobble event received", slog.Any("event", event))
+
 	}
-	// TODO: add other actions like pause
 }

@@ -64,6 +64,15 @@ func IsBeqNotifyOnLoadEnabled() bool {
 	return config.NotifyOnLoad
 }
 
+func IsBeqNotifyOnUnLoadEnabled() bool {
+	var config models.EZBEQConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load EZBEQ config", "error", err)
+		return false
+	}
+	return config.NotifyOnUnLoad
+}
+
 func IsBeqDryRun() bool {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {

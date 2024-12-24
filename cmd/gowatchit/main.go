@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/database"
-	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
-	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 
 	"github.com/iloveicedgreentea/go-plex/models"
@@ -61,8 +59,6 @@ func main() {
 	dbDir := fmt.Sprintf("%s/db.sqlite3", baseDir)
 	log.Debug("Base directory", slog.String("dbDir", dbDir))
 
-	// TODO: use const for sql file location
-	// TODO: file needs to be docker-compatible
 	// Create the database connection
 	log.Info("Connecting to the database...")
 	db, err := database.GetDB(dbDir)
@@ -135,7 +131,8 @@ func main() {
 	// init event channel
 	log.Info("Creating workers...")
 	// all webhook events are sent to this channel
-	eventChan := make(chan models.Event)
+	// set to one so new events block old ones and will be discarded
+	eventChan := make(chan models.Event, 1)
 
 	// register routes
 	RegisterRoutes(router, eventChan)
@@ -144,28 +141,8 @@ func main() {
 		logger.Fatal("Failed to set trusted proxies: ", err)
 	}
 
-	// init clients
-	log.Info("Creating clients...")
-	// TODO: this should never block UI from loading
-	beqClient, err := ezbeq.NewClient()
-	if err != nil {
-		log.Error("Error creating beq client",
-			slog.Any("error", err),
-		)
-		return
-	}
-
-	// TODO: this should never block UI from loading
-	homeAssistantClient, err := homeassistant.NewClient()
-	if err != nil {
-		log.Error("Error creating HA client",
-			slog.Any("error", err),
-		)
-		return
-	}
-
 	// run event loop in background
-	go eventHandler(ctx, eventChan, beqClient, homeAssistantClient)
+	go eventHandler(ctx, eventChan)
 
 	// init the router
 	port := "9999"

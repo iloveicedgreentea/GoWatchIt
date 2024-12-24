@@ -24,8 +24,19 @@ func processWebhook(ctx context.Context, eventChan chan models.Event, c *gin.Con
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	eventChan <- event
-	c.JSON(200, gin.H{"message": "Webhook processed successfully"})
+	// Try to send event, discard old one if channel is full
+	select {
+	case eventChan <- event: // Try to send
+	default:
+		// Channel is full, remove old event and send new one
+		select {
+		case <-eventChan: // Remove old event
+		default:
+		}
+		eventChan <- event
+	}
+
+	c.JSON(200, gin.H{"message": "Webhook decoded successfully"})
 }
 
 func processHealthcheckWebhookGin(c *gin.Context) {

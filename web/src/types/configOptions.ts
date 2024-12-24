@@ -57,7 +57,15 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
             {
                 key: 'notifyonload',
                 label: 'Notify On Load',
-                description: 'Notify you on BEQ Load/Unload/Issues (requires Home Assistant)',
+                description: 'Notify you on BEQ Load/Issues (requires Home Assistant)',
+                type: 'checkbox',
+                defaultValue: false,
+                section: 'ezbeq'
+            },
+            {
+                key: 'notifyonunload',
+                label: 'Notify On Unload',
+                description: 'Notify you on BEQ Unload/Issues (requires Home Assistant)',
                 type: 'checkbox',
                 defaultValue: false,
                 section: 'ezbeq'
@@ -79,6 +87,8 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 defaultValue: [1],
                 section: 'ezbeq'
             },
+            // TODO: other options like loose matching
+
             // TODO: maybe support this
             // {
             //     key: 'stopplexifmismatch',

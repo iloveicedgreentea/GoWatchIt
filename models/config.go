@@ -9,6 +9,7 @@ type EZBEQConfig struct {
 	Enabled                       bool   `json:"enabled" db:"enabled"`
 	EnableTVBEQ                   bool   `json:"enabletvbeq" db:"enable_tv_beq"`
 	NotifyOnLoad                  bool   `json:"notifyonload" db:"notify_on_load"`
+	NotifyOnUnLoad                bool   `json:"notifyonunload" db:"notify_on_unload"`
 	PreferredAuthor               string `json:"preferredauthor" db:"preferred_author"`
 	Slots                         []int  `json:"slots" db:"slots"` // Store as JSON string in DB
 	StopPlexIfMismatch            bool   `json:"stopplexifmismatch" db:"stop_plex_if_mismatch"`

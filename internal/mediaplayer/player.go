@@ -15,7 +15,7 @@ import (
 )
 
 // Implement MediaEventHandler methods
-func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
+func HandlePlay(ctx context.Context, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
 	log := logger.GetLoggerFromContext(ctx)
 	// Check if context is already cancelled before starting lets say you play but then stop, this should stop processing
 	if ctx.Err() != nil {
@@ -46,29 +46,18 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.
 				}
 
 				// optimistically try to hdmi sync. Will return if disabled
-				// TODO: implement this
-				// common.WaitForHDMISync(wg, skipActions, haClient, client)
+				// TODO: implement this ensure it calls innerWg.done
+
+				// common.WaitForHDMISync(innerWg, skipActions, haClient, client)
 			}()
 		}
 	}
 
 	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
 
-	if ctx.Err() != nil {
-		log.Debug("mediaPlay was cancelled before unloading BEQ profile")
-		return nil
-	}
-
-	select {
-	case <-ctx.Done():
-		log.Error("mediaPlay cancelled before unloading BEQ profile")
-		return nil
-	default:
-		// if its a show and you dont want beq enabled, exit
-		if strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeShow)) {
-			if !config.IsBeqTVEnabled() {
-				return nil
-			}
+	if strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeShow)) {
+		if !config.IsBeqTVEnabled() {
+			return nil
 		}
 	}
 
@@ -104,19 +93,61 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.
 	return nil
 }
 
-func HandlePause(ctx context.Context, cancel context.CancelFunc, payload *models.Event) error {
-	// Implement Plex-specific pause event handling
+func HandlePause(ctx context.Context, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
+	log := logger.GetLoggerFromContext(ctx)
+	// Check if context is already cancelled before starting lets say you play but then stop, this should stop processing
+	if ctx.Err() != nil {
+		log.Debug("Context already cancelled, stopping processing",
+			"error", ctx.Err(),
+			"func", "HandlePause",
+		)
+		return nil
+	}
+	log.Debug("handlepause searchRequest",
+		slog.Any("searchRequest", searchRequest),
+	)
+
+	var err error
+
+	// dont need to set skipActions here because it will only send media.pause and media.resume. This is media.play
+
+	if strings.EqualFold(string(payload.Metadata.Type), string(models.MediaTypeShow)) {
+		if !config.IsBeqTVEnabled() {
+			return nil
+		}
+	}
+
+	if ctx.Err() != nil {
+		log.Debug("mediaPlay was cancelled before unloading BEQ profile")
+		return nil
+	}
+
+	if beqClient != nil {
+		err = beqClient.UnloadBeqProfile(searchRequest)
+		if err != nil {
+			return err
+		}
+		log.Info("BEQ profile unloaded")
+		// send notification of it loaded
+		if config.IsBeqNotifyOnUnLoadEnabled() && homeAssistantClient != nil {
+			err := homeAssistantClient.SendNotification("BEQ Profile Unloaded")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
-func HandleStop(ctx context.Context, cancel context.CancelFunc, payload *models.Event) error {
-	// Implement Plex-specific stop event handling
-	return nil
+func HandleStop(ctx context.Context, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
+	// same thing as stop pretty much
+	return HandlePause(ctx, payload, wg, beqClient, homeAssistantClient, searchRequest)
 }
 
-func HandleResume(ctx context.Context, cancel context.CancelFunc, payload *models.Event) error {
-	// Implement Plex-specific resume event handling
-	return nil
+func HandleResume(ctx context.Context, payload *models.Event, wg *sync.WaitGroup, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient, searchRequest *models.BeqSearchRequest) error {
+	// TODO: support skip search for faster resume
+	return HandlePlay(ctx, payload, wg, beqClient, homeAssistantClient, searchRequest)
 }
 
 func HandleScrobble(ctx context.Context, payload *models.Event) error {

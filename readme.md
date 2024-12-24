@@ -39,7 +39,7 @@
 
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec/edition detected
-* HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen in front of your friends)
+* HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen in front of your friends)  (coming soon)
 * Web based UI
 
 Players Supported:
