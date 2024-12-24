@@ -26,6 +26,16 @@ func IsSignalSourceTime() bool {
 	return config.Source == "time"
 }
 
+// Plex
+func IsPlexEnabled() bool {
+	var config models.PlexConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load Plex config", "error", err)
+		return false
+	}
+	return config.Enabled
+}
+
 // BEQ
 func IsBeqEnabled() bool {
 	var config models.EZBEQConfig

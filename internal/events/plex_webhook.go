@@ -130,6 +130,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 	}
 	return models.Event{
 		Action:      action,
+		EventType:   models.EventTypePlex,
 		User:        decodedPayload.User,
 		Owner:       decodedPayload.Owner,
 		AccountID:   decodedPayload.Account.ID,

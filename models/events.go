@@ -46,7 +46,16 @@ type Event struct {
 	PlayerIP    string      `json:"player_ip"`
 	ServerIP    string      `json:"server_ip"`
 	Metadata    Metadata    `json:"metadata"`
+	EventType   EventType   `json:"event_type"`
 }
+
+type EventType string
+
+const (
+	EventTypePlex          EventType = "plex"
+	EventTypeJellyfin      EventType = "jellyfin"
+	EventTypeHomeAssistant EventType = "homeassistant"
+)
 
 // Metadata is a generic container for media metadata
 type Metadata struct {

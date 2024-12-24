@@ -79,18 +79,18 @@ func TestIsPlexType(t *testing.T) {
 
 	t.Run("Valid Plex request", func(t *testing.T) {
 		req := createMockMultipartRequest(plexPayload)
-		assert.True(t, isPlexType(ctx, req))
+		assert.True(t, IsPlexType(ctx, req))
 	})
 
 	t.Run("Invalid Plex request", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", http.NoBody)
-		assert.False(t, isPlexType(ctx, req))
+		assert.False(t, IsPlexType(ctx, req))
 	})
 
 	t.Run("Non-multipart request", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
 		req.Header.Set("Content-Type", "application/json")
-		assert.False(t, isPlexType(ctx, req))
+		assert.False(t, IsPlexType(ctx, req))
 	})
 }
 
@@ -99,19 +99,19 @@ func TestIsJellyfinType(t *testing.T) {
 	t.SkipNow() // TODO: skipped
 	t.Run("Valid Jellyfin request", func(t *testing.T) {
 		req := createJellyfinWebhookTestRequest()
-		assert.True(t, isJellyfinType(req))
+		assert.True(t, IsJellyfinType(req))
 	})
 
 	t.Run("Invalid Jellyfin request", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
 		req.Header.Set("Content-Type", "text/plain")
-		assert.False(t, isJellyfinType(req))
+		assert.False(t, IsJellyfinType(req))
 	})
 
 	t.Run("Non-JSON request", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		assert.False(t, isJellyfinType(req))
+		assert.False(t, IsJellyfinType(req))
 	})
 }
 
@@ -176,7 +176,7 @@ func TestIsHomeassistantType(t *testing.T) {
 	t.Parallel()
 	t.Run("Not implemented", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", http.NoBody)
-		assert.False(t, isHomeassistantType(req))
+		assert.False(t, IsHomeassistantType(req))
 	})
 }
 

@@ -16,29 +16,34 @@ package jellyfin
 // 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 // 	"github.com/iloveicedgreentea/go-plex/models"
 // )
+import (
+	"net/http"
+	"strings"
+	"time"
+)
 
 // var log = logger.GetLogger()
 
 // // Stuff to interface directly with Plex
 // // of course their api is undocumented and worst of all, in xml. I had to piece it together reading various unofficial API implementations
 
-// type JellyfinClient struct {
-// 	ServerURL  string
-// 	Port       string
-// 	HTTPClient http.Client
-// }
+type JellyfinClient struct {
+	ServerURL  string
+	Port       string
+	HTTPClient http.Client
+}
 
-// // return a new instance of a plex client
-// func NewClient(url, port string) *JellyfinClient {
-// 	url = strings.Replace(url, "http://", "", -1)
-// 	return &JellyfinClient{
-// 		ServerURL: url,
-// 		Port:      port,
-// 		HTTPClient: http.Client{
-// 			Timeout: 5 * time.Second,
-// 		},
-// 	}
-// }
+// return a new instance of a plex client
+func NewClient(url, port string) *JellyfinClient {
+	url = strings.ReplaceAll(url, "http://", "")
+	return &JellyfinClient{
+		ServerURL: url,
+		Port:      port,
+		HTTPClient: http.Client{
+			Timeout: 5 * time.Second,
+		},
+	}
+}
 
 // // Get the active session and return one that matches the machine ID
 // func (c *JellyfinClient) getActiveSession() (string, error) {

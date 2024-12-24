@@ -2,25 +2,69 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 
+	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/homeassistant"
+	"github.com/iloveicedgreentea/go-plex/internal/plex"
+
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/mediaplayer"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
+func initializeMediaClient(event *models.Event) (mediaplayer.MediaAPIClient, error) {
+	// For Plex
+	if event.EventType == models.EventTypePlex && config.IsPlexEnabled() {
+		return plex.NewClient(
+			config.GetPlexScheme(),
+			config.GetPlexUrl(),
+			config.GetPlexPort(),
+		)
+	}
+
+	// For Jellyfin
+	if event.EventType == models.EventTypeJellyfin && config.IsJellyfinEnabled() {
+		// TODO: Implement Jellyfin client
+		return nil, nil
+	}
+
+	// TODO: home assistant
+	if event.EventType == models.EventTypeHomeAssistant && config.IsHomeAssistantEnabled() {
+		return nil, nil
+	}
+
+	return nil, fmt.Errorf("unsupported server type for Event: %s", event.ServerUUID)
+}
+
+func getClient(payload *models.Event) (client mediaplayer.MediaAPIClient, err error) {
+	if payload.Client == nil {
+		var err error
+		payload.Client, err = initializeMediaClient(payload)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing media client: %v", err)
+		}
+	}
+	client, ok := payload.Client.(mediaplayer.MediaAPIClient)
+	if !ok {
+		return nil, fmt.Errorf("error checking client is MediaAPIClient : %v - payload client is %v", payload, payload.Client)
+	}
+
+	return client, nil
+}
+
 func eventHandler(ctx context.Context, c <-chan models.Event, beqClient *ezbeq.BeqClient, homeAssistantClient *homeassistant.HomeAssistantClient) {
 	log := logger.GetLoggerFromContext(ctx)
 	for payload := range c {
-		client, ok := payload.Client.(mediaplayer.MediaAPIClient)
-		if !ok {
-			log.Error("Error getting client from event", slog.Any("event", payload))
-			return
+		client, err := getClient(&payload)
+		if err != nil {
+			log.Error("Error getting client for payload", slog.Any("error", err))
+			continue
 		}
-		// TODO: update events to have a client object, add the object depending on the event type
+
 		// Create a new context for each event, but don't cancel it immediately
 		eventCtx, eventCancel := context.WithCancel(ctx)
 

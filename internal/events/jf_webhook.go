@@ -79,6 +79,7 @@ func parseJellyfinWebhook(ctx context.Context, req *http.Request) (models.Event,
 		AccountID:   models.IntOrString{StringValue: webhook.UserID},
 		PlayerUUID:  webhook.DeviceID,
 		PlayerTitle: webhook.DeviceName,
+		EventType:   models.EventTypeJellyfin,
 		Metadata: models.Metadata{
 			Key:      webhook.ItemID,
 			Type:     models.MediaType(webhook.ItemType),

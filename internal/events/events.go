@@ -13,27 +13,27 @@ func RequestToEvent(ctx context.Context, req *http.Request) (models.Event, error
 		return models.Event{}, EventNotSupportedError{Message: "Request body is empty"}
 	}
 	switch {
-	case isPlexType(ctx, req):
+	case IsPlexType(ctx, req):
 		return processPlexWebhook(ctx, req)
-	case isJellyfinType(req):
+	case IsJellyfinType(req):
 		return parseJellyfinWebhook(ctx, req)
-	case isHomeassistantType(req):
+	case IsHomeassistantType(req):
 		return models.Event{}, nil
 	}
 
 	return models.Event{}, EventNotSupportedError{Message: "Event type not supported"}
 }
 
-func isPlexType(ctx context.Context, req *http.Request) bool {
+func IsPlexType(ctx context.Context, req *http.Request) bool {
 	_, err := getMultipartPayload(ctx, req)
 	return err == nil
 }
 
-func isJellyfinType(req *http.Request) bool {
+func IsJellyfinType(req *http.Request) bool {
 	return isJellyfinWebhook(req)
 }
 
-func isHomeassistantType(req *http.Request) bool {
+func IsHomeassistantType(req *http.Request) bool {
 	// TODO: implement
 	return false
 }
