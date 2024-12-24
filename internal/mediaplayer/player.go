@@ -95,9 +95,9 @@ func HandlePlay(ctx context.Context, cancel context.CancelFunc, payload *models.
 		return nil
 	}
 
-	log.Debug("Waiting for goroutines")
+	log.Debug("waiting for handleplay goroutines")
 	innerWg.Wait()
-	log.Debug("Goroutines complete")
+	log.Debug("handleplay goroutines complete")
 
 	return nil
 }
