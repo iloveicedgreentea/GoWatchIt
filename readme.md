@@ -28,7 +28,6 @@
 
 ## Table of Contents
 - [Features](#features)
-<!-- TODO: add other pages here -->
 - [Setup](./docs/setup.md)
 - [Usage](#usage)
 - [Home Assistant Quickstart](#Home-Assistant-Quickstart)
@@ -42,12 +41,15 @@ Main features:
 * HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen in front of your friends)  (coming soon)
 * Web based UI
 
-Players Supported:
-* Kodi (through Home Assistant)
-* Plex (Webhooks and through Home Assistant)
-* Jellyfin (through Home Assistant)
+Players Supported Via Home Assistant:
+* Kodi (The integration exposes necessary data)
+
+Players Supported Natively:
+* Plex 
+* Jellyfin 
 * Emby (may work due to jellyfin support, no support given and not tested)
-* Apple TV and technically any player that exposes the correct metadata (title, year, codec, edition, tmdb)
+
+I am working on updating the Plex integration to expose the necessary data to Home Assistant. This will allow bypassing Plex webhooks
 
 Other cool stuff:
 * Mute/Unmute Minidsp
@@ -59,7 +61,7 @@ Other cool stuff:
 ## Usage
 
 ### Web UI
-The web UI mainly serves to configure this application. It is available at `http://(your-server-ip):9999`
+The web UI mainly serves to configure this application. It is available at `http://(your-server-ip):3000`
 
 Each section has an enable/disable toggle. If you disable a section, it will not be used. For example, if you disable BEQ, it will not load BEQ profiles. Options will not be shown if the section is disabled.
 
@@ -68,6 +70,8 @@ You can also check application logs. It will fetch logs on the page automaticall
 ## Home Assistant Quickstart
 
 ### Endpoints
+
+Not up to date
 
 `/plexwebhook`
 
@@ -98,13 +102,10 @@ Using the above you can automate the mute and unmute of your minidsp with any au
 
 One use case is to mute the subs at night. You can use the time integration to trigger this at a certain time or with a button press.
 
-### Config
-The only supported way to configure this is via the web UI. You can dump the current config via the `/config` endpoint.
-
 ### Plex Authentication
 You must whitelist your server IP in "List of IP addresses and networks that are allowed without auth"
 
-Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I may eventually implement their auth flow but it is not a priority.
+Why? Plex refuses to implement client to server authentication and you must go through their auth servers. I may eventually implement their auth flow but it is not a priority. It also would mean access would expire periodically and the user would have to deal with that.
 
 ### Logs
 Look at the Logs view in the UI, query the `/logs` endpoint, check stdout, or read the log in `/data`
@@ -113,8 +114,6 @@ Look at the Logs view in the UI, query the `/logs` endpoint, check stdout, or re
 These are environment variables you can set to get more info
 
 `LOG_LEVEL=debug` to have it print out debug logs while running
-`LOG_FILE=true` to have it write logs to a file
-`LOG_ENV=local` leave blank when using docker
 
 ## Help
 First check your logs to see whats happening in the Logs view.

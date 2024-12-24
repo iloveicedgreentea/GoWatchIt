@@ -1,3 +1,12 @@
+## Table of Contents
+- [Back To Main](../readme.md)
+- [Unraid](./setup_unraid.md)
+- [Plex](./setup_plex.md)
+- [Jellyfin](./setup_jellyfin.md)
+- [HDMI Sync](./setup_hdmi_sync.md)
+- [Home Assistant (WIP)](./setup_homeassistant.md)
+
+
 ## Setup
 > ⚠️ ⚠️ *Warning: You should really set a compressor on your minidsp for safety as outlined in the [BEQ forum post](https://www.avsforum.com/threads/bass-eq-for-filtered-movies.2995212/). I am not responsible for any damage* ⚠️ ⚠️
 ### Prerequisites

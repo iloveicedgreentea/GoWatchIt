@@ -1,4 +1,5 @@
-
+help:
+	
 build: 
 	cd cmd/gowatchit && go build -o ../../build/gowatchit
 test:

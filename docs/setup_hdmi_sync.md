@@ -1,5 +1,15 @@
+## Table of Contents
+- [Back To Main](../readme.md)
+- [Unraid](./setup_unraid.md)
+- [Plex](./setup_plex.md)
+- [Jellyfin](./setup_jellyfin.md)
+- [HDMI Sync](./setup_hdmi_sync.md)
+- [Home Assistant (WIP)](./setup_homeassistant.md)
 
-### HDMI Sync Automation
+
+This is not enabled yet
+
+## HDMI Sync Automation
 This application supports automatically waiting until HDMI sync is complete. 
 
 Have you ever started something in Plex only to hear audio but see a black screen for 10 seconds? Then everyone in your theater makes fun of you and you cry yourself to sleep? This application will prevent that. 
