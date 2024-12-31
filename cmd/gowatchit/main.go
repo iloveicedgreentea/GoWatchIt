@@ -136,7 +136,6 @@ func main() {
 		// all webhook events are sent to this channel
 		// set to one so new events block old ones and will be discarded
 		eventChan := make(chan models.Event, 1)
-
 		// register routes
 		RegisterRoutes(router, eventChan)
 		err = router.SetTrustedProxies(nil)
@@ -146,7 +145,6 @@ func main() {
 
 		// run event loop in background
 		go eventHandler(ctx, eventChan)
-
 		// init the router
 		port := "9999"
 		log.Debug("Listening on port", slog.String("port", port))

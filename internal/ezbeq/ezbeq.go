@@ -26,7 +26,6 @@ type BeqClient struct {
 	Scheme              string
 	ServerURL           string
 	Port                string
-	CurrentProfile      string
 	CurrentMasterVolume float64
 	CurrentMediaType    string
 	MuteStatus          bool
@@ -75,6 +74,33 @@ func NewClient() (*BeqClient, error) {
 	}
 
 	return c, nil
+}
+
+func (c *BeqClient) GetLoadedProfile() (out map[string]string) {
+	out = make(map[string]string)
+	if c == nil {
+		return out
+	}
+
+	if config.IsBeqEnabled() {
+		// map the current profile to each device for any active slots
+		// assuming the slots would have the same profile because why wouldnt they
+		for _, k := range c.DeviceInfo {
+			for _, v := range k.Slots {
+				if v.Active {
+					out[k.Name] = v.Last
+				}
+			}
+		}
+
+		if len(out) == 0 {
+			for _, k := range c.DeviceInfo {
+				out[k.Name] = "No profile loaded"
+			}
+		}
+	}
+
+	return out
 }
 
 // NewRequest returns a new request for ezbeq
@@ -534,7 +560,6 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 
 	// save the current stuff for later, used in media.resume
 	c.CurrentMasterVolume = m.MVAdjust
-	c.CurrentProfile = m.EntryID
 	c.CurrentMediaType = string(m.MediaType)
 
 	if m.EntryID == "" {

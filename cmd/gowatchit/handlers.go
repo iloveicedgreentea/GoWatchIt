@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
 	"github.com/iloveicedgreentea/go-plex/internal/events"
+	"github.com/iloveicedgreentea/go-plex/internal/ezbeq"
 	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
@@ -41,6 +42,25 @@ func processWebhook(ctx context.Context, eventChan chan models.Event, c *gin.Con
 
 func processHealthcheckWebhookGin(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
+}
+
+func processMinidspHookGin(c *gin.Context) {
+	// TODO: implement mute and unmute
+	c.String(http.StatusNotImplemented, "not implemented")
+}
+
+func profileHandler(ctx context.Context, c *gin.Context) {
+	log := logger.GetLoggerFromContext(ctx)
+	beqClient, err := ezbeq.NewClient()
+	if err != nil {
+		log.Error("Error creating beq client in profileHandler",
+			slog.Any("error", err),
+		)
+	}
+	profile := beqClient.GetLoadedProfile()
+	if profile != nil {
+		c.JSON(200, profile)
+	}
 }
 
 // GetConfig returns all configurations from the database

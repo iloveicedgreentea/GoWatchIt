@@ -11,6 +11,10 @@ func RegisterRoutes(router *gin.Engine, webhookChan chan models.Event) {
 	router.POST("/api/config", SaveConfig)
 	router.GET("/api/logs", GetLogs)
 	router.GET("/api/health", processHealthcheckWebhookGin)
+	router.GET("/api/currentprofile", func(c *gin.Context) {
+		profileHandler(c.Request.Context(), c)
+	})
+	router.POST("/api/minidsp", processMinidspHookGin)
 	router.POST("/api/webhook", func(c *gin.Context) {
 		processWebhook(c.Request.Context(), webhookChan, c)
 	})
