@@ -73,7 +73,7 @@ func HandlePlay(ctx context.Context, payload *models.Event, wg *sync.WaitGroup, 
 		}
 		log.Info("BEQ profile loaded")
 		// send notification of it loaded
-		if config.IsBeqNotifyOnLoadEnabled() && homeAssistantClient != nil {
+		if config.IsBeqNotifyOnLoadEnabled() && config.IsHomeAssistantEnabled() {
 			err := homeAssistantClient.SendNotification(fmt.Sprintf("BEQ Profile: Title - %s  (%d) // Codec %s", payload.Metadata.Title, payload.Metadata.Year, searchRequest.Codec))
 			if err != nil {
 				return err
@@ -129,7 +129,7 @@ func HandlePause(ctx context.Context, payload *models.Event, wg *sync.WaitGroup,
 		}
 		log.Info("BEQ profile unloaded")
 		// send notification of it loaded
-		if config.IsBeqNotifyOnUnLoadEnabled() && homeAssistantClient != nil {
+		if config.IsBeqNotifyOnUnLoadEnabled() && config.IsHomeAssistantEnabled() {
 			err := homeAssistantClient.SendNotification("BEQ Profile Unloaded")
 			if err != nil {
 				return err

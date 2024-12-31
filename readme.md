@@ -73,17 +73,15 @@ You can also check application logs. It will fetch logs on the page automaticall
 
 Not up to date
 
-`/plexwebhook`
+`/api/webhook`
 
-`/jellyfin` 
-
-`/minidspwebhook`
+`/api/minidsp`
 This endpoint accepts commands used by minidsp-rs which are performed by EZbeq. Here is how to trigger it with Home Assistant
 
 ```yaml
 rest_command:
   minidsp:
-    url: "http://192.168.88.56:9999/minidspwebhook"
+    url: "http://192.168.88.56:9999/api/minidsp"
     method: POST
     payload: '{"command": "{{ command }}" }'
     content_type:  'application/json'
