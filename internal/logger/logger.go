@@ -2,9 +2,11 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"strings"
 )
 
@@ -16,14 +18,26 @@ var (
 	logFile       *os.File // Keep track of the log file
 )
 
-func Fatal(msg string, args ...any) {
-	slog.Error(msg, args...)
-	os.Exit(1)
+func getLogDir() string {
+	baseDir := os.Getenv("BASE_DIR")
+	if baseDir == "" {
+		return "./"
+	}
+	return baseDir
 }
 
+// InitLoggerFile enhanced to ensure panic captures
 func InitLoggerFile() error {
+	logMu.Lock()
+	defer logMu.Unlock()
+
 	if os.Getenv("LOG_FILE") == "true" {
 		logFilePath := getLogFilePath()
+
+		// Create log directory if it doesn't exist
+		if err := os.MkdirAll(getLogDir(), 0o750); err != nil {
+			return fmt.Errorf("failed to create log directory: %w", err)
+		}
 
 		// Remove old log file if it exists
 		err := os.Remove(logFilePath)
@@ -41,8 +55,11 @@ func InitLoggerFile() error {
 		// Store the file handle globally
 		logFile = file
 
+		// Create a multi-writer for both file and stdout
+		multiWriter := io.MultiWriter(file, os.Stdout)
+
 		// Create a new logger with the file
-		handler := slog.NewJSONHandler(io.MultiWriter(file, os.Stdout), &slog.HandlerOptions{
+		handler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
 			Level:     getLogLevel(),
 			AddSource: true,
 		})
@@ -51,7 +68,31 @@ func InitLoggerFile() error {
 		defaultLogger = slog.New(handler)
 		slog.SetDefault(defaultLogger)
 	}
+
 	return nil
+}
+
+// Fatal enhanced to capture more context
+func Fatal(msg string, args ...any) {
+	logMu.Lock()
+	defer func() {
+		logMu.Unlock()
+		os.Exit(1)
+	}()
+
+	// Capture stack trace
+	stack := debug.Stack()
+
+	// Append stack trace to args
+	args = append(args, slog.String("stack", string(stack)))
+
+	// Log the fatal error
+	slog.Error(msg, args...)
+
+	// Ensure logs are flushed before exit
+	if logFile != nil {
+		_ = logFile.Sync()
+	}
 }
 
 func getLogLevel() slog.Level {
