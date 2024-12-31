@@ -19,7 +19,6 @@ RUN bun run build
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y \
     tzdata \
-    supervisor \
     nginx \
     sqlite3 \
     libsqlite3-dev \
@@ -27,8 +26,6 @@ RUN apt-get update && apt-get install -y \
 
 # Create necessary directories
 RUN mkdir -p /data \
-    /run/supervisor \
-    /var/log/supervisor \
     /run/nginx \
     /var/lib/nginx \
     /var/lib/nginx/tmp \
@@ -47,7 +44,6 @@ RUN chmod +x /gowatchit
 COPY --from=frontend-build /usr/src/app/dist /var/www/html/
 
 # Copy config files
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
@@ -60,4 +56,4 @@ ENV GIN_MODE=release
 ENV LOG_FILE=true
 ENV BASE_DIR=/data
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/entrypoint.sh"]

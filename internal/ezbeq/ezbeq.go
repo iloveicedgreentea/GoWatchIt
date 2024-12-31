@@ -38,7 +38,7 @@ type BeqClient struct {
 // return a new instance of a plex client
 func NewClient() (*BeqClient, error) {
 	if !config.IsBeqEnabled() {
-		return nil, nil
+		return &BeqClient{}, nil
 	}
 
 	port := config.GetEZBeqPort()

@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"os"
 	"runtime/debug"
-	"strings"
 	"sync"
 )
 
@@ -15,25 +14,29 @@ func PanicLogger(next func()) {
 	defer func() {
 		if err := recover(); err != nil {
 			stack := debug.Stack()
-			logMu.Lock()
-			defer logMu.Unlock()
 
-			// Ensure we have a logger
-			log := GetLogger()
+			// Ensure we have a logger even if panic happens during logger init
+			logger := GetLogger()
+			if logger == nil {
+				// Emergency logging if logger isn't initialized
+				handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+					Level: slog.LevelError,
+				})
+				logger = slog.New(handler)
+			}
 
-			// Log both the panic and the stack trace
-			log.Error("PANIC RECOVERED",
-				slog.Any("error", err),
+			logger.Error("PANIC RECOVERED",
+				slog.Any("panic", err),
 				slog.String("stack", string(stack)),
 			)
 
-			// Re-panic if we're in development mode
-			if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
-				panic(err)
+			// Ensure logs are flushed
+			if logFile != nil {
+				_ = logFile.Sync()
 			}
 
-			// In production, exit with error code
-			os.Exit(1)
+			// Re-panic to let the program crash with the original error
+			panic(err)
 		}
 	}()
 	next()

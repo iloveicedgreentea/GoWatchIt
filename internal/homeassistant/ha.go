@@ -28,7 +28,7 @@ type HomeAssistantClient struct {
 // // A client to interface with home assistant
 func NewClient() (*HomeAssistantClient, error) {
 	if !config.IsHomeAssistantEnabled() {
-		return nil, nil
+		return &HomeAssistantClient{}, nil
 	}
 
 	url := config.GetHomeAssistantUrl()

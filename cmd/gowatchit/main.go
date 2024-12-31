@@ -26,15 +26,17 @@ func noCache() gin.HandlerFunc {
 }
 
 func main() {
+	err := logger.InitLoggerFile()
+	if err != nil {
+		fmt.Printf("Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
 	logger.PanicLogger(func() {
 		// init context
 		ctx := context.Background()
 
 		// reuse logger object in calls
-		err := logger.InitLoggerFile()
-		if err != nil {
-			logger.Fatal("Failed to initialize the logger: ", err)
-		}
+
 		defer func() {
 			if err := logger.CleanupLogger(); err != nil {
 				logger.Fatal("Failed to close the logger: ", err)
