@@ -39,10 +39,11 @@
 Main features:
 * Load/unload BEQ profiles automatically, without user action and the correct codec/edition detected
 * HDMI Sync detection and automation (pause while HDMI is syncing so you don't sit embarrassed with a audio playing to a black screen in front of your friends)  (coming soon)
-* Web based UI
+* Web UI
 
 Players Supported Via Home Assistant:
 * Kodi (The integration exposes necessary data)
+* Plex (soon)
 
 Players Supported Natively:
 * Plex 
