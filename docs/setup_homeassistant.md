@@ -8,5 +8,9 @@
 
 
 
-WIP
 
+This is WIP docs to set up home assistant triggering instead of using plex webhooks
+
+The source integration has to expose necessary data. Currently, Kodi is the only one that does this. I personally use PlexKodiConnect so that works for me.
+
+I have a fork of the Plex integration which exposes the data (link tbd)

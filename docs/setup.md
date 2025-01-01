@@ -12,13 +12,13 @@
 ### Prerequisites
 > ℹ  It is assumed you have the following tools working. Refer to their respective guides for installation help.
 * Home Assistant (Optional)
-* Plex or Home Assistant supported player
+* Plex or other supported player
 * ezBEQ
-* Minidsp (other DSPs may work but I have not tested them. If ezBEQ supports it, it should be work)
+* Minidsp 2x4HD (other DSPs may work but I have not tested them. If ezBEQ supports it, it will probably work)
 
 You can configure this to only load BEQ profiles, or do everything else besides BEQ. It is up to you.
 
-> ℹ  If you are using MSO, make sure to use the BEQ friendly output export. If you have PEQ on your inputs, BEQ will overwrite them. If you have shared gain, make sure to disable master volume adjustment
+> ℹ  If you are using MSO, make sure to use the BEQ friendly output export. If you have PEQ on your inputs, BEQ will overwrite them. If you have shared gain, make sure to disable the master volume adjustment config option
 
 ### Docker Setup
 > ℹ  If you need help deploying with Docker, refer to the [Docker documentation](https://docs.docker.com/get-docker/).

@@ -51,7 +51,11 @@ export default function ConfigurationPage() {
         body: JSON.stringify(config)
       });
 
-      if (!response.ok) throw new Error(response.statusText);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || response.statusText);
+      }
 
       addToast({
         title: 'Success',
@@ -61,7 +65,7 @@ export default function ConfigurationPage() {
     } catch (error) {
       addToast({
         title: 'Error',
-        description: 'Failed to save configuration',
+        description: error instanceof Error ? error.message : 'Failed to save configuration',
         variant: 'destructive',
       });
     }

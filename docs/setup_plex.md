@@ -6,6 +6,7 @@
 - [HDMI Sync](./setup_hdmi_sync.md)
 - [Home Assistant (WIP)](./setup_homeassistant.md)
 
+> ℹ I recommend using Home Assistant for triggering actions. It is faster and more reliable than Plex webhooks which are very unreliable and slow
 
 ## Plex
 1) get your player UUID from `https://plex.tv/devices.xml` while logged in (you may need to play something)
