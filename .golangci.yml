@@ -1,0 +1,82 @@
+# Options for analysis running
+run:
+  # Timeout for analysis, e.g. 30s, 5m
+  timeout: 60s
+
+  # Include test files
+  tests: true
+
+  # Use all available CPU cores
+  concurrency: 4
+
+  # Exit code when at least one issue was found
+  issues-exit-code: 1
+
+# Output configuration options
+output:
+  # Make issues output unique by line
+  uniq-by-line: true
+
+  # Sort results by: filepath, line and column
+  sort-results: true
+
+# Linters settings
+linters:
+  disable-all: true
+  enable:
+    # - gofmt        # Checks formatting
+    # - gofumpt      # Stricter gofmt
+    - govet # Reports suspicious constructs
+    - errcheck # Checks for unchecked errors
+    - gosimple # Suggests code simplifications
+    - staticcheck # Go static analysis
+    - unused # Checks for unused constants, variables, functions and types
+    - ineffassign # Detects ineffective assignments
+    - typecheck # Go type checker
+    - bodyclose # Checks whether HTTP response bodies are closed
+    - gosec # Inspects code for security problems
+    - prealloc # Suggests slice preallocation
+    - revive # Fast, configurable, extensible, flexible, and beautiful linter
+    - misspell # Finds commonly misspelled English words
+    - copyloopvar # Checks for pointers to enclosing loop variables
+    - gocritic # Provides diagnostics that check for bugs, performance and style issues
+
+# Linter-specific settings
+linters-settings:
+  gosec:
+    excludes:
+      - G104 # Audit errors not being checked (too noisy)
+
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        disabled: true
+      - name: unexported-return
+        severity: warning
+        disabled: false
+      - name: receiver-naming
+        severity: warning
+        disabled: false
+
+  gocritic:
+    disabled-checks:
+      - commentedOutCode
+    enabled-tags:
+      - performance
+      - style
+      - diagnostic
+   
+
+# Issues configuration
+issues:
+  # Maximum count of issues with the same text
+  max-same-issues: 3
+
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+
+  # Don't show issues from excluded files
+  exclude-use-default: false
+  exclude-dirs:
+    - vendor

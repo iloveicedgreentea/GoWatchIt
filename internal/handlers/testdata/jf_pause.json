@@ -1,8 +1,0 @@
-{
-    "DeviceId": "{{DeviceId}}",
-    "DeviceName": "{{DeviceName}}",
-    "ClientName": "{{ClientName}}",
-    "UserId": "{{UserId}}",
-    "ItemId": "{{ItemId}}",
-    "ItemType": "{{ItemType}}"
-}

@@ -1,6 +1,6 @@
 build
 .DS_Store
-*config.json
+**/config.json
 media.*.priv*
 docker/data
 coverage.*
@@ -20,3 +20,8 @@ coverage.*
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+*.db
+*.sqlite3
+applog.log
+test_web.sh

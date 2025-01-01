@@ -1,0 +1,11 @@
+repos:
+  - repo: https://github.com/tekwizely/pre-commit-golang
+    rev: v1.0.0-rc.1
+    hooks:
+      - id: go-mod-tidy
+        # Formatting
+      - id: go-fumpt
+        args: [-l, -w]
+      # GolangCI-Lint
+      - id: golangci-lint-mod
+        args: [--fix, --config=.golangci.yml]

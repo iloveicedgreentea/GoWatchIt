@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 )
 
+// MediaContainer plex
 type MediaContainer struct {
 	XMLName             xml.Name `xml:"MediaContainer"`
 	Size                string   `xml:"size,attr"`
@@ -22,7 +23,7 @@ type MediaContainer struct {
 		AttrGuid              string `xml:"guid,attr"`
 		ParentGuid            string `xml:"parentGuid,attr"`
 		GrandparentGuid       string `xml:"grandparentGuid,attr"`
-		EditionTitle string `xml:"editionTitle,attr"`
+		EditionTitle          string `xml:"editionTitle,attr"`
 		Type                  string `xml:"type,attr"`
 		Title                 string `xml:"title,attr"`
 		GrandparentKey        string `xml:"grandparentKey,attr"`
@@ -100,7 +101,7 @@ type MediaContainer struct {
 					LanguageCode         string `xml:"languageCode,attr"`
 					AudioChannelLayout   string `xml:"audioChannelLayout,attr"`
 					SamplingRate         string `xml:"samplingRate,attr"`
-					Title         string `xml:"title,attr"`
+					Title                string `xml:"title,attr"`
 				} `xml:"Stream"`
 			} `xml:"Part"`
 		} `xml:"Media"`
@@ -115,7 +116,7 @@ type MediaContainer struct {
 			Tag    string `xml:"tag,attr"`
 		} `xml:"Writer"`
 		Guid []struct {
-			ID   string `xml:"id,attr"`
+			ID string `xml:"id,attr"`
 		} `xml:"Guid"`
 		Rating struct {
 			Image string `xml:"image,attr"`
@@ -131,8 +132,9 @@ type MediaContainer struct {
 			Thumb  string `xml:"thumb,attr"`
 		} `xml:"Role"`
 	} `xml:"Video"`
-} 
+}
 
+// AllMediaContainer plex
 type AllMediaContainer struct {
 	XMLName             xml.Name `xml:"MediaContainer"`
 	Text                string   `xml:",chardata"`
@@ -240,8 +242,9 @@ type AllMediaContainer struct {
 			Tag  string `xml:"tag,attr"`
 		} `xml:"Role"`
 	} `xml:"Video"`
-} 
+}
 
+// SessionMediaContainer plex
 type SessionMediaContainer struct {
 	XMLName xml.Name `xml:"MediaContainer"`
 	Text    string   `xml:",chardata"`
@@ -379,4 +382,4 @@ type SessionMediaContainer struct {
 			MinOffsetAvailable       string `xml:"minOffsetAvailable,attr"`
 		} `xml:"TranscodeSession"`
 	} `xml:"Video"`
-} 
+}
