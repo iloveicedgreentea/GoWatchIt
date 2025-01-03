@@ -14,21 +14,11 @@ func santizeURL(url string) string {
 	return url
 }
 
-// Main
-func GetMainListenPort() string {
-	var config models.MainConfig
-	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Main config", "error", err)
-		return ""
-	}
-	return config.ListenPort
-}
-
 // HDMI
 func GetHDMISyncSource() string {
 	var config models.HDMISyncConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HDMISync config", "error", err)
+		logger.Error("Failed to load HDMISync source", "error", err)
 		return ""
 	}
 	return config.Source
@@ -37,7 +27,7 @@ func GetHDMISyncSource() string {
 func GetHDMISyncEnvyName() string {
 	var config models.HDMISyncConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HDMISync config", "error", err)
+		logger.Error("Failed to load HDMISync name", "error", err)
 		return ""
 	}
 	return config.Envy
@@ -46,7 +36,7 @@ func GetHDMISyncEnvyName() string {
 func GetHDMISyncSeconds() string {
 	var config models.HDMISyncConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HDMISync config", "error", err)
+		logger.Error("Failed to load HDMISync seconds", "error", err)
 		return ""
 	}
 	return config.Time
@@ -55,7 +45,7 @@ func GetHDMISyncSeconds() string {
 func GetHDMISyncPlayerIP() string {
 	var config models.HDMISyncConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HDMISync config", "error", err)
+		logger.Error("Failed to load HDMISync ip", "error", err)
 		return ""
 	}
 	return config.PlayerIP
@@ -64,7 +54,7 @@ func GetHDMISyncPlayerIP() string {
 func GetHDMISyncMachineIdentifier() string {
 	var config models.HDMISyncConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HDMISync config", "error", err)
+		logger.Error("Failed to load HDMISync id", "error", err)
 		return ""
 	}
 	return config.PlayerMachineIdentifier
@@ -75,7 +65,7 @@ func GetHDMISyncMachineIdentifier() string {
 func GetHomeAssistantUrl() string {
 	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
+		logger.Error("Failed to load HomeAssistant url", "error", err)
 		return ""
 	}
 
@@ -88,10 +78,24 @@ func GetHomeAssistantUrl() string {
 	return config.URL
 }
 
+func GetHomeAssistantScheme() string {
+	var config models.HomeAssistantConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load HomeAssistant scheme", "error", err)
+		return ""
+	}
+
+	if config.Scheme == "" {
+		return "http"
+	}
+
+	return config.Scheme
+}
+
 func GetHomeAssistantToken() string {
 	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
+		logger.Error("Failed to load HomeAssistant token", "error", err)
 		return ""
 	}
 	return config.Token
@@ -100,7 +104,7 @@ func GetHomeAssistantToken() string {
 func GetHomeAssistantPort() string {
 	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
+		logger.Error("Failed to load HomeAssistant port", "error", err)
 		return ""
 	}
 
@@ -114,7 +118,7 @@ func GetHomeAssistantPort() string {
 func GetHomeAssistantRemoteEntityName() string {
 	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
+		logger.Error("Failed to load HomeAssistant remote entity", "error", err)
 		return ""
 	}
 	return config.RemoteEntityName
@@ -123,7 +127,7 @@ func GetHomeAssistantRemoteEntityName() string {
 func GetHomeAssistantNotifyEndpointName() string {
 	var config models.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load HomeAssistant config", "error", err)
+		logger.Error("Failed to load HomeAssistant notify endpoint", "error", err)
 		return ""
 	}
 	return config.NotifyEndpointName
@@ -133,7 +137,7 @@ func GetHomeAssistantNotifyEndpointName() string {
 func GetEZBeqUrl() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ url", "error", err)
 		return ""
 	}
 
@@ -149,7 +153,7 @@ func GetEZBeqUrl() string {
 func GetEZBeqScheme() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ scheme", "error", err)
 		return ""
 	}
 
@@ -163,7 +167,7 @@ func GetEZBeqScheme() string {
 func GetEZBeqPort() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ port", "error", err)
 		return ""
 	}
 
@@ -177,7 +181,7 @@ func GetEZBeqPort() string {
 func GetEZBeqAvrURL() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ avr url", "error", err)
 		return ""
 	}
 	return config.AVRURL
@@ -186,7 +190,7 @@ func GetEZBeqAvrURL() string {
 func GetEZBeqAvrBrand() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ avr brand", "error", err)
 		return ""
 	}
 	return config.AVRBrand
@@ -195,7 +199,7 @@ func GetEZBeqAvrBrand() string {
 func GetEZBeqSlots() []int {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ slots", "error", err)
 		return []int{}
 	}
 	return config.Slots
@@ -204,7 +208,7 @@ func GetEZBeqSlots() []int {
 func GetEZBeqPreferredAuthor() string {
 	var config models.EZBEQConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load EZBEQ config", "error", err)
+		logger.Error("Failed to load EZBEQ author", "error", err)
 		return ""
 	}
 	return config.PreferredAuthor
@@ -215,7 +219,7 @@ func GetEZBeqPreferredAuthor() string {
 func GetPlexUrl() string {
 	var config models.PlexConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Plex config", "error", err)
+		logger.Error("Failed to load Plex url", "error", err)
 		return ""
 	}
 
@@ -227,7 +231,7 @@ func GetPlexUrl() string {
 func GetPlexToken() string {
 	var config models.PlexConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Plex config", "error", err)
+		logger.Error("Failed to load Plex token", "error", err)
 		return ""
 	}
 	return config.Token
@@ -236,7 +240,7 @@ func GetPlexToken() string {
 func GetPlexPort() string {
 	var config models.PlexConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Plex config", "error", err)
+		logger.Error("Failed to load Plex port", "error", err)
 		return ""
 	}
 
@@ -250,7 +254,7 @@ func GetPlexPort() string {
 func GetPlexScheme() string {
 	var config models.PlexConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Plex config", "error", err)
+		logger.Error("Failed to load Plex scheme", "error", err)
 		return ""
 	}
 
@@ -264,7 +268,7 @@ func GetPlexScheme() string {
 func GetPlexDeviceUUIDFilter() string {
 	var config models.PlexConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Plex config", "error", err)
+		logger.Error("Failed to load Plex uuid", "error", err)
 		return ""
 	}
 	return config.DeviceUUIDFilter
@@ -273,7 +277,7 @@ func GetPlexDeviceUUIDFilter() string {
 func GetPlexOwnerNameFilter() string {
 	var config models.PlexConfig
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
-		logger.Error("Failed to load Plex config", "error", err)
+		logger.Error("Failed to load Plex name", "error", err)
 		return ""
 	}
 	return config.OwnerNameFilter

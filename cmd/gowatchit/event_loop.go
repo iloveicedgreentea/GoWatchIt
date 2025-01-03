@@ -205,7 +205,6 @@ func eventRouter(ctx context.Context, event *models.Event, wg *sync.WaitGroup, b
 			log.Error("Error handling resume event", slog.Any("error", err))
 		}
 	case models.ActionScrobble:
-		log.Info("Scrobble event received", slog.Any("event", event))
-
+		log.Debug("Scrobble event received")
 	}
 }

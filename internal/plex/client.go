@@ -290,7 +290,7 @@ func (c *PlexClient) GetAudioCodec(ctx context.Context, payload *models.Event) (
 			return "", errors.New("no codec found")
 		}
 	} else {
-		return "", errors.New("invalid data type")
+		return "", errors.New("invalid data type; mc.Video.Key is empty")
 	}
 	return plexAudioCodec, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
@@ -49,7 +50,7 @@ func main() {
 		log.Info("Starting up please wait until the server is ready...")
 
 		// set program to debug mode
-		debug := os.Getenv("LOG_LEVEL") == "debug"
+		debug := strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug"
 		if !debug {
 			gin.SetMode(gin.ReleaseMode)
 		}

@@ -23,36 +23,31 @@ type HomeAssistantClient struct {
 	Token      string
 	HTTPClient http.Client
 	EntityName string
+	Scheme     string
 }
 
-// // A client to interface with home assistant
+// A client to interface with home assistant
 func NewClient() (*HomeAssistantClient, error) {
 	if !config.IsHomeAssistantEnabled() {
 		return &HomeAssistantClient{}, nil
 	}
 
-	url := config.GetHomeAssistantUrl()
-	port := config.GetHomeAssistantPort()
-	token := config.GetHomeAssistantToken()
-	entityName := config.GetHomeAssistantRemoteEntityName()
-	// TODO: use scheme validation
-	url = strings.ReplaceAll(url, "http://", "")
 	return &HomeAssistantClient{
-		ServerURL:  url,
-		Port:       port,
-		Token:      token,
-		EntityName: entityName,
+		ServerURL:  config.GetHomeAssistantUrl(),
+		Port:       config.GetHomeAssistantPort(),
+		Token:      config.GetHomeAssistantToken(),
+		EntityName: config.GetHomeAssistantRemoteEntityName(),
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
+		Scheme: config.GetHomeAssistantScheme(),
 	}, nil
 }
 
 func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodType string) ([]byte, error) {
 	var req *http.Request
 	var err error
-	// TODO: use schema from db/client
-	url := fmt.Sprintf("http://%s:%s%s", c.ServerURL, c.Port, endpoint)
+	url := fmt.Sprintf("%s://%s:%s%s", c.Scheme, c.ServerURL, c.Port, endpoint)
 	if len(payload) == 0 {
 		req, err = http.NewRequest(methodType, url, http.NoBody)
 	} else {

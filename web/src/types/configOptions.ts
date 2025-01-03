@@ -33,6 +33,17 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 section: 'ezbeq'
             },
             {
+                key: 'scheme',
+                label: 'EzBEQ Scheme',
+                description: 'EzBEQ Scheme',
+                type: 'select',
+                options: [
+                    { label: 'HTTP', value: 'http' },
+                    { label: 'HTTPS', value: 'https' }
+                ],
+                section: 'ezbeq'
+            },
+            {
                 key: 'adjustmastervolumewithprofile',
                 label: 'Adjust Master Volume With Profile',
                 description: 'Most BEQ profiles have a Master Volume adjustment. Many lower the MV but some raise it. I recommend this on because the BEQ is created with MV in mind.',
@@ -173,6 +184,17 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 section: 'homeassistant'
             },
             {
+                key: 'scheme',
+                label: 'Home Assistant Scheme',
+                description: 'Scheme',
+                type: 'select',
+                options: [
+                    { label: 'HTTP', value: 'http' },
+                    { label: 'HTTPS', value: 'https' }
+                ],
+                section: 'homeassistant'
+            },
+            {
                 key: 'token',
                 label: 'Home Assistant token',
                 description: 'HA User token - "ey.xyz" get a token from your user profile',
@@ -216,6 +238,17 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
                 description: 'port',
                 type: 'text',
                 defaultValue: '32400',
+                section: 'plex'
+            },
+            {
+                key: 'scheme',
+                label: 'Plex Scheme',
+                description: 'Scheme',
+                type: 'select',
+                options: [
+                    { label: 'HTTP', value: 'http' },
+                    { label: 'HTTPS', value: 'https' }
+                ],
                 section: 'plex'
             },
             {
