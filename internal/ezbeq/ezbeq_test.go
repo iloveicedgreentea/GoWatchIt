@@ -552,6 +552,18 @@ func TestSearchCatalog(t *testing.T) {
 			expectedMvAdjust: 0,
 		},
 		{
+			// Stargate (1994) {edition-Extended Edition} Remux 1080p no year
+			m: models.BeqSearchRequest{
+				TMDB:            "2164",
+				Codec:           "DTS-HD MA 7.1",
+				PreferredAuthor: "none",
+				Edition:         "Extended",
+			},
+			expectedEdition:  "Extended Cut",
+			expectedDigest:   "6d9cfaed8335a348491eebae27f7f5fb11752e32df64b46d24d6f995dd74d96d",
+			expectedMvAdjust: 0,
+		},
+		{
 			// fast five extended
 			m: models.BeqSearchRequest{
 				TMDB:            "51497",
@@ -719,6 +731,31 @@ func TestSearchCatalog(t *testing.T) {
 			expectedMvAdjust: 0.0,
 		},
 		{
+			//  spiderman universe blank year
+			m: models.BeqSearchRequest{
+				TMDB:            "56292",
+				Year:            0,
+				Codec:           "TrueHD 7.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
+			expectedMvAdjust: 0.0,
+		},
+		{
+			//  spiderman universe no year
+			m: models.BeqSearchRequest{
+				TMDB:            "56292",
+				Codec:           "TrueHD 7.1",
+				PreferredAuthor: "none",
+				Edition:         "",
+			},
+			expectedEdition:  "",
+			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
+			expectedMvAdjust: 0.0,
+		},
+		{
 			//  Star Wars (1977) {edition-Project 4K77} Remux 2160p DTS-HD MA
 			m: models.BeqSearchRequest{
 				TMDB:            "11",
@@ -726,6 +763,19 @@ func TestSearchCatalog(t *testing.T) {
 				Codec:           "DTS-HD MA 5.1",
 				PreferredAuthor: "none",
 				Edition:         "",
+			},
+			expectedEdition:  "Project 4K77",
+			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",
+			expectedMvAdjust: 1.0,
+		},
+		{
+			//  Star Wars (1977) {edition-Project 4K77} Remux 2160p DTS-HD MA
+			m: models.BeqSearchRequest{
+				TMDB:            "11",
+				Year:            1977,
+				Codec:           "DTS-HD MA 5.1",
+				PreferredAuthor: "none",
+				Edition:         "Project 4K77",
 			},
 			expectedEdition:  "Project 4K77",
 			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",

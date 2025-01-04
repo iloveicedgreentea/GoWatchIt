@@ -342,7 +342,11 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 	)
 	q := url.Values{}
 	q.Add("audiotypes", string(m.Codec))
-	q.Add("years", strconv.Itoa(m.Year))
+	// dont add blank year
+	if m.Year != 0 {
+		q.Add("years", strconv.Itoa(m.Year))
+	}
+
 	log.Debug("converted year to string",
 		slog.String("year", strconv.Itoa(m.Year)),
 	)
@@ -406,11 +410,14 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 				break
 			}
 		}
-		// TODO: matching is probably failing here
-		if val.MovieDbID == m.TMDB && val.Year == m.Year && audioMatch {
+
+		// ensure tmdb and codec match
+		if val.MovieDbID == m.TMDB && audioMatch {
 			log.Debug("Potential match found",
 				slog.String("title", val.Title),
 				slog.Any("codecs", val.AudioTypes),
+				slog.String("found_edition", val.Edition),
+				slog.String("requested_edition", string(m.Edition)),
 			)
 			// if it matches, check edition
 			if checkEdition(&val, m.Edition) {
@@ -419,7 +426,12 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 				)
 				return val, nil
 			} else {
-				log.Error("Found a potential match but editions did not match entry. Not loading")
+				log.Warn("Found a potential match but editions did not match. Not loading",
+					slog.String("title", val.Title),
+					slog.Any("codecs", val.AudioTypes),
+					slog.String("found_edition", val.Edition),
+					slog.String("requested_edition", string(m.Edition)),
+				)
 			}
 		}
 	}
@@ -474,7 +486,6 @@ func checkEdition(val *models.BeqCatalog, edition models.Edition) bool {
 	return false
 }
 
-// Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 	if !config.IsBeqEnabled() {
