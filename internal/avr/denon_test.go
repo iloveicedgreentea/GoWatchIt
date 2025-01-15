@@ -14,6 +14,7 @@ func setupTest() *DenonClient {
 }
 
 func TestMakeReq(t *testing.T) {
+	t.SkipNow()
 	c := setupTest()
 
 	res, err := c.makeReq("PW?")
@@ -22,6 +23,7 @@ func TestMakeReq(t *testing.T) {
 }
 
 func TestGetAudioMode(t *testing.T) {
+	t.SkipNow()
 	c := setupTest()
 
 	mode, err := c.GetCodec()

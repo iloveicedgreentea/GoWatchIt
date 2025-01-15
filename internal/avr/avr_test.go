@@ -73,6 +73,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestAvrGetAudioMode(t *testing.T) {
+	t.SkipNow()
 	mode, err := client.GetCodec()
 	assert.NoError(t, err)
 	t.Log(mode)

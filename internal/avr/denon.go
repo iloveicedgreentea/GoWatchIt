@@ -23,6 +23,7 @@ type DenonClient struct {
 
 // make a request to denon via telnet
 func (c *DenonClient) makeReq(command string) (string, error) {
+	// TODO: redo to add context timeout here
 	conn, err := telnet.DialTo(fmt.Sprintf("%s:%s", c.ServerURL, c.Port))
 	if err != nil {
 		return "", err
