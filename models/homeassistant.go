@@ -19,6 +19,24 @@ const (
 	HomeAssistantMediaPlayerStateOn      HomeAssistantMediaPlayerState = "on"
 )
 
+// StateToAction converts a HomeAssistantMediaPlayerState to an Action
+func (s HomeAssistantMediaPlayerState) StateToAction() Action {
+	switch s {
+	case HomeAssistantMediaPlayerStatePlaying:
+		return ActionPlay
+	case HomeAssistantMediaPlayerStatePaused:
+		return ActionPause
+	case HomeAssistantMediaPlayerStateStandby:
+		return ActionStop
+	case HomeAssistantMediaPlayerStateIdle:
+		return ActionStop
+	case HomeAssistantMediaPlayerStateOff:
+		return ActionStop
+	default:
+		return ActionStop
+	}
+}
+
 type HomeAssistantScriptReq struct {
 	EntityID string `json:"entity_id"`
 }
@@ -27,7 +45,9 @@ type HomeAssistantNotificationReq struct {
 	Message string `json:"message"`
 }
 
-type HomeAssistantWebhookPayload struct{}
+type HomeAssistantWebhookPayload struct {
+	EntityID string `json:"entity_id"`
+}
 
 // HAMediaPlayerResponse is a struct that contains the payload of a media player
 type HAMediaPlayerResponse struct {
@@ -42,6 +62,14 @@ type Attributes struct {
 	MediaContentID   MediaContentID   `json:"media_content_id"`
 	MediaContentType MediaContentType `json:"media_content_type"`
 	MediaTitle       string           `json:"media_title"`
+	IMDB             string           `json:"imdb"`
+	TMDB             string           `json:"tmdb"`
+	TVDB             string           `json:"tvdb"`
+	MediaAlbumName   string           `json:"media_album_name"`
+	MediaSeriesTitle string           `json:"media_series_title"`
+	MediaSeason      int              `json:"media_season"`
+	MediaEpisode     int              `json:"media_episode"`
+	FriendlyName     string           `json:"friendly_name"`
 }
 
 type MediaContentType string
@@ -55,28 +83,4 @@ type MediaContentID struct {
 	IMDB string `json:"imdb"`
 	TMDB string `json:"tmdb"`
 	TVDB string `json:"tvdb"`
-}
-
-type HABinaryResponse struct {
-	State string `json:"state"`
-}
-
-func (r *HABinaryResponse) GetState() string {
-	return r.State
-}
-
-func (r *HABinaryResponse) GetSignalStatus() bool {
-	return false // TODO: implement hdmi sync
-}
-
-func (r *HAMediaPlayerResponse) GetState() HomeAssistantMediaPlayerState {
-	return r.State
-}
-
-func (r *HAMediaPlayerResponse) GetSignalStatus() bool {
-	return r.Attributes.SignalStatus
-}
-
-func (r *HAMediaPlayerResponse) GetAttributes() Attributes {
-	return r.Attributes
 }

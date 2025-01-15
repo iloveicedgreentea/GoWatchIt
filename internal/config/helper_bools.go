@@ -10,6 +10,7 @@ import (
 // HDMI
 func IsHDMISyncEnabled() bool {
 	var config models.HDMISyncConfig
+	// TODO: have a worker to refresh config for each enabled service and modify these functions to use a global object instead
 	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
 		logger.Error("Failed to load HDMISync config", "error", err)
 		return false

@@ -98,31 +98,25 @@ func TestNotification(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TODO: test read state, other stuff
 func TestReadAttributes(t *testing.T) {
 	t.Parallel()
 	type testStruct struct {
 		entName string
-		test    HAAttributeResponse
 		entType models.HomeAssistantEntity
 	}
 	tt := []testStruct{
 		{
 			entName: "theater_2",
-			test:    &models.HAMediaPlayerResponse{},
 			entType: models.HomeAssistantEntityMediaPlayer,
 		},
 	}
 
 	for _, k := range tt {
-		attributes, err := haClient.ReadAttributes(k.entName, k.test, k.entType)
-		require.NoError(t, err)
-
-		state, err := haClient.ReadState(k.entName, k.test, k.entType)
+		state, err := haClient.ReadState(k.entName, k.entType)
 		require.NoError(t, err)
 
 		assert.NotEmpty(t, state)
-		assert.NotEmpty(t, attributes)
+		assert.NotEmpty(t, state.Attributes)
 
 	}
 }

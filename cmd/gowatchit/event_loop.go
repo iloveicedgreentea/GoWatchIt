@@ -78,6 +78,8 @@ func eventHandler(ctx context.Context, c <-chan models.Event) {
 
 		log.Debug("Received event", slog.Any("event", payload))
 
+		// TODO: Check filters for user and device
+
 		client, err := getClient(&payload)
 		if err != nil {
 			log.Error("Error getting client for payload", slog.Any("error", err))

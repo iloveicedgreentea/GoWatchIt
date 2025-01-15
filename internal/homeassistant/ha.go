@@ -141,15 +141,15 @@ type HAAttributeResponse interface {
 	GetAttributes() models.Attributes
 }
 
-func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType models.HomeAssistantEntity, entName string, attrResp HAAttributeResponse) (bool, error) {
+func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType models.HomeAssistantEntity, entName string) (bool, error) {
 	var err error
 	var isSignal bool
-	var attributes models.Attributes
+	var state models.HAMediaPlayerResponse
 	log := logger.GetLoggerFromContext(ctx)
 
 	// read attributes until its not nosignal
 	for i := 0; i < waitTime; i++ {
-		attributes, err = c.ReadAttributes(entName, attrResp, entType)
+		state, err = c.ReadState(entName, entType)
 		if err != nil {
 			log.Error("Error reading attributes",
 				slog.String("entity", entName),
@@ -157,7 +157,7 @@ func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int,
 			)
 			return false, err
 		}
-		isSignal = attributes.SignalStatus
+		isSignal = state.Attributes.SignalStatus
 		log.Debug("Signal value",
 			slog.String("entity", entName),
 			slog.Bool("isSignal", isSignal),
@@ -174,39 +174,25 @@ func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int,
 	return false, err
 }
 
-// TODO: read this once and then read the fields from the object instead of two calls
-
 // ReadAttributes generic function to read attribute. entType remote || binary_sensor
-func (c *HomeAssistantClient) ReadState(entityName string, respObj HAAttributeResponse, entType models.HomeAssistantEntity) (models.HomeAssistantMediaPlayerState, error) {
+func (c *HomeAssistantClient) ReadState(entityName string, entType models.HomeAssistantEntity) (models.HAMediaPlayerResponse, error) {
+	var respObj models.HAMediaPlayerResponse
 	endpoint := fmt.Sprintf("/api/states/%s.%s", entType, entityName)
 	resp, err := c.doRequest(endpoint, nil, http.MethodGet)
 	if err != nil {
-		return "", err
+		return models.HAMediaPlayerResponse{}, err
 	}
 
 	// unmarshal
-	err = json.Unmarshal(resp, respObj)
+	err = json.Unmarshal(resp, &respObj)
 	if err != nil {
-		return "", err
+		return models.HAMediaPlayerResponse{}, err
 	}
-	return respObj.GetState(), nil
-}
-
-// ReadAttributes generic function to read attribute.
-func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttributeResponse, entType models.HomeAssistantEntity) (models.Attributes, error) {
-	endpoint := fmt.Sprintf("/api/states/%s.%s", entType, entityName)
-	resp, err := c.doRequest(endpoint, nil, http.MethodGet)
-	if err != nil {
-		return models.Attributes{}, err
-	}
-	log := logger.GetLogger()
-	log.Debug("Response", slog.String("response", string(resp)))
-	// unmarshal
-	err = json.Unmarshal(resp, respObj)
-	if err != nil {
-		return models.Attributes{}, err
-	}
-	return respObj.GetAttributes(), nil
+	return models.HAMediaPlayerResponse{
+		State:      respObj.State,
+		Attributes: respObj.Attributes,
+		EntityID:   entityName,
+	}, nil
 }
 
 func (c *HomeAssistantClient) SendEvent(eventType string, eventData map[string]interface{}) error {

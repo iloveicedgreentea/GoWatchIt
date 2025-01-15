@@ -71,6 +71,7 @@ export function DeviceProfilesGrid() {
                         <div className="flex items-center space-x-2">
                             <Badge variant="secondary">Current Profile</Badge>
                             <span className="text-sm font-medium">{profile}</span>
+                            Mute button here TODO
                         </div>
                     </div>
                 </DashboardCard>

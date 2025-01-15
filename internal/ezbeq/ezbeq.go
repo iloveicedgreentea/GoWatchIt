@@ -76,6 +76,21 @@ func NewClient() (*BeqClient, error) {
 	return c, nil
 }
 
+func (c *BeqClient) IsProfileLoaded() bool {
+	log := logger.GetLogger()
+	profiles := c.GetLoadedProfile()
+	log.Debug("Checking if profile is loaded",
+		slog.Any("profiles", profiles),
+	)
+	for _, v := range profiles {
+		if v != "Empty" {
+			return true
+		}
+	}
+	log.Debug("No profile loaded")
+	return false
+}
+
 func (c *BeqClient) GetLoadedProfile() (out map[string]string) {
 	out = make(map[string]string)
 	if c == nil {
@@ -85,17 +100,12 @@ func (c *BeqClient) GetLoadedProfile() (out map[string]string) {
 	if config.IsBeqEnabled() {
 		// map the current profile to each device for any active slots
 		// assuming the slots would have the same profile because why wouldnt they
+		// BEQ will return "Empty" if no profile is loaded
 		for _, k := range c.DeviceInfo {
 			for _, v := range k.Slots {
 				if v.Active {
 					out[k.Name] = v.Last
 				}
-			}
-		}
-
-		if len(out) == 0 {
-			for _, k := range c.DeviceInfo {
-				out[k.Name] = "No profile loaded"
 			}
 		}
 	}

@@ -19,12 +19,13 @@ var (
 
 type Config struct {
 	db *sql.DB
+	mu sync.RWMutex
 }
 
 // InitConfig initializes the global config instance
 func InitConfig(db *sql.DB) error {
 	once.Do(func() {
-		globalConfig = &Config{db: db}
+		globalConfig = &Config{db: db, mu: sync.RWMutex{}}
 	})
 	return nil
 }
@@ -33,6 +34,9 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
 	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	if c.db == nil {
 		return fmt.Errorf("db is nil")
@@ -104,6 +108,9 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
 	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	if c.db == nil {
 		return fmt.Errorf("db is nil")

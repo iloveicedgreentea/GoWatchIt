@@ -1268,7 +1268,7 @@ func TestGetCodecFromSession(t *testing.T) {
 	t.SkipNow()
 	ctx := context.Background()
 
-	codec, err := c.GetCodecFromSession(ctx, config.GetPlexDeviceUUIDFilter())
+	codec, err := c.GetCodecFromSession(ctx, "sessionuuid")
 	require.NoError(t, err)
 
 	t.Log(codec)

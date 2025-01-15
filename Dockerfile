@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     nginx \
     sqlite3 \
     libsqlite3-dev \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*      
 
 # Create necessary directories

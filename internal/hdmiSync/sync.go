@@ -65,7 +65,7 @@ func WaitForHDMISync(ctx context.Context, wg *sync.WaitGroup, skipActions *bool,
 		if strings.Contains(envyName, "remote") {
 			envyName = strings.ReplaceAll(envyName, "remote.", "")
 		}
-		signal, err = haClient.ReadAttrAndWait(ctx, 60, "remote", envyName, &models.HAMediaPlayerResponse{}) // TODO: implement
+		signal, err = haClient.ReadAttrAndWait(ctx, 60, "remote", envyName) // TODO: implement
 		// will break out here
 	case "time":
 		seconds := config.GetHDMISyncSeconds()

@@ -83,22 +83,37 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 	)
 	// check filter for user if not blank
 	userID := config.GetPlexOwnerNameFilter()
+	deviceFilter := config.GetPlexDeviceUUIDFilter()
+
+	// check if device filter is set and if it matches the device UUID
+	if deviceFilter != "" && !strings.EqualFold(deviceFilter, decodedPayload.Player.UUID) {
+		log.Warn("device filter does not match",
+			slog.String("device_filter", deviceFilter),
+			slog.String("expected_uuid", decodedPayload.Player.UUID),
+		)
+		return models.Event{}, FilterDoesNotMatchError{Message: "device UUID filter does not match"}
+
+	}
+
 	// only respond to events on a particular account if you share servers and only for movies and shows
-	// TODO: decodedPayload.Account.Title seems to always map to server owner not player account
+	// TODO: decodedPayload.Account.Title seems to always map to server owner not player account?
 	if userID == "" || strings.EqualFold(decodedPayload.Account.Title, userID) {
 		if strings.EqualFold(mediaType, string(models.MediaTypeMovie)) || strings.EqualFold(mediaType, string(models.MediaTypeShow)) {
 			log.Debug("adding item to plexChan")
 		} else {
-			log.Debug("Media type not supported",
+			log.Error("Media type not supported",
 				slog.String("media_type", mediaType),
 			)
+			return models.Event{}, EventNotSupportedError{Message: "Media type not supported"}
 		}
 	} else {
-		log.Debug("userID does not match filter",
+		log.Warn("userID does not match filter",
 			slog.String("account_title", decodedPayload.Account.Title),
 			slog.String("filter", userID),
 		)
+		return models.Event{}, FilterDoesNotMatchError{Message: "account name filter does not match"}
 	}
+
 	var action models.Action
 	switch decodedPayload.Event {
 	case "media.play":
@@ -116,6 +131,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		log.Debug("Received unsupported event",
 			slog.String("event", decodedPayload.Event),
 		)
+		return models.Event{}, EventNotSupportedError{Message: "event type not supported"}
 	}
 	var tmdb string
 	// extract the tmdb ID from the GUID0 field
