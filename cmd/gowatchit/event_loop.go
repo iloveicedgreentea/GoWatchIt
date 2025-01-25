@@ -73,12 +73,15 @@ func eventHandler(ctx context.Context, c <-chan models.Event) {
 			log.Debug("New event received, cancelling current operation")
 			currentCancel()
 			currentCancel = nil
+		}
 
+		// check if event is empty
+		if payload == (models.Event{}) {
+			log.Debug("Empty event received, skipping")
+			continue
 		}
 
 		log.Debug("Received event", slog.Any("event", payload))
-
-		// TODO: Check filters for user and device
 
 		client, err := getClient(&payload)
 		if err != nil {

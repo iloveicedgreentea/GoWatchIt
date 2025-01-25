@@ -15,7 +15,6 @@ import (
 func GetDB(path string) (*sql.DB, error) {
 	log := logger.GetLogger()
 	if path != ":memory:" {
-		log.Debug("not using in-memory database", slog.String("path", path))
 		// Check if the file exists
 		_, err := os.Stat(path)
 		if err != nil {

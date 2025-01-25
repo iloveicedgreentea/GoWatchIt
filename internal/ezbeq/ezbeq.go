@@ -57,12 +57,6 @@ func NewClient() (*BeqClient, error) {
 	log := logger.GetLogger()
 	c.HTTPClient.Logger = log
 
-	log.Debug("created new beq client",
-		slog.String("server_url", c.ServerURL),
-		slog.String("scheme", c.Scheme),
-		slog.String("port", c.Port),
-	)
-
 	// update client with latest metadata from minidsp
 	err = c.GetStatus()
 	if err != nil {
@@ -77,17 +71,14 @@ func NewClient() (*BeqClient, error) {
 }
 
 func (c *BeqClient) IsProfileLoaded() bool {
-	log := logger.GetLogger()
 	profiles := c.GetLoadedProfile()
-	log.Debug("Checking if profile is loaded",
-		slog.Any("profiles", profiles),
-	)
+
 	for _, v := range profiles {
 		if v != "Empty" {
 			return true
 		}
 	}
-	log.Debug("No profile loaded")
+
 	return false
 }
 
@@ -119,9 +110,6 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 	deviceNames := make([]string, 0, len(c.DeviceInfo))
 
 	for _, k := range c.DeviceInfo {
-		log.Debug("adding device to request",
-			slog.String("device", k.Name),
-		)
 		deviceNames = append(deviceNames, k.Name)
 	}
 	if len(deviceNames) == 0 {
@@ -159,13 +147,7 @@ func (c *BeqClient) GetStatus() error {
 	if err != nil {
 		return err
 	}
-	log.Debug("BEQ payload",
-		slog.Any("payload", payload),
-	)
 
-	log.Debug("Payload length",
-		slog.Int("length", len(payload)),
-	)
 	// add devices to client, it returns as a map not list
 	for _, v := range payload {
 		log.Debug("BEQ device",
@@ -177,7 +159,6 @@ func (c *BeqClient) GetStatus() error {
 	if len(c.DeviceInfo) == 0 || c.DeviceInfo == nil {
 		return errors.New("no devices found")
 	}
-	log.Debug("c.DeviceInfo is not 0")
 
 	return nil
 }
@@ -287,10 +268,6 @@ func (c *BeqClient) makeReq(endpoint string, payload []byte, methodType string) 
 	if setHeader {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	log.Debug("Created request object",
-		slog.String("url", req.URL.String()),
-		slog.String("method", methodType),
-	)
 
 	// retry
 	res, err := c.makeCallWithRetry(req)
@@ -356,10 +333,7 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 	if m.Year != 0 {
 		q.Add("years", strconv.Itoa(m.Year))
 	}
-
-	log.Debug("converted year to string",
-		slog.String("year", strconv.Itoa(m.Year)),
-	)
+	// add tmdb id
 	q.Add("tmdbid", m.TMDB)
 
 	// Add authors if present
@@ -368,10 +342,6 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 	}
 
 	endpoint := fmt.Sprintf("/api/1/search?%s", q.Encode())
-
-	log.Debug("Sending ezbeq search request",
-		slog.String("endpoint", endpoint),
-	)
 
 	var payload []models.BeqCatalog
 	res, err := c.makeReq(endpoint, nil, http.MethodGet)
@@ -503,8 +473,8 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 		return nil
 	}
 
-	log.Debug("BEQ payload",
-		slog.Any("payload", m),
+	log.Debug("BEQ search request",
+		slog.Any("request", m),
 	)
 
 	// if no devices provided, error
@@ -617,13 +587,7 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 	}
 
 	// write payload to each device
-	log.Debug("Sending BEQ payload to devices",
-		slog.Int("device_count", len(m.Devices)),
-	)
 	for _, v := range m.Devices {
-		log.Debug("Sending payload to device",
-			slog.String("device_name", v),
-		)
 		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
 		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
@@ -652,9 +616,6 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 	for _, v := range m.Devices {
 		for _, k := range m.Slots {
 			endpoint := fmt.Sprintf("/api/1/devices/%s/filter/%v", v, k)
-			log.Debug("Unloading profile",
-				slog.String("endpoint", endpoint),
-			)
 			_, err := c.makeReq(endpoint, nil, http.MethodDelete)
 			if err != nil {
 				return err

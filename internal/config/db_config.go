@@ -63,7 +63,6 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 
 			// Special handling for slices because sqlite doesn't support them
 			if v.Field(i).Kind() == reflect.Slice {
-				log.Debug("Loading slice field", "field", field.Name)
 				var jsonStr string
 				// Store the pointer to the JSON string in the map
 				sliceFields[i] = &jsonStr
@@ -99,7 +98,6 @@ func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 		}
 	}
 
-	log.Debug("Loaded configuration", "table", tableName)
 	return nil
 }
 

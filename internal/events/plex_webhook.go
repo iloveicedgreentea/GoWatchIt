@@ -77,6 +77,14 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 
 	mediaType := decodedPayload.Metadata.Type
 
+	// check media type
+	if !strings.EqualFold(mediaType, string(models.MediaTypeMovie)) || !strings.EqualFold(mediaType, string(models.MediaTypeShow)) {
+		log.Error("Media type not supported",
+			slog.String("media_type", mediaType),
+		)
+		return models.Event{}, EventNotSupportedError{Message: "Media type not supported"}
+	}
+
 	log.Debug("Processed Webhook",
 		slog.String("media_type", mediaType),
 		slog.String("media_title", decodedPayload.Metadata.Title),
@@ -91,27 +99,17 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 			slog.String("device_filter", deviceFilter),
 			slog.String("expected_uuid", decodedPayload.Player.UUID),
 		)
-		return models.Event{}, FilterDoesNotMatchError{Message: "device UUID filter does not match"}
-
+		return models.Event{}, nil
 	}
 
-	// only respond to events on a particular account if you share servers and only for movies and shows
+	// only respond to events on a particular account if you share servers
 	// TODO: decodedPayload.Account.Title seems to always map to server owner not player account?
-	if userID == "" || strings.EqualFold(decodedPayload.Account.Title, userID) {
-		if strings.EqualFold(mediaType, string(models.MediaTypeMovie)) || strings.EqualFold(mediaType, string(models.MediaTypeShow)) {
-			log.Debug("adding item to plexChan")
-		} else {
-			log.Error("Media type not supported",
-				slog.String("media_type", mediaType),
-			)
-			return models.Event{}, EventNotSupportedError{Message: "Media type not supported"}
-		}
-	} else {
+	if userID != "" && !strings.EqualFold(decodedPayload.Account.Title, userID) {
 		log.Warn("userID does not match filter",
 			slog.String("account_title", decodedPayload.Account.Title),
 			slog.String("filter", userID),
 		)
-		return models.Event{}, FilterDoesNotMatchError{Message: "account name filter does not match"}
+		return models.Event{}, nil
 	}
 
 	var action models.Action

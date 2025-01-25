@@ -89,9 +89,7 @@ func HandlePlay(ctx context.Context, payload *models.Event, wg *sync.WaitGroup, 
 		return nil
 	}
 
-	log.Debug("waiting for handleplay goroutines")
 	innerWg.Wait()
-	log.Debug("handleplay goroutines complete")
 
 	return nil
 }
