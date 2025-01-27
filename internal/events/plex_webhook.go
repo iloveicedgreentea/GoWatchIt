@@ -78,11 +78,11 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 	mediaType := decodedPayload.Metadata.Type
 
 	// check media type
-	if !strings.EqualFold(mediaType, string(models.MediaTypeMovie)) || !strings.EqualFold(mediaType, string(models.MediaTypeShow)) {
-		log.Error("Media type not supported",
+	if !strings.EqualFold(mediaType, string(models.MediaTypeMovie)) && !strings.EqualFold(mediaType, string(models.MediaTypeShow)) {
+		log.Warn("Media type not supported",
 			slog.String("media_type", mediaType),
 		)
-		return models.Event{}, EventNotSupportedError{Message: "Media type not supported"}
+		return models.Event{}, nil
 	}
 
 	log.Debug("Processed Webhook",
