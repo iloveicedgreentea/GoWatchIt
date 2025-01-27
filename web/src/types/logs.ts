@@ -1,6 +1,6 @@
 // types/logs.ts
 export interface LogEntry {
-    timestamp: string;
+    time: string;
     level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
     msg: string;
     source: Source;

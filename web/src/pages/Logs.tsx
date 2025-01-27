@@ -85,7 +85,7 @@ export default function Logs() {
                                         {log.level.toUpperCase()}
                                     </Badge>
                                     <span className="text-sm text-muted-foreground">
-                                        {new Date(log.timestamp).toLocaleString()}
+                                        {new Date(log.time).toLocaleString()}
                                     </span>
                                 </div>
                                 <p className="text-sm">
