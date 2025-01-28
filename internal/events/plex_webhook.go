@@ -89,6 +89,15 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 		slog.String("media_type", mediaType),
 		slog.String("media_title", decodedPayload.Metadata.Title),
 	)
+
+	// check if TV BEQ is enabled
+	if strings.EqualFold(mediaType, string(models.MediaTypeShow)) && !config.IsBeqTVEnabled() {
+		log.Warn("TV BEQ is disabled",
+			slog.String("media_type", mediaType),
+		)
+		return models.Event{}, nil
+	}
+
 	// check filter for user if not blank
 	userID := config.GetPlexOwnerNameFilter()
 	deviceFilter := config.GetPlexDeviceUUIDFilter()
@@ -96,8 +105,8 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (models.Even
 	// check if device filter is set and if it matches the device UUID
 	if deviceFilter != "" && !strings.EqualFold(deviceFilter, decodedPayload.Player.UUID) {
 		log.Warn("device filter does not match",
-			slog.String("device_filter", deviceFilter),
-			slog.String("expected_uuid", decodedPayload.Player.UUID),
+			slog.String("current_device_filter", deviceFilter),
+			slog.String("received_uuid", decodedPayload.Player.UUID),
 		)
 		return models.Event{}, nil
 	}
