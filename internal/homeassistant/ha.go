@@ -2,50 +2,54 @@ package homeassistant
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/internal/config"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 	"github.com/iloveicedgreentea/go-plex/models"
 )
 
-var log = logger.GetLogger()
-
 type HomeAssistantClient struct {
-	ServerURL      string
-	Port           string
-	Token          string
-	HTTPClient     http.Client
+	ServerURL  string
+	Port       string
+	Token      string
+	HTTPClient http.Client
 	EntityName string
+	Scheme     string
 }
 
-// // A client to interface with home assistant
-func NewClient(url, port string, token string, entityName string) *HomeAssistantClient {
+// A client to interface with home assistant
+func NewClient() (*HomeAssistantClient, error) {
+	if !config.IsHomeAssistantEnabled() {
+		return &HomeAssistantClient{}, nil
+	}
+
 	return &HomeAssistantClient{
-		ServerURL:      url,
-		Port:           port,
-		Token:          token,
-		EntityName: entityName,
+		ServerURL:  config.GetHomeAssistantUrl(),
+		Port:       config.GetHomeAssistantPort(),
+		Token:      config.GetHomeAssistantToken(),
+		EntityName: config.GetHomeAssistantRemoteEntityName(),
 		HTTPClient: http.Client{
 			Timeout: 5 * time.Second,
 		},
-	}
+		Scheme: config.GetHomeAssistantScheme(),
+	}, nil
 }
 
 func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodType string) ([]byte, error) {
 	var req *http.Request
 	var err error
-
-	// log.Debugf("Using method %s", methodType)
-	// bodyReader := bytes.NewReader(jsonBody)
-	url := fmt.Sprintf("%s:%s%s", c.ServerURL, c.Port, endpoint)
+	url := fmt.Sprintf("%s://%s:%s%s", c.Scheme, c.ServerURL, c.Port, endpoint)
 	if len(payload) == 0 {
-		req, err = http.NewRequest(methodType, url, nil)
+		req, err = http.NewRequest(methodType, url, http.NoBody)
 	} else {
 		req, err = http.NewRequest(methodType, url, bytes.NewBuffer(payload))
 	}
@@ -63,7 +67,11 @@ func (c *HomeAssistantClient) doRequest(endpoint string, payload []byte, methodT
 	if err != nil {
 		return []byte{}, err
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			logger.GetLogger().Warn("error closing response body: %v")
+		}
+	}()
 	if res.StatusCode != 200 {
 		return []byte{}, errors.New(res.Status)
 	}
@@ -87,7 +95,7 @@ func (c *HomeAssistantClient) TriggerScript(scriptName string) error {
 }
 
 // switch a light on/off
-func (c *HomeAssistantClient) SwitchLight(entityType string, entityName string, state string) error {
+func (c *HomeAssistantClient) SwitchLight(entityType, entityName, state string) error {
 	// trigger script
 	payload := models.HomeAssistantScriptReq{
 		EntityID: fmt.Sprintf("%s.%s", entityType, entityName),
@@ -119,39 +127,103 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 	if err != nil {
 		return err
 	}
-	endpoint := fmt.Sprintf("/api/services/notify/%s", config.GetString("ezbeq.notifyEndpointName"))
+	//  remove notify. if present
+	name := strings.ReplaceAll(config.GetHomeAssistantNotifyEndpointName(), "notify.", "")
+	endpoint := fmt.Sprintf("/api/services/notify/%s", name)
 	_, err = c.doRequest(endpoint, jsonPayload, http.MethodPost)
 	return err
 }
 
 // HAAttributeResponse is an interface for anything that implements these functions
 type HAAttributeResponse interface {
-	GetState() string
+	GetState() models.HomeAssistantMediaPlayerState
 	GetSignalStatus() bool
+	GetAttributes() models.Attributes
+}
+
+func (c *HomeAssistantClient) ReadAttrAndWait(ctx context.Context, waitTime int, entType models.HomeAssistantEntity, entName string) (bool, error) {
+	var err error
+	var isSignal bool
+	var state models.HAMediaPlayerResponse
+	log := logger.GetLoggerFromContext(ctx)
+
+	// read attributes until its not nosignal
+	for i := 0; i < waitTime; i++ {
+		state, err = c.ReadState(entName, entType)
+		if err != nil {
+			log.Error("Error reading attributes",
+				slog.String("entity", entName),
+				slog.String("error", err.Error()),
+			)
+			return false, err
+		}
+		isSignal = state.Attributes.SignalStatus
+		log.Debug("Signal value",
+			slog.String("entity", entName),
+			slog.Bool("isSignal", isSignal),
+		)
+		if isSignal {
+			log.Debug("HDMI sync complete")
+			return isSignal, nil
+		}
+
+		// otherwise continue
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	return false, err
 }
 
 // ReadAttributes generic function to read attribute. entType remote || binary_sensor
-func (c *HomeAssistantClient) ReadAttributes(entityName string, respObj HAAttributeResponse, entType string) (bool, error) {
+func (c *HomeAssistantClient) ReadState(entityName string, entType models.HomeAssistantEntity) (models.HAMediaPlayerResponse, error) {
+	var respObj models.HAMediaPlayerResponse
 	endpoint := fmt.Sprintf("/api/states/%s.%s", entType, entityName)
 	resp, err := c.doRequest(endpoint, nil, http.MethodGet)
 	if err != nil {
-		return false, err
+		return models.HAMediaPlayerResponse{}, err
 	}
-	log.Debugf("Response: %s", resp)
 
 	// unmarshal
-	err = json.Unmarshal(resp, respObj)
-
-	switch entType {
-	case "remote":
-		if respObj.GetState() == "off" {
-			return false, fmt.Errorf("entity state is %s", respObj.GetState())
-		}
-
-		return respObj.GetSignalStatus(), err
-	case "binary_sensor":
-		return respObj.GetState() == "on", err
-	default:
-		return false, err
+	err = json.Unmarshal(resp, &respObj)
+	if err != nil {
+		return models.HAMediaPlayerResponse{}, err
 	}
+	return models.HAMediaPlayerResponse{
+		State:      respObj.State,
+		Attributes: respObj.Attributes,
+		EntityID:   entityName,
+	}, nil
+}
+
+func (c *HomeAssistantClient) SendEvent(eventType string, eventData map[string]interface{}) error {
+	url := fmt.Sprintf("http://%s:%s/api/events/%s", c.ServerURL, c.Port, eventType)
+
+	jsonData, err := json.Marshal(eventData)
+	if err != nil {
+		return fmt.Errorf("error marshaling event data: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %v", err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.GetLogger().Warn("error closing response body: %v")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
