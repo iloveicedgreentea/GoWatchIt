@@ -14,7 +14,6 @@ run:
 
 # Output configuration options
 output:
-  # Make issues output unique by line
 
   # Sort results by: filepath, line and column
   sort-results: true
@@ -24,7 +23,7 @@ linters:
   disable-all: true
   enable:
     # - gofmt        # Checks formatting
-    - gofumpt      # Stricter gofmt
+    # - gofumpt      # Stricter gofmt
     - govet # Reports suspicious constructs
     - errcheck # Checks for unchecked errors
     - gosimple # Suggests code simplifications
