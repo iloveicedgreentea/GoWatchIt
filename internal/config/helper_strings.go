@@ -133,6 +133,19 @@ func GetHomeAssistantNotifyEndpointName() string {
 	return config.NotifyEndpointName
 }
 
+func GetHomeAssistantNotifyDisplayTime() int {
+	var config models.HomeAssistantConfig
+	if err := globalConfig.LoadConfig(context.Background(), &config); err != nil {
+		logger.Error("Failed to load HomeAssistant notify display time", "error", err)
+		return 0
+	}
+	// set default to 15
+	if config.NotifyDisplayTime == 0 {
+		return 15
+	}
+	return config.NotifyDisplayTime
+}
+
 // EZBeq
 func GetEZBeqUrl() string {
 	var config models.EZBEQConfig

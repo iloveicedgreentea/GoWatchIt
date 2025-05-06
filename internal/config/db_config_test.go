@@ -119,6 +119,7 @@ func TestHomeAssistantConfig(t *testing.T) {
 		Scheme:                          "http",
 		MediaPlayerEntityName:           "media_player.test",
 		NotifyEndpointName:              "test_endpoint",
+		NotifyDisplayTime:               5,
 	}
 
 	err := GetConfig().SaveConfig(haConfig)
@@ -140,6 +141,7 @@ func TestHomeAssistantConfig(t *testing.T) {
 	assert.Equal(t, haConfig.Scheme, loadedConfig.Scheme)
 	assert.Equal(t, haConfig.MediaPlayerEntityName, loadedConfig.MediaPlayerEntityName)
 	assert.Equal(t, haConfig.NotifyEndpointName, loadedConfig.NotifyEndpointName)
+	assert.Equal(t, haConfig.NotifyDisplayTime, loadedConfig.NotifyDisplayTime)
 }
 
 // Add similar tests for other config types (JellyfinConfig, MQTTConfig, HDMISyncConfig)

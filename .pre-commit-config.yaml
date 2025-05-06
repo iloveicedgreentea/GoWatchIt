@@ -1,11 +1,12 @@
 repos:
   - repo: https://github.com/tekwizely/pre-commit-golang
-    rev: v1.0.0-rc.1
+    rev: v1.0.0-rc.1 # Consider updating if a newer stable tag is available
     hooks:
       - id: go-mod-tidy
-        # Formatting
       - id: go-fumpt
         args: [-l, -w]
-      # GolangCI-Lint
-      - id: golangci-lint-mod
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.1.6
+    hooks:
+      - id: golangci-lint
         args: [--fix, --config=.golangci.yml]
