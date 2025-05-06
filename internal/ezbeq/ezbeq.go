@@ -22,6 +22,25 @@ import (
 
 var log = logger.GetLogger()
 
+// Constants for recurring strings
+const (
+	profileEmpty = "Empty"
+	authorNone   = "none"
+	// Codec variations used in search logic
+	codecAtmosMaybe         models.CodecName = "AtmosMaybe"
+	codecTrueHD71           models.CodecName = "TrueHD 7.1"
+	codecAtmos              models.CodecName = "Atmos"
+	codecDDPlusAtmos51Maybe models.CodecName = "DD+Atmos5.1Maybe"
+	codecDDPlusAtmos        models.CodecName = "DD+ Atmos"
+	codecDDPlus51           models.CodecName = "DD+ 5.1"
+	codecDDPlus             models.CodecName = "DD+"
+	codecDDPlusAtmos71Maybe models.CodecName = "DD+Atmos7.1Maybe"
+	codecDDPlus71           models.CodecName = "DD+ 7.1"
+	// API Endpoints (prefix) - Add comments for V1 usage
+	apiV1Prefix = "/api/1"
+	apiV2Prefix = "/api/2"
+)
+
 type BeqClient struct {
 	Scheme              string
 	ServerURL           string
@@ -74,7 +93,8 @@ func (c *BeqClient) IsProfileLoaded() bool {
 	profiles := c.GetLoadedProfile()
 
 	for _, v := range profiles {
-		if v != "Empty" {
+		// Use constant for "Empty" profile name
+		if v != profileEmpty {
 			return true
 		}
 	}
@@ -138,8 +158,9 @@ func (c *BeqClient) GetStatus() error {
 	if c == nil {
 		return errors.New("beq client is nil")
 	}
-	// get all devices
-	res, err := c.makeReq("/api/2/devices", nil, http.MethodGet)
+	// get all devices using V2 API
+	endpoint := fmt.Sprintf("%s/devices", apiV2Prefix)
+	res, err := c.makeReq(endpoint, nil, http.MethodGet)
 	if err != nil {
 		return err
 	}
@@ -176,7 +197,8 @@ func (c *BeqClient) MuteCommand(status bool) error {
 	}
 	log.Debug("Running mute command")
 	for _, v := range c.DeviceInfo {
-		endpoint := fmt.Sprintf("/api/1/devices/%s/mute", v.Name)
+		// Note: Still using V1 API endpoint for mute as V2 equivalent might not exist or behave differently.
+		endpoint := fmt.Sprintf("%s/devices/%s/mute", apiV1Prefix, v.Name)
 		log.Debug("Muting device",
 			slog.String("endpoint", endpoint),
 		)
@@ -221,7 +243,8 @@ func (c *BeqClient) MakeCommand(payload []byte) error {
 		return errors.New("beq client is nil")
 	}
 	for _, v := range c.DeviceInfo {
-		endpoint := fmt.Sprintf("/api/1/devices/%s", v.Name)
+		// Note: Still using V1 API endpoint for generic patch as V2 equivalent might not exist or behave differently.
+		endpoint := fmt.Sprintf("%s/devices/%s", apiV1Prefix, v.Name)
 		_, err := c.makeReq(endpoint, payload, http.MethodPatch)
 		if err != nil {
 			return err
@@ -305,7 +328,8 @@ func (c *BeqClient) makeCallWithRetry(req *retryablehttp.Request) ([]byte, error
 // authorCompare returns true if there is an author
 func hasAuthor(s string) bool {
 	hasAuthor := strings.ToLower(strings.TrimSpace(s))
-	return hasAuthor != "none" && hasAuthor != ""
+	// Use constant for "none" author check
+	return hasAuthor != authorNone && hasAuthor != ""
 }
 
 // buildAuthorWhitelist returns a string of authors to search for
@@ -341,7 +365,8 @@ func (c *BeqClient) searchCatalog(m *models.BeqSearchRequest) (models.BeqCatalog
 		q = buildAuthorWhitelist(m.PreferredAuthor, q)
 	}
 
-	endpoint := fmt.Sprintf("/api/1/search?%s", q.Encode())
+	// Note: Still using V1 API endpoint for search as V2 equivalent might not exist or behave differently.
+	endpoint := fmt.Sprintf("%s/search?%s", apiV1Prefix, q.Encode())
 
 	var payload []models.BeqCatalog
 	res, err := c.makeReq(endpoint, nil, http.MethodGet)
@@ -492,53 +517,51 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 
 	// skip searching when resuming for speed
 	if !m.SkipSearch {
-		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
+		// Attempting codec variations due to potential metadata ambiguity from source.
+		// Use constants for codec names.
 		switch m.Codec {
-		case "AtmosMaybe":
-			m.Codec = "TrueHD 7.1"
+		case codecAtmosMaybe:
+			m.Codec = codecTrueHD71
 			catalog, err = c.searchCatalog(m)
 			if err != nil {
-				m.Codec = "Atmos"
+				m.Codec = codecAtmos
 				catalog, err = c.searchCatalog(m)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to find BEQ for %s or %s: %w", codecTrueHD71, codecAtmos, err)
 				}
 			}
-			// most metadata contains DD+5.1 or something but its actually DD+ Atmos, so try a few options
-		case "DD+Atmos5.1Maybe":
-			m.Codec = "DD+ Atmos"
+		case codecDDPlusAtmos51Maybe:
+			m.Codec = codecDDPlusAtmos
 			catalog, err = c.searchCatalog(m)
-			// else try DD+ 5.1
 			if err != nil {
-				m.Codec = "DD+ 5.1"
+				m.Codec = codecDDPlus51
 				catalog, err = c.searchCatalog(m)
 				if err != nil {
-					m.Codec = "DD+"
+					m.Codec = codecDDPlus
 					catalog, err = c.searchCatalog(m)
 					if err != nil {
-						return err
+						return fmt.Errorf("failed to find BEQ for %s, %s or %s: %w", codecDDPlusAtmos, codecDDPlus51, codecDDPlus, err)
 					}
 				}
 			}
-		case "DD+Atmos7.1Maybe":
-			m.Codec = "DD+ Atmos"
+		case codecDDPlusAtmos71Maybe:
+			m.Codec = codecDDPlusAtmos
 			catalog, err = c.searchCatalog(m)
-			// else try DD+ 7.1
 			if err != nil {
-				m.Codec = "DD+ 7.1"
+				m.Codec = codecDDPlus71
 				catalog, err = c.searchCatalog(m)
 				if err != nil {
-					m.Codec = "DD+"
+					m.Codec = codecDDPlus
 					catalog, err = c.searchCatalog(m)
 					if err != nil {
-						return err
+						return fmt.Errorf("failed to find BEQ for %s, %s or %s: %w", codecDDPlusAtmos, codecDDPlus71, codecDDPlus, err)
 					}
 				}
 			}
 		default:
 			catalog, err = c.searchCatalog(m)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to find BEQ for %s: %w", m.Codec, err)
 			}
 		}
 
@@ -563,21 +586,22 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 
 	// build payload
 	var payload models.BeqPatchV2
-	// for len m.Slots, add that many slots
-	// if no slots, add one so it doesnt error
+	// Target only the first configured slot to avoid issues with devices like HTP-1
 	if len(m.Slots) == 0 {
-		m.Slots = []int{1}
+		log.Warn("No BEQ slots configured, defaulting to slot 1")
+		m.Slots = []int{1} // Default to slot 1 if none configured
+	} else if len(m.Slots) > 1 {
+		log.Warn("Multiple BEQ slots configured, but only the first one will be used for loading", slog.Int("first_slot", m.Slots[0]), slog.Any("all_slots", m.Slots))
 	}
-	for _, k := range m.Slots {
-		// append a slot to payload for each
-		payload.Slots = append(payload.Slots, models.SlotsV2{
-			ID:     strconv.Itoa(k),
-			Gains:  []float64{m.MVAdjust, m.MVAdjust},
-			Active: true,
-			Mutes:  []bool{false, false},
-			Entry:  m.EntryID,
-		})
-	}
+
+	firstSlot := m.Slots[0]
+	payload.Slots = append(payload.Slots, models.SlotsV2{
+		ID:     strconv.Itoa(firstSlot),
+		Gains:  []float64{m.MVAdjust, m.MVAdjust}, // Assuming gain applies similarly, might need refinement if ezbeq handles this differently per device
+		Active: true,
+		Mutes:  []bool{false, false}, // Assuming unmuting is desired on load
+		Entry:  m.EntryID,
+	})
 	log.Debug("Sending BEQ payload",
 		slog.Any("payload", payload),
 	)
@@ -586,9 +610,9 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 		return err
 	}
 
-	// write payload to each device
-	for _, v := range m.Devices {
-		endpoint := fmt.Sprintf("/api/2/devices/%s", v)
+	// write payload to each device using V2 API
+	for _, deviceName := range m.Devices {
+		endpoint := fmt.Sprintf("%s/devices/%s", apiV2Prefix, deviceName)
 		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
 			log.Debug("Error sending payload",
@@ -602,26 +626,65 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 	return nil
 }
 
-// UnloadBeqProfile will unload all profiles from all devices
+// UnloadBeqProfile will unload the profile from the first configured slot on all devices using the V2 API.
 func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 	if !config.IsBeqEnabled() {
-		log.Debug("BEQ is disabled, skipping")
+		log.Debug("BEQ is disabled, skipping unload")
 		return nil
 	}
 	if m.DryrunMode {
+		log.Info("BEQ Dry run: Would unload profile from first configured slot")
 		return nil
 	}
-	log.Debug("Unloading ezBEQ profiles")
+	log.Debug("Unloading ezBEQ profile from first configured slot using V2 API")
 
-	for _, v := range m.Devices {
-		for _, k := range m.Slots {
-			endpoint := fmt.Sprintf("/api/1/devices/%s/filter/%v", v, k)
-			_, err := c.makeReq(endpoint, nil, http.MethodDelete)
-			if err != nil {
-				return err
-			}
+	// Target only the first configured slot
+	if len(m.Slots) == 0 {
+		log.Warn("No BEQ slots configured, defaulting to slot 1 for unload")
+		m.Slots = []int{1} // Default to slot 1 if none configured
+	} else if len(m.Slots) > 1 {
+		log.Warn("Multiple BEQ slots configured, but only the first one will be used for unloading", slog.Int("first_slot", m.Slots[0]), slog.Any("all_slots", m.Slots))
+	}
+
+	firstSlot := m.Slots[0]
+
+	// Build V2 payload to deactivate the slot
+	var payload models.BeqPatchV2
+	payload.Slots = append(payload.Slots, models.SlotsV2{
+		ID:     strconv.Itoa(firstSlot),
+		Active: false,
+		Entry:  "", // Explicitly clear entry, though Active: false might be sufficient
+		// Gains/Mutes are likely ignored when Active is false, but setting defaults just in case
+		Gains: []float64{0, 0},
+		Mutes: []bool{false, false},
+	})
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal unload payload: %w", err)
+	}
+
+	log.Debug("Sending BEQ unload payload", slog.Any("payload", payload))
+
+	var allErrors error
+
+	// Send PATCH request to each device using V2 API, collect errors
+	for _, deviceName := range m.Devices {
+		endpoint := fmt.Sprintf("%s/devices/%s", apiV2Prefix, deviceName)
+		_, err = c.makeReq(endpoint, jsonPayload, http.MethodPatch)
+		if err != nil {
+			deviceErr := fmt.Errorf("failed to unload profile from device %s: %w", deviceName, err)
+			log.Error("Error sending unload payload to device",
+				slog.String("device", deviceName),
+				slog.String("json_payload", string(jsonPayload)),
+				slog.String("endpoint", endpoint),
+				slog.String("error", deviceErr.Error()), // Log the wrapped error
+			)
+			allErrors = errors.Join(allErrors, deviceErr) // Collect errors
+		} else {
+			log.Info("Successfully sent unload command to device", slog.String("device", deviceName), slog.Int("slot", firstSlot))
 		}
 	}
 
-	return nil
+	return allErrors // Return combined errors, nil if none occurred
 }
