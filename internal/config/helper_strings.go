@@ -141,9 +141,11 @@ func GetHomeAssistantNotifyDisplayTime() int {
 	}
 	// set default to 15
 	if config.NotifyDisplayTime == 0 {
-		return 15
+		// Default to 15 seconds (15000 ms)
+		return 15 * 1000
 	}
-	return config.NotifyDisplayTime
+	// Convert configured seconds to milliseconds
+	return config.NotifyDisplayTime * 1000
 }
 
 // EZBeq

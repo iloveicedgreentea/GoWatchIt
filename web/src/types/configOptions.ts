@@ -213,7 +213,7 @@ export const CONFIG_SCHEMA: ConfigSection[] = [
             {
                 key: "notifydisplaytime",
                 label: "Notify Display Time",
-                description: "How long to show the notification in seconds. Default is 15 seconds.",
+                description: "How long to show the notification in seconds. Automatically converted to milliseconds.",
                 type: "number",
                 defaultValue: 15,
                 section: "homeassistant"
