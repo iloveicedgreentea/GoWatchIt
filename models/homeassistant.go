@@ -42,9 +42,13 @@ type HomeAssistantScriptReq struct {
 }
 
 type HomeAssistantNotificationReq struct {
-	Message string `json:"message"`
+	Message string                        `json:"message"`
+	Data    HomeAssistantNotificationData `json:"data"`
 }
 
+type HomeAssistantNotificationData struct {
+	DisplayTime int `json:"displaytime"`
+}
 type HomeAssistantWebhookPayload struct {
 	EntityID string `json:"entity_id"`
 }

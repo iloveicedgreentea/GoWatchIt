@@ -31,6 +31,7 @@ type HomeAssistantConfig struct {
 	Token                           string `json:"token" db:"token"`
 	TriggerAspectRatioChangeOnEvent bool   `json:"triggeraspectratiochangeonevent" db:"trigger_aspect_ratio_change_on_event"`
 	NotifyEndpointName              string `json:"notifyendpointname" db:"notify_endpoint_name"`
+	NotifyDisplayTime               int    `json:"notifydisplaytime" db:"notify_display_time"`
 	URL                             string `json:"url" db:"url"`
 	Port                            string `json:"port" db:"port"`
 	Scheme                          string `json:"scheme" db:"scheme"`
