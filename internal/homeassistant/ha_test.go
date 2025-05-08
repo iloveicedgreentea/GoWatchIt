@@ -56,6 +56,7 @@ func TestMain(m *testing.M) {
 			MediaPlayerEntityName: "media_player.test",
 			Token:                 os.Getenv("HA_TOKEN"),
 			NotifyEndpointName:    "notify.mobile_app_iphone",
+			NotifyDisplayTime:     5,
 		}
 		err = cf.SaveConfig(&haCfg)
 		if err != nil {

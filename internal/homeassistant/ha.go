@@ -121,6 +121,9 @@ func (c *HomeAssistantClient) SendNotification(msg string) error {
 	// trigger script
 	scriptData := models.HomeAssistantNotificationReq{
 		Message: msg,
+		Data: models.HomeAssistantNotificationData{
+			DisplayTime: config.GetHomeAssistantNotifyDisplayTime(),
+		},
 	}
 
 	jsonPayload, err := json.Marshal(scriptData)
