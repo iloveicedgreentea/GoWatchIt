@@ -2,15 +2,13 @@ version: '3.8'
 
 services:
   plex-webhook-automation:
-    image: ghcr.io/iloveicedgreentea/gowatchit:latest
+    image: gowatchit-local
     ports:
       - '9999:9999' 
+      - '3000:3000'
     environment: 
-      SUPER_DEBUG: 'false'
-      LOG_LEVEL: 'info'
+      LOG_LEVEL: 'debug'
+      LOG_FILE: 'true'
+      BASE_DIR: '/data'
     volumes:
-      - data_volume:/data 
-
-volumes:
-  data_volume: 
-    driver: local 
+      - ./docker/data/:/data 

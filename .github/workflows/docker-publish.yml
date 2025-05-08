@@ -1,10 +1,10 @@
 name: Docker
-
 on:
   push:
-    tags: ['v*.*.*']  # Triggers on tag following semantic versioning
+    tags: ['v*.*.*']
   pull_request:
-    branches: ['master', 'develop']  # Triggers on PR to these branches
+    types: [opened, synchronize]
+    branches: ['master', 'develop']
 
 env:
   REGISTRY: ghcr.io
@@ -17,16 +17,16 @@ jobs:
       contents: read
       packages: write
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3.8.0
 
       - name: Log into registry ${{ env.REGISTRY }}
-        # if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') || github.event_name == 'pull_request'}}
         uses: docker/login-action@v3.1.0
         with:
           registry: ${{ env.REGISTRY }}
@@ -44,4 +44,5 @@ jobs:
         with:
           context: .
           push: true
+          no-cache: true
           tags: ${{ steps.meta.outputs.tags }}
