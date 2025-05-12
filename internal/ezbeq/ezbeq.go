@@ -141,7 +141,7 @@ func (c *BeqClient) NewRequest(ctx context.Context, skipSearch bool, year int, m
 
 	return &models.BeqSearchRequest{
 		DryrunMode:      config.IsBeqDryRun(),
-		Slots:           config.GetEZBeqSlots(),
+		Slots:           config.GetEZBeqSlots(), // All configured slots
 		PreferredAuthor: config.GetEZBeqPreferredAuthor(),
 		Devices:         deviceNames,
 		SkipSearch:      skipSearch,
@@ -584,24 +584,32 @@ func (c *BeqClient) LoadBeqProfile(m *models.BeqSearchRequest) error {
 		return fmt.Errorf("BEQ Dry run msg - Would load title %s -- codec %s -- edition: %s, ezbeq entry ID %s - author %s", catalog.Title, m.Codec, catalog.Edition, m.EntryID, catalog.Author)
 	}
 
-	// build payload
+	// build payload to target ALL configured slots
 	var payload models.BeqPatchV2
-	// Target only the first configured slot to avoid issues with devices like HTP-1
 	if len(m.Slots) == 0 {
-		log.Warn("No BEQ slots configured, defaulting to slot 1")
-		m.Slots = []int{1} // Default to slot 1 if none configured
-	} else if len(m.Slots) > 1 {
-		log.Warn("Multiple BEQ slots configured, but only the first one will be used for loading", slog.Int("first_slot", m.Slots[0]), slog.Any("all_slots", m.Slots))
+		log.Warn("No BEQ slots configured (m.Slots is empty), attempting to load to slot 1 by default.")
+		// If no slots are configured by the user, ezbeq typically defaults to slot 1 for some operations.
+		// However, the V2 PATCH expects explicit slot IDs. We'll default to slot 1 here.
+		// This situation should ideally be handled by ensuring EZBEQ_SLOTS is always populated if BEQ is enabled.
+		payload.Slots = append(payload.Slots, models.SlotsV2{
+			ID:     "1", // Default to slot "1"
+			Gains:  []float64{m.MVAdjust, m.MVAdjust},
+			Active: true,
+			Mutes:  []bool{false, false},
+			Entry:  m.EntryID,
+		})
+	} else {
+		log.Info("Targeting all configured BEQ slots for load operation", slog.Any("slots", m.Slots))
+		for _, slotNum := range m.Slots {
+			payload.Slots = append(payload.Slots, models.SlotsV2{
+				ID:     strconv.Itoa(slotNum),
+				Gains:  []float64{m.MVAdjust, m.MVAdjust},
+				Active: true,
+				Mutes:  []bool{false, false},
+				Entry:  m.EntryID,
+			})
+		}
 	}
-
-	firstSlot := m.Slots[0]
-	payload.Slots = append(payload.Slots, models.SlotsV2{
-		ID:     strconv.Itoa(firstSlot),
-		Gains:  []float64{m.MVAdjust, m.MVAdjust}, // Assuming gain applies similarly, might need refinement if ezbeq handles this differently per device
-		Active: true,
-		Mutes:  []bool{false, false}, // Assuming unmuting is desired on load
-		Entry:  m.EntryID,
-	})
 	log.Debug("Sending BEQ payload",
 		slog.Any("payload", payload),
 	)
@@ -636,28 +644,32 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 		log.Info("BEQ Dry run: Would unload profile from first configured slot")
 		return nil
 	}
-	log.Debug("Unloading ezBEQ profile from first configured slot using V2 API")
+	log.Debug("Unloading ezBEQ profile using V2 API")
 
-	// Target only the first configured slot
-	if len(m.Slots) == 0 {
-		log.Warn("No BEQ slots configured, defaulting to slot 1 for unload")
-		m.Slots = []int{1} // Default to slot 1 if none configured
-	} else if len(m.Slots) > 1 {
-		log.Warn("Multiple BEQ slots configured, but only the first one will be used for unloading", slog.Int("first_slot", m.Slots[0]), slog.Any("all_slots", m.Slots))
-	}
-
-	firstSlot := m.Slots[0]
-
-	// Build V2 payload to deactivate the slot
+	// Build V2 payload to deactivate ALL configured slots
 	var payload models.BeqPatchV2
-	payload.Slots = append(payload.Slots, models.SlotsV2{
-		ID:     strconv.Itoa(firstSlot),
-		Active: false,
-		Entry:  "", // Explicitly clear entry, though Active: false might be sufficient
-		// Gains/Mutes are likely ignored when Active is false, but setting defaults just in case
-		Gains: []float64{0, 0},
-		Mutes: []bool{false, false},
-	})
+	if len(m.Slots) == 0 {
+		log.Warn("No BEQ slots configured (m.Slots is empty), attempting to unload from slot 1 by default.")
+		// Defaulting to slot "1" for unload if no slots are configured.
+		payload.Slots = append(payload.Slots, models.SlotsV2{
+			ID:     "1",
+			Active: false,
+			Entry:  "",
+			Gains:  []float64{0, 0},
+			Mutes:  []bool{false, false},
+		})
+	} else {
+		log.Info("Targeting all configured BEQ slots for unload operation", slog.Any("slots", m.Slots))
+		for _, slotNum := range m.Slots {
+			payload.Slots = append(payload.Slots, models.SlotsV2{
+				ID:     strconv.Itoa(slotNum),
+				Active: false,
+				Entry:  "",
+				Gains:  []float64{0, 0},
+				Mutes:  []bool{false, false},
+			})
+		}
+	}
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
@@ -682,7 +694,7 @@ func (c *BeqClient) UnloadBeqProfile(m *models.BeqSearchRequest) error {
 			)
 			allErrors = errors.Join(allErrors, deviceErr) // Collect errors
 		} else {
-			log.Info("Successfully sent unload command to device", slog.String("device", deviceName), slog.Int("slot", firstSlot))
+			log.Info("Successfully sent unload command to device for configured slots", slog.String("device", deviceName), slog.Any("slots_targeted_in_payload", m.Slots))
 		}
 	}
 
