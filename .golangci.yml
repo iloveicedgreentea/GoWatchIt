@@ -13,11 +13,13 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - iface
     - misspell
     - prealloc
     - revive
     - staticcheck
     - unused
+    - wastedassign
   settings:
     gocritic:
       disabled-checks:

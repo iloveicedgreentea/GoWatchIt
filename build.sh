@@ -1,1 +1,0 @@
-docker buildx build --platform linux/amd64 --tag "ghcr.io/iloveicedgreentea/plex-webhook-automation:v$1"  --push .

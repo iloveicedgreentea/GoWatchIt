@@ -3,7 +3,7 @@ help:
 build: 
 	cd cmd/gowatchit && go build -o ../../build/gowatchit
 test:
-	./test.sh
+	./test_web.sh
 docker-build:
 	docker buildx build --platform linux/arm64 --load --tag gowatchit-local . -f ./Dockerfile
 docker-push:
@@ -11,7 +11,7 @@ docker-push:
 docker-run: docker-build
 	LOG_FILE=true LOG_LEVEL=debug docker-compose -f docker-compose.yml up
 run: 
-	LOG_ENV=local LOG_FILE=true LOG_LEVEL=debug go run ./cmd/gowatchit/
+	LOG_ENV=local LOG_FILE=false LOG_LEVEL=debug go run ./services/gowatchit
 run-ui:
 	cd web && bun run dev
 live-test:

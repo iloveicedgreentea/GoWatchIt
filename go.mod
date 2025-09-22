@@ -1,6 +1,6 @@
-module github.com/iloveicedgreentea/go-plex
+module github.com/iloveicedgreentea/gowatchit
 
-go 1.23.4
+go 1.25.1
 
 require (
 	github.com/gin-gonic/gin v1.10.0
@@ -36,6 +36,8 @@ require (
 	github.com/reiver/go-oi v1.0.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/net v0.32.0 // indirect
