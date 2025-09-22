@@ -22,9 +22,6 @@ import (
 
 // return a new instance of a plex client
 func NewClient(ctx context.Context) (*BeqClient, error) {
-	if !config.IsBeqEnabled() {
-		return &BeqClient{}, errors.New("ezBEQ is not enabled")
-	}
 
 	port := config.GetEZBeqPort()
 	// safely parse the url

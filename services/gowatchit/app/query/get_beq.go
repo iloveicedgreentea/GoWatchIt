@@ -7,7 +7,6 @@ import (
 )
 
 type GetBeqQuery struct {
-	Payload *beq.BEQPayload
 }
 
 type GetBeqHandler struct {

@@ -16,6 +16,8 @@ import (
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/beq"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/ports/webhooks"
 	"go.uber.org/zap"
 )
@@ -75,8 +77,21 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("failed to run init config: %w", err)
 	}
 
+	// init beq client
+	// TODO: must support being loaded while off in config
+	beqClient, err := beq.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create beq client: %w", err)
+	}
+
+	// initialize app
+	app, err := app.NewApplication(ctx, beqClient)
+	if err != nil {
+		return fmt.Errorf("failed to create application: %w", err)
+	}
+
 	// set up routes
-	router, err := webhooks.NewRouter(ctx)
+	router, err := webhooks.NewRouter(ctx, app)
 	if err != nil {
 		return err
 	}

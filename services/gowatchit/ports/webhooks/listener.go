@@ -5,10 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app"
 )
 
 // http listener
-func NewRouter(ctx context.Context) (*gin.Engine, error) {
+func NewRouter(ctx context.Context, app *app.App) (*gin.Engine, error) {
 	log := logger.GetLoggerFromContext(ctx)
 
 	log.Debug("Making new router")
@@ -16,7 +17,7 @@ func NewRouter(ctx context.Context) (*gin.Engine, error) {
 
 	router.Use(addOrigins())
 
-	addRoutes(router)
+	addRoutes(router, app)
 
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
