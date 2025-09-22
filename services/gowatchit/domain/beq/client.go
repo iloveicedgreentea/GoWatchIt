@@ -100,7 +100,6 @@ func (c *BeqClient) GetCurrentProfile(ctx context.Context) (map[string]string, e
 	}
 
 	return out, nil
-
 }
 
 func mapToBeqDevice(jsonData []byte) (beqPayload map[string]BeqDevices, err error) {

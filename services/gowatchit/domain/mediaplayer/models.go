@@ -1,7 +1,6 @@
 package mediaplayer
 
-type Status struct {
-}
+type Status struct{}
 
 // Codec represents the audio codec used in the media player
 // Codec is based on EzBEQ/BEQ strings
