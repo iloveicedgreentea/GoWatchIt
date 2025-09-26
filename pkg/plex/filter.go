@@ -1,6 +1,7 @@
 package plex
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -8,19 +9,19 @@ import (
 )
 
 // check each one and return errors as needed
-func CheckAllFilters(payload PlexWebhookPayload) (bool, error) {
+func CheckAllFilters(ctx context.Context, payload PlexWebhookPayload) (bool, error) {
 	mediaType := payload.Metadata.Type
 	if !checkItemTypeMatch(mediaType) {
 		return false, fmt.Errorf("item type %s is not supported", mediaType)
 	}
-	uuidFilter := config.GetPlexDeviceUUIDFilter()
+	uuidFilter := config.GetPlayerDeviceUUIDFilter(ctx)
 	uuid := payload.Player.UUID
 
 	if !checkUUIDFilterMatch(uuid, uuidFilter) {
 		return false, fmt.Errorf("uuid did not match expected %s but got %s", uuidFilter, uuid)
 	}
 
-	userIDFilter := config.GetPlexOwnerNameFilter()
+	userIDFilter := config.GetPlayerOwnerNameFilter(ctx)
 	user := payload.Account.Title
 
 	if !checkUserFilterMatch(user, userIDFilter) {

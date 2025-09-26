@@ -9,8 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
-	"go.uber.org/zap"
+	"github.com/iloveicedgreentea/go-plex/internal/logger"
 )
 
 var (
@@ -31,7 +30,7 @@ func InitConfig(db *sql.DB) error {
 	return nil
 }
 
-func (c *Config) LoadConfig(ctx context.Context, cfg any) error {
+func (c *Config) LoadConfig(ctx context.Context, cfg interface{}) error {
 	if c == nil {
 		return fmt.Errorf("config is nil")
 	}
@@ -79,7 +78,7 @@ func (c *Config) LoadConfig(ctx context.Context, cfg any) error {
 	err := c.db.QueryRowContext(ctx, query).Scan(scanDest...)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Debug("No configuration found in table", zap.String("table", tableName))
+			log.Debug("No configuration found in table", "table", tableName)
 			return nil
 		}
 		return fmt.Errorf("failed to scan row: %v", err)
@@ -103,7 +102,7 @@ func (c *Config) LoadConfig(ctx context.Context, cfg any) error {
 }
 
 func (c *Config) SaveConfig(cfg interface{}) error {
-	// TODO: add frontend safety checks for URLs make sure they are reachable
+	// TODO: add safety checks for URLs make sure they are reachable
 	if c == nil {
 		return fmt.Errorf("config is nil")
 	}

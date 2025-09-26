@@ -1,4 +1,4 @@
-package config
+package models
 
 type EZBEQConfig struct {
 	ID                            int64  `json:"-" db:"id"`
@@ -27,6 +27,7 @@ type HomeAssistantConfig struct {
 	ID                              int64  `json:"-" db:"id"`
 	Enabled                         bool   `json:"enabled" db:"enabled"`
 	RemoteEntityName                string `json:"remoteentityname" db:"remote_entity_name"`
+	MediaPlayerEntityName           string `json:"mediaplayerentitynmae" db:"mediaplayer_entity_name"`
 	Token                           string `json:"token" db:"token"`
 	TriggerAspectRatioChangeOnEvent bool   `json:"triggeraspectratiochangeonevent" db:"trigger_aspect_ratio_change_on_event"`
 	NotifyEndpointName              string `json:"notifyendpointname" db:"notify_endpoint_name"`
@@ -36,31 +37,34 @@ type HomeAssistantConfig struct {
 	Scheme                          string `json:"scheme" db:"scheme"`
 }
 
-type Player string
-
-const (
-	PlayerPlex          Player = "Plex"
-	PlayerJellyfin      Player = "Jellyfin"
-	PlayerHomeAssistant Player = "HomeAssistant"
-)
-
-type PlayerConfig struct {
+type JellyfinConfig struct {
 	ID               int64  `json:"-" db:"id"`
-	PlayerType       Player `json:"playertype" db:"player_type"` // Plex, Jellyfin, HomeAssistant, etc
-	Token            string `json:"token" db:"token"`            // Generic token field for players that use tokens
-	UserID           string `json:"userid" db:"user_id"`         // Generic userID field for players that use user IDs
+	APIToken         string `json:"apitoken" db:"api_token"`
+	DeviceUUIDFilter string `json:"deviceuuidfilter" db:"device_uuid_filter"`
+	Enabled          bool   `json:"enabled" db:"enabled"`
+	OwnerNameFilter  string `json:"ownernamefilter" db:"owner_name_filter"`
+	UserID           string `json:"userID" db:"user_id"`
 	URL              string `json:"url" db:"url"`
 	Port             string `json:"port" db:"port"`
 	Scheme           string `json:"scheme" db:"scheme"`
-	DeviceUUIDFilter string `json:"deviceuuidfilter" db:"device_uuid_filter"`
-	OwnerNameFilter  string `json:"ownernamefilter" db:"owner_name_filter"`
-	SkipTMDB         bool   `json:"skiptmdb" db:"skip_tmdb"`                // Specific to Jellyfin
-	MediaEntityName  string `json:"mediaentityname" db:"media_entity_name"` // Specific to HomeAssistant
+	SkipTMDB         bool   `json:"skiptmdb" db:"skip_tmdb"`
 }
 
 type MainConfig struct {
 	ID         int64  `json:"-" db:"id"`
 	ListenPort string `json:"listenport" db:"listen_port"`
+}
+
+type PlexConfig struct {
+	ID                   int64  `json:"-" db:"id"`
+	DeviceUUIDFilter     string `json:"deviceuuidfilter" db:"device_uuid_filter"`
+	Enabled              bool   `json:"enabled" db:"enabled"`
+	EnableTrailerSupport bool   `json:"enabletrailersupport" db:"enable_trailer_support"`
+	OwnerNameFilter      string `json:"ownernamefilter" db:"owner_name_filter"`
+	Token                string `json:"token" db:"token"`
+	URL                  string `json:"url" db:"url"`
+	Port                 string `json:"port" db:"port"`
+	Scheme               string `json:"scheme" db:"scheme"`
 }
 
 type HDMISyncConfig struct {

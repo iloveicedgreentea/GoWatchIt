@@ -14,8 +14,9 @@ import (
 	"github.com/iloveicedgreentea/gowatchit/old/models"
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
+	"github.com/iloveicedgreentea/gowatchit/pkg/events"
 	"github.com/iloveicedgreentea/gowatchit/pkg/jellyfin"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/events"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/mediaplayer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -114,10 +115,11 @@ func TestMain(m *testing.M) {
 func TestRequestToEvent(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	var player mediaplayer.MediaPlayer
 
 	t.Run("Plex event", func(t *testing.T) {
 		req := createMockMultipartRequest(plexPayload)
-		event, err := requestToEvent(ctx, req)
+		event, err := requestToEvent(ctx, player, req)
 		require.NoError(t, err)
 		assert.Equal(t, events.ActionPlay, event.Action)
 		assert.Equal(t, "/library/metadata/3019", event.Metadata.Key)
@@ -138,29 +140,8 @@ func TestRequestToEvent(t *testing.T) {
 	t.Run("Unsupported event", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
 		req.Header.Set("Content-Type", "text/plain")
-		_, err := requestToEvent(ctx, req)
+		_, err := requestToEvent(ctx, player, req)
 		assert.Error(t, err)
-	})
-}
-
-func TestIsPlexType(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-
-	t.Run("Valid Plex request", func(t *testing.T) {
-		req := createMockMultipartRequest(plexPayload)
-		assert.True(t, IsPlexType(ctx, req))
-	})
-
-	t.Run("Invalid Plex request", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/webhook", http.NoBody)
-		assert.False(t, IsPlexType(ctx, req))
-	})
-
-	t.Run("Non-multipart request", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
-		req.Header.Set("Content-Type", "application/json")
-		assert.False(t, IsPlexType(ctx, req))
 	})
 }
 
@@ -186,37 +167,37 @@ func TestIsPlexType(t *testing.T) {
 // 	})
 // }
 
-func TestParseJellyfinWebhook(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
+// func TestParseJellyfinWebhook(t *testing.T) {
+// 	t.Parallel()
+// 	ctx := context.Background()
 
-	t.Run("Valid Jellyfin webhook", func(t *testing.T) {
-		req := createJellyfinWebhookTestRequest()
-		event, err := ParseJellyfinWebhook(ctx, req)
-		require.NoError(t, err)
-		assert.Equal(t, events.ActionPlay, event.Action)
-		assert.Equal(t, "Living Room TV", event.PlayerTitle)
-		assert.Equal(t, "123456789", event.PlayerUUID)
-		assert.Equal(t, events.MediaType("Movie"), event.Metadata.Type)
-		assert.Equal(t, 2023, event.Metadata.Year)
-		assert.False(t, event.Metadata.IsPaused)
-	})
+// 	t.Run("Valid Jellyfin webhook", func(t *testing.T) {
+// 		req := createJellyfinWebhookTestRequest()
+// 		event, err := ParseJellyfinWebhook(ctx, req)
+// 		require.NoError(t, err)
+// 		assert.Equal(t, events.ActionPlay, event.Action)
+// 		assert.Equal(t, "Living Room TV", event.PlayerTitle)
+// 		assert.Equal(t, "123456789", event.PlayerUUID)
+// 		assert.Equal(t, events.MediaType("Movie"), event.Metadata.Type)
+// 		assert.Equal(t, 2023, event.Metadata.Year)
+// 		assert.False(t, event.Metadata.IsPaused)
+// 	})
 
-	t.Run("Invalid Jellyfin webhook", func(t *testing.T) {
-		invalidPayload := []byte(`{"InvalidField": "InvalidValue"}`)
-		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewBuffer(invalidPayload))
-		req.Header.Set("Content-Type", "application/json")
-		_, err := ParseJellyfinWebhook(ctx, req)
-		assert.Error(t, err)
-	})
+// 	t.Run("Invalid Jellyfin webhook", func(t *testing.T) {
+// 		invalidPayload := []byte(`{"InvalidField": "InvalidValue"}`)
+// 		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewBuffer(invalidPayload))
+// 		req.Header.Set("Content-Type", "application/json")
+// 		_, err := ParseJellyfinWebhook(ctx, req)
+// 		assert.Error(t, err)
+// 	})
 
-	t.Run("Non-JSON payload", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewBufferString("Not JSON"))
-		req.Header.Set("Content-Type", "text/plain")
-		_, err := ParseJellyfinWebhook(ctx, req)
-		assert.Error(t, err)
-	})
-}
+// 	t.Run("Non-JSON payload", func(t *testing.T) {
+// 		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewBufferString("Not JSON"))
+// 		req.Header.Set("Content-Type", "text/plain")
+// 		_, err := ParseJellyfinWebhook(ctx, req)
+// 		assert.Error(t, err)
+// 	})
+// }
 
 func TestIsValidWebhook(t *testing.T) {
 	t.Parallel()

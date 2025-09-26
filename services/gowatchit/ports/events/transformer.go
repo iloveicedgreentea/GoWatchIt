@@ -5,40 +5,53 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iloveicedgreentea/gowatchit/pkg/events"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/events"
+	"github.com/iloveicedgreentea/gowatchit/pkg/plex"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/mediaplayer"
+	"go.uber.org/zap"
 )
 
-func ProcessWebhook(ctx context.Context, req *http.Request) error {
-	_, err := requestToEvent(ctx, req)
+func ProcessWebhook(ctx context.Context, player mediaplayer.MediaPlayer, req *http.Request) error {
+	log := logger.GetLoggerFromContext(ctx)
+	if req == nil {
+		log.Error("Request is nil")
+		return fmt.Errorf("request is nil")
+	}
+	if player == nil {
+		log.Error("Media player is nil")
+		return fmt.Errorf("media player is nil")
+	}
+	event, err := requestToEvent(ctx, player, req)
 	if err != nil {
 		return fmt.Errorf("failed to convert webhook to event: %w", err)
 	}
+	if event == nil {
+		log.Error("Event is nil after conversion")
+		return fmt.Errorf("event is nil after conversion")
+	}
 
-	// TODO: route event to correct cmd handler
+	log.Debug("Received event",
+		zap.Any("event", event),
+	)
+	// TODO: CONTINUE HERE process event
 
 	return nil
 }
 
 // RequestToEvent converts http to Event type
-func requestToEvent(ctx context.Context, req *http.Request) (*events.Event, error) {
+func requestToEvent(ctx context.Context, player mediaplayer.MediaPlayer, req *http.Request) (*events.Event, error) {
 	log := logger.GetLoggerFromContext(ctx)
 	if req.Body == nil {
 		return &events.Event{}, EventNotSupportedError{Message: "Request body is empty"}
 	}
 
-	switch {
-	case IsPlexType(ctx, req):
-		log.Debug("Plex")
+	switch player.(type) {
+	case *plex.PlexClient:
+		log.Debug("Using Plex event parser")
 		return processPlexWebhook(ctx, req)
 	}
 	// TODO: JF event
 	// TODO: HA event
 	return &events.Event{}, EventNotSupportedError{Message: "Event type not supported"}
-}
-
-// IsPlexType checks if it can extract a multipart payload. If true, its a plex payload
-func IsPlexType(ctx context.Context, req *http.Request) bool {
-	_, err := getMultipartPayload(ctx, req)
-	return err == nil
 }

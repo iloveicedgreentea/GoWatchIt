@@ -9,8 +9,11 @@ import (
 
 	l "log"
 
+	"github.com/iloveicedgreentea/go-plex/models"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iloveicedgreentea/go-plex/internal/database"
 )
 
 var (
@@ -28,7 +31,7 @@ func TestMain(m *testing.M) {
 		}
 
 		// run migrations
-		err = RunMigrations(db)
+		err = database.RunMigrations(db)
 		if err != nil {
 			l.Fatalf("Failed to run migrations: %v", err)
 		}
@@ -53,7 +56,7 @@ func TestMain(m *testing.M) {
 
 func TestEZBEQConfig(t *testing.T) {
 	// Test saving EZBEQ config
-	ezbeqConfig := &EZBEQConfig{
+	ezbeqConfig := &models.EZBEQConfig{
 		AdjustMasterVolumeWithProfile: true,
 		DenonIP:                       "192.168.1.100",
 		DenonPort:                     "8080",
@@ -76,15 +79,14 @@ func TestEZBEQConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test loading EZBEQ config
-	ctx := context.Background()
-	assert.True(t, IsBeqEnabled(ctx))
-	assert.True(t, IsBeqTVEnabled(ctx))
-	assert.True(t, IsBeqNotifyOnLoadEnabled(ctx))
-	assert.True(t, IsBeqNotifyOnUnLoadEnabled(ctx))
-	assert.False(t, IsBeqDryRun(ctx))
+	assert.True(t, IsBeqEnabled())
+	assert.True(t, IsBeqTVEnabled())
+	assert.True(t, IsBeqNotifyOnLoadEnabled())
+	assert.True(t, IsBeqNotifyOnUnLoadEnabled())
+	assert.False(t, IsBeqDryRun())
 
 	// Test loading full config
-	var loadedConfig EZBEQConfig
+	var loadedConfig models.EZBEQConfig
 	err = GetConfig().LoadConfig(context.Background(), &loadedConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, ezbeqConfig.AdjustMasterVolumeWithProfile, loadedConfig.AdjustMasterVolumeWithProfile)
@@ -107,7 +109,7 @@ func TestEZBEQConfig(t *testing.T) {
 
 func TestHomeAssistantConfig(t *testing.T) {
 	// Test saving HomeAssistant config
-	haConfig := &HomeAssistantConfig{
+	haConfig := &models.HomeAssistantConfig{
 		Enabled:                         true,
 		Port:                            "8123",
 		RemoteEntityName:                "remote.living_room",
@@ -115,6 +117,7 @@ func TestHomeAssistantConfig(t *testing.T) {
 		TriggerAspectRatioChangeOnEvent: true,
 		URL:                             "homeassistant.local",
 		Scheme:                          "http",
+		MediaPlayerEntityName:           "media_player.test",
 		NotifyEndpointName:              "test_endpoint",
 		NotifyDisplayTime:               5,
 	}
@@ -123,11 +126,10 @@ func TestHomeAssistantConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test helper functions
-	ctx := context.Background()
-	assert.True(t, IsHomeAssistantEnabled(ctx))
+	assert.True(t, IsHomeAssistantEnabled())
 
 	// Test loading full config
-	var loadedConfig HomeAssistantConfig
+	var loadedConfig models.HomeAssistantConfig
 	err = GetConfig().LoadConfig(context.Background(), &loadedConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, haConfig.Enabled, loadedConfig.Enabled)
@@ -137,6 +139,7 @@ func TestHomeAssistantConfig(t *testing.T) {
 	assert.Equal(t, haConfig.TriggerAspectRatioChangeOnEvent, loadedConfig.TriggerAspectRatioChangeOnEvent)
 	assert.Equal(t, haConfig.URL, loadedConfig.URL)
 	assert.Equal(t, haConfig.Scheme, loadedConfig.Scheme)
+	assert.Equal(t, haConfig.MediaPlayerEntityName, loadedConfig.MediaPlayerEntityName)
 	assert.Equal(t, haConfig.NotifyEndpointName, loadedConfig.NotifyEndpointName)
 	assert.Equal(t, haConfig.NotifyDisplayTime, loadedConfig.NotifyDisplayTime)
 }

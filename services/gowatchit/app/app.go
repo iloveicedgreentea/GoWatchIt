@@ -9,13 +9,14 @@ import (
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/beq"
 )
 
-type App struct{
+type App struct {
 	Commands Commands
 	Queries  Queries
 }
 
 type Commands struct {
-	LoadBeq *command.LoadBeqHandler
+	LoadBeq        *command.LoadBeqHandler
+	ProcessWebhook *command.ProcessesWebhookHandler
 }
 
 type Queries struct {
@@ -36,9 +37,14 @@ func NewApplication(ctx context.Context, beqClient *beq.BeqClient) (*App, error)
 	if err != nil {
 		return nil, err
 	}
+	processWebhookHandler, err := command.NewProcessesWebhookHandler(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &App{
 		Commands: Commands{
-			LoadBeq: beqHandler,
+			LoadBeq:        beqHandler,
+			ProcessWebhook: processWebhookHandler,
 		},
 		Queries: Queries{
 			GetBeq: beqGetHandler,

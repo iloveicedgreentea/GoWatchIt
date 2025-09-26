@@ -14,18 +14,18 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/iloveicedgreentea/gowatchit/pkg/codecs"
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
+	"github.com/iloveicedgreentea/gowatchit/pkg/editions"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/mediaplayer"
 	"go.uber.org/zap"
 )
 
 // return a new instance of a plex client
 func NewClient(ctx context.Context) (*BeqClient, error) {
-
-	port := config.GetEZBeqPort()
+	port := config.GetEZBeqPort(ctx)
 	// safely parse the url
-	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s://%s", config.GetEZBeqScheme(), config.GetEZBeqUrl()))
+	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s://%s", config.GetEZBeqScheme(ctx), config.GetEZBeqUrl(ctx)))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing url: %v", err)
 	}
@@ -127,7 +127,7 @@ func (c *BeqClient) makeReq(ctx context.Context, endpoint string, payload []byte
 	}
 	// caller encodes stuff by using url.Values
 	fullURL := fmt.Sprintf("%s://%s:%s%s", c.Scheme, c.ServerURL, c.Port, endpoint)
-
+	log.Debug("Full URL", zap.String("url", fullURL))
 	if len(payload) == 0 {
 		req, err = retryablehttp.NewRequest(methodType, fullURL, nil)
 	} else {
@@ -304,7 +304,7 @@ func (c *BeqClient) searchCatalog(ctx context.Context, m *BEQPayload) (BeqCatalo
 	for i := range payload {
 		val := payload[i]
 		// if skipping TMDB, set the IDs to match
-		if config.IsJellyfinSkipTMDB() {
+		if config.IsJellyfinSkipTMDB(ctx) {
 			if m.Title == "" {
 				return BeqCatalog{}, errors.New("title is blank, can't skip TMDB")
 			}
@@ -346,7 +346,7 @@ func (c *BeqClient) searchCatalog(ctx context.Context, m *BEQPayload) (BeqCatalo
 				zap.String("requested_edition", string(m.Edition)),
 			)
 			// if it matches, check edition
-			if checkEdition(&val, m.Edition) {
+			if checkEdition(ctx, &val, m.Edition) {
 				log.Info("Found a match in catalog",
 					zap.String("author", val.Author),
 				)
@@ -366,9 +366,9 @@ func (c *BeqClient) searchCatalog(ctx context.Context, m *BEQPayload) (BeqCatalo
 }
 
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion
-func checkEdition(val *BeqCatalog, edition mediaplayer.Edition) bool {
+func checkEdition(ctx context.Context, val *BeqCatalog, edition editions.Edition) bool {
 	// skip if matching disabled
-	if config.IsBeqSkipEditionMatching() {
+	if config.IsBeqSkipEditionMatching(ctx) {
 		return true
 	}
 	valLower := strings.ToLower(val.Edition)
@@ -387,24 +387,24 @@ func checkEdition(val *BeqCatalog, edition mediaplayer.Edition) bool {
 	// Some BEQ have short hand names
 	switch {
 	case strings.Contains(valLower, "dc"):
-		return edition == mediaplayer.EditionDirectorsCut
+		return edition == editions.EditionDirectorsCut
 	case strings.Contains(valLower, "se"):
-		return edition == mediaplayer.EditionSpecialEdition
+		return edition == editions.EditionSpecialEdition
 	case strings.Contains(valLower, "tc"):
-		return edition == mediaplayer.EditionTheatrical
+		return edition == editions.EditionTheatrical
 	case strings.Contains(valLower, "uc"):
-		return edition == mediaplayer.EditionUltimate
+		return edition == editions.EditionUltimate
 	case strings.Contains(valLower, "cr"):
-		return edition == mediaplayer.EditionCriterion
+		return edition == editions.EditionCriterion
 	case strings.Contains(valLower, "ur"):
-		return edition == mediaplayer.EditionUnrated
+		return edition == editions.EditionUnrated
 	case strings.Contains(valLower, "ex"):
-		return edition == mediaplayer.EditionExtended
+		return edition == editions.EditionExtended
 	}
 
 	// if BEQ returns an edition but we have none, and loose matching is enabled, let it match
-	if config.IsBeqLooseEditionMatching() {
-		if edition == mediaplayer.EditionNone {
+	if config.IsBeqLooseEditionMatching(ctx) {
+		if edition == editions.EditionNone {
 			return true
 		}
 	}
@@ -415,7 +415,7 @@ func checkEdition(val *BeqCatalog, edition mediaplayer.Edition) bool {
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(ctx context.Context, m *BEQPayload) error {
 	log := logger.GetLoggerFromContext(ctx)
-	if !config.IsBeqEnabled() {
+	if !config.IsBeqEnabled(ctx) {
 		log.Debug("BEQ is disabled, skipping")
 		return nil
 	}
@@ -442,38 +442,38 @@ func (c *BeqClient) LoadBeqProfile(ctx context.Context, m *BEQPayload) error {
 		// Attempting codec variations due to potential metadata ambiguity from source.
 		// Use constants for codec names.
 		switch m.Codec {
-		case mediaplayer.CodecAtmosMaybe:
-			m.Codec = mediaplayer.CodecTrueHD71
+		case codecs.CodecAtmosMaybe:
+			m.Codec = codecs.CodecTrueHD71
 			catalog, err = c.searchCatalog(ctx, m)
 			if err != nil {
-				m.Codec = mediaplayer.CodecAtmos
+				m.Codec = codecs.CodecAtmos
 				catalog, err = c.searchCatalog(ctx, m)
 				if err != nil {
 					return fmt.Errorf("failed to find BEQ %w", err)
 				}
 			}
-		case mediaplayer.CodecDDPlusAtmos51Maybe:
-			m.Codec = mediaplayer.CodecDDPAtmos
+		case codecs.CodecDDPlusAtmos51Maybe:
+			m.Codec = codecs.CodecDDPAtmos
 			catalog, err = c.searchCatalog(ctx, m)
 			if err != nil {
-				m.Codec = mediaplayer.CodecDDPlus51
+				m.Codec = codecs.CodecDDPlus51
 				catalog, err = c.searchCatalog(ctx, m)
 				if err != nil {
-					m.Codec = mediaplayer.CodecDDPlus
+					m.Codec = codecs.CodecDDPlus
 					catalog, err = c.searchCatalog(ctx, m)
 					if err != nil {
 						return fmt.Errorf("failed to find BEQ %w", err)
 					}
 				}
 			}
-		case mediaplayer.CodecDDPlusAtmos71Maybe:
-			m.Codec = mediaplayer.CodecDDPAtmos
+		case codecs.CodecDDPlusAtmos71Maybe:
+			m.Codec = codecs.CodecDDPAtmos
 			catalog, err = c.searchCatalog(ctx, m)
 			if err != nil {
-				m.Codec = mediaplayer.CodecDDPlus71
+				m.Codec = codecs.CodecDDPlus71
 				catalog, err = c.searchCatalog(ctx, m)
 				if err != nil {
-					m.Codec = mediaplayer.CodecDDPlus
+					m.Codec = codecs.CodecDDPlus
 					catalog, err = c.searchCatalog(ctx, m)
 					if err != nil {
 						return fmt.Errorf("failed to find BEQ  %w", err)
@@ -559,7 +559,7 @@ func (c *BeqClient) LoadBeqProfile(ctx context.Context, m *BEQPayload) error {
 // UnloadBeqProfile will unload the profile from the first configured slot on all devices using the V2 API.
 func (c *BeqClient) UnloadBeqProfile(ctx context.Context, m *BEQPayload) error {
 	log := logger.GetLoggerFromContext(ctx)
-	if !config.IsBeqEnabled() {
+	if !config.IsBeqEnabled(ctx) {
 		log.Debug("BEQ is disabled, skipping unload")
 		return nil
 	}

@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
+	"github.com/iloveicedgreentea/gowatchit/pkg/events"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"github.com/iloveicedgreentea/gowatchit/pkg/plex"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/events"
 	"go.uber.org/zap"
 )
 
@@ -78,7 +78,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (*events.Eve
 	)
 
 	// check all filters
-	checkRes, err := plex.CheckAllFilters(decodedPayload)
+	checkRes, err := plex.CheckAllFilters(ctx, decodedPayload)
 	if !checkRes {
 		log.Warn("filters did not match",
 			zap.Error(err),
@@ -94,7 +94,7 @@ func processPlexWebhook(ctx context.Context, request *http.Request) (*events.Eve
 	)
 
 	// check if TV BEQ is enabled
-	if strings.EqualFold(mediaType, string(plex.MediaTypeShow)) && !config.IsBeqTVEnabled() {
+	if strings.EqualFold(mediaType, string(plex.MediaTypeShow)) && !config.IsBeqTVEnabled(ctx) {
 		log.Warn("TV BEQ is disabled",
 			zap.String("media_type", mediaType),
 		)

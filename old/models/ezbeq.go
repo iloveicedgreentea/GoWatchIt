@@ -1,30 +1,19 @@
-package beq
+package models
 
-import (
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/iloveicedgreentea/gowatchit/pkg/codecs"
-	"github.com/iloveicedgreentea/gowatchit/pkg/editions"
-	"github.com/iloveicedgreentea/gowatchit/pkg/events"
-)
-
-// BEQPayload is used for searching aka loading
-type BEQPayload struct {
-	// normalized codec
-	Codec codecs.Codec
-	// names of each device
-	Devices    []string
-	DryrunMode bool
-	Edition    editions.Edition
-	EntryID    string
-	// show, movie, etc
-	MediaType       events.MediaType
-	MVAdjust        float64
-	PreferredAuthor string
-	SkipSearch      bool
-	Slots           []int
-	Title           string
+type BeqSearchRequest struct {
 	TMDB            string
 	Year            int
+	Codec           CodecName
+	PreferredAuthor string
+	Edition         Edition
+	SkipSearch      bool
+	EntryID         string
+	MVAdjust        float64
+	DryrunMode      bool
+	MediaType       MediaType
+	Devices         []string
+	Slots           []int
+	Title           string
 }
 
 type BeqCatalog struct {
@@ -82,23 +71,3 @@ type SlotsV1 struct {
 	Mutes  []bool    `json:"mutes"`
 	Entry  string    `json:"entry"`
 }
-
-type BeqClient struct {
-	Scheme              string
-	ServerURL           string
-	Port                string
-	CurrentMasterVolume float64
-	CurrentMediaType    string
-	MuteStatus          bool
-	MasterVolume        float64
-	HTTPClient          *retryablehttp.Client
-	DeviceInfo          []BeqDevices
-}
-
-const (
-	// API Endpoints (prefix) - Add comments for V1 usage
-	apiV1Prefix  = "/api/1"
-	apiV2Prefix  = "/api/2"
-	profileEmpty = "Empty"
-	authorNone   = "none"
-)

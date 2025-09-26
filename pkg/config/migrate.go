@@ -11,9 +11,8 @@ func getDbModels() []interface{} {
 	return []interface{}{
 		&EZBEQConfig{},
 		&HomeAssistantConfig{},
-		&JellyfinConfig{},
+		&PlayerConfig{},
 		&MainConfig{},
-		&PlexConfig{},
 		&HDMISyncConfig{},
 	}
 }
