@@ -11,7 +11,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/iloveicedgreentea/gowatchit/old/models"
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
 	"github.com/iloveicedgreentea/gowatchit/pkg/events"
@@ -85,14 +84,12 @@ func TestMain(m *testing.M) {
 		cf := config.GetConfig()
 
 		// populate test data
-		plexCfg := models.PlexConfig{
-			Enabled:              true,
-			URL:                  "192.168.88.56",
-			Port:                 "32400",
-			Scheme:               "http",
-			DeviceUUIDFilter:     "player-id",
-			EnableTrailerSupport: false,
-			OwnerNameFilter:      "o",
+		plexCfg := config.PlayerConfig{
+			URL:              "192.168.88.56",
+			Port:             "32400",
+			Scheme:           "http",
+			DeviceUUIDFilter: "player-id",
+			OwnerNameFilter:  "o",
 		}
 		err = cf.SaveConfig(&plexCfg)
 		if err != nil {

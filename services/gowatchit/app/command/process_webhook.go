@@ -8,8 +8,8 @@ import (
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"github.com/iloveicedgreentea/gowatchit/pkg/plex"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/events"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/mediaplayer"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/ports/events"
 	"go.uber.org/zap"
 )
 

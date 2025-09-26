@@ -34,6 +34,7 @@ func ProcessWebhook(ctx context.Context, player mediaplayer.MediaPlayer, req *ht
 	log.Debug("Received event",
 		zap.Any("event", event),
 	)
+
 	// TODO: CONTINUE HERE - from event, trigger a load
 	// TODO: support hdmi sync
 
