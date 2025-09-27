@@ -16,10 +16,13 @@ type App struct {
 
 type Commands struct {
 	ProcessWebhook *command.ProcessWebhookHandler
+	SaveConfig     *command.SaveConfigHandler
 }
 
 type Queries struct {
-	GetBeq *query.GetBeqHandler
+	GetBeq    *query.GetBeqHandler
+	GetConfig *query.GetConfigHandler
+	GetLogs   *query.GetLogsHandler
 }
 
 func NewApplication(ctx context.Context, beqClient *beq.BeqClient) (*App, error) {
@@ -32,7 +35,22 @@ func NewApplication(ctx context.Context, beqClient *beq.BeqClient) (*App, error)
 		return nil, err
 	}
 
+	saveConfigHandler, err := command.NewSaveConfigHandler()
+	if err != nil {
+		return nil, err
+	}
+
 	beqGetHandler, err := query.NewGetBeqHandler(beqClient)
+	if err != nil {
+		return nil, err
+	}
+
+	getConfigHandler, err := query.NewGetConfigHandler()
+	if err != nil {
+		return nil, err
+	}
+
+	getLogsHandler, err := query.NewGetLogsHandler()
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +58,12 @@ func NewApplication(ctx context.Context, beqClient *beq.BeqClient) (*App, error)
 	return &App{
 		Commands: Commands{
 			ProcessWebhook: processWebhookHandler,
+			SaveConfig:     saveConfigHandler,
 		},
 		Queries: Queries{
-			GetBeq: beqGetHandler,
+			GetBeq:    beqGetHandler,
+			GetConfig: getConfigHandler,
+			GetLogs:   getLogsHandler,
 		},
 	}, nil
 }

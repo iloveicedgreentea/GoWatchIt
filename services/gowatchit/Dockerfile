@@ -1,11 +1,17 @@
 # Backend build stage
-FROM golang:1.23 AS backend-build
+FROM golang:1.25 AS backend-build
 WORKDIR /go/src/app
-COPY . .
-RUN go mod download
-WORKDIR /go/src/app/cmd/gowatchit
 
-RUN go build -o /go/bin/app
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build from the service directory
+WORKDIR /go/src/app/services/gowatchit
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o /go/bin/app main.go
 
 # Frontend build stage
 FROM oven/bun:1 AS frontend-build
@@ -15,20 +21,21 @@ RUN bun install --frozen-lockfile
 COPY web/ ./
 RUN bun run build
 
-# Final stage
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y \
+# Final stage - using golang alpine for CGO compatibility
+FROM debian:stable-slim
+
+# Install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     nginx \
     sqlite3 \
     libsqlite3-dev \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*      
+    && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
 RUN mkdir -p /data \
     /run/nginx \
-    /var/lib/nginx \
     /var/lib/nginx/tmp \
     /var/lib/nginx/logs \
     /var/lib/nginx/tmp/client_body \
