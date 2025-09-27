@@ -126,7 +126,7 @@ func GetLoggerFromContext(ctx context.Context) *zap.Logger {
 
 func newZapLogger(core zapcore.Core) *zap.Logger {
 	return zap.New(core,
-		zap.AddCallerSkip(1),
+		zap.AddCallerSkip(0),
 		zap.AddCaller(),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 	)

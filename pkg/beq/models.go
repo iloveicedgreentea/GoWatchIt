@@ -10,9 +10,7 @@ import (
 // BEQPayload is used for searching aka loading
 type BEQPayload struct {
 	// normalized codec
-	Codec codecs.Codec
-	// names of each device
-	Devices    []string
+	Codec      codecs.Codec
 	DryrunMode bool
 	Edition    editions.Edition
 	EntryID    string

@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iloveicedgreentea/gowatchit/pkg/beq"
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/beq"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/ports/webhooks"
 	"go.uber.org/zap"
 )
@@ -78,7 +78,6 @@ func run(ctx context.Context) error {
 	}
 
 	// init beq client
-	// TODO: must support being loaded while off in config
 	beqClient, err := beq.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create beq client: %w", err)

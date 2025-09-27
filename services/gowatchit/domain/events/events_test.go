@@ -116,7 +116,7 @@ func TestRequestToEvent(t *testing.T) {
 
 	t.Run("Plex event", func(t *testing.T) {
 		req := createMockMultipartRequest(plexPayload)
-		event, err := requestToEvent(ctx, player, req)
+		event, err := RequestToEvent(ctx, player, req)
 		require.NoError(t, err)
 		assert.Equal(t, events.ActionPlay, event.Action)
 		assert.Equal(t, "/library/metadata/3019", event.Metadata.Key)
@@ -137,7 +137,7 @@ func TestRequestToEvent(t *testing.T) {
 	t.Run("Unsupported event", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/webhook", bytes.NewBufferString(""))
 		req.Header.Set("Content-Type", "text/plain")
-		_, err := requestToEvent(ctx, player, req)
+		_, err := RequestToEvent(ctx, player, req)
 		assert.Error(t, err)
 	})
 }

@@ -49,8 +49,6 @@ func NewClient(ctx context.Context) (*PlexClient, error) {
 	}
 	// set timeout
 	c.HTTPClient.HTTPClient.Timeout = time.Second * 10
-	log := logger.GetLogger()
-	c.HTTPClient.Logger = log
 
 	return c, nil
 }

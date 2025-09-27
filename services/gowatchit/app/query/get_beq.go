@@ -3,11 +3,10 @@ package query
 import (
 	"context"
 
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/beq"
+	"github.com/iloveicedgreentea/gowatchit/pkg/beq"
 )
 
-type GetBeqQuery struct {
-}
+type GetBeqQuery struct{}
 
 type GetBeqHandler struct {
 	BeqClient *beq.BeqClient

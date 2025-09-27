@@ -23,6 +23,7 @@ import (
 
 // return a new instance of a plex client
 func NewClient(ctx context.Context) (*BeqClient, error) {
+	// TODO: check if enabled if not, return empty
 	port := config.GetEZBeqPort(ctx)
 	// safely parse the url
 	parsedUrl, err := url.ParseRequestURI(fmt.Sprintf("%s://%s", config.GetEZBeqScheme(ctx), config.GetEZBeqUrl(ctx)))
@@ -424,12 +425,16 @@ func (c *BeqClient) LoadBeqProfile(ctx context.Context, m *BEQPayload) error {
 		zap.Any("request", m),
 	)
 
-	// if no devices provided, error
-	if len(m.Devices) == 0 {
-		return fmt.Errorf("no ezbeq devices provided. Can't load")
+	err := c.GetStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("error getting status from ezbeq: %w", err)
 	}
 
-	var err error
+	// if no devices found in client, error
+	if len(c.DeviceInfo) == 0 {
+		return fmt.Errorf("no ezbeq devices found. Can't load")
+	}
+
 	var catalog BeqCatalog
 	// TODO: cache these in DB for faster lookup. Purge cache on new BEQ entry
 	// if provided stuff is blank, we cant skip search
@@ -541,8 +546,8 @@ func (c *BeqClient) LoadBeqProfile(ctx context.Context, m *BEQPayload) error {
 	}
 
 	// write payload to each device using V2 API
-	for _, deviceName := range m.Devices {
-		endpoint := fmt.Sprintf("%s/devices/%s", apiV2Prefix, deviceName)
+	for _, device := range c.DeviceInfo {
+		endpoint := fmt.Sprintf("%s/devices/%s", apiV2Prefix, device.Name)
 		_, err = c.makeReq(ctx, endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
 			log.Debug("Error sending payload",
@@ -569,6 +574,14 @@ func (c *BeqClient) UnloadBeqProfile(ctx context.Context, m *BEQPayload) error {
 	}
 	log.Debug("Unloading ezBEQ profile using V2 API")
 
+	err := c.GetStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("error getting status from ezbeq: %w", err)
+	}
+	// if no devices found in client, error
+	if len(c.DeviceInfo) == 0 {
+		return fmt.Errorf("no ezbeq devices found. Can't unload")
+	}
 	// Build V2 payload to deactivate ALL configured slots
 	var payload BeqPatchV2
 	if len(m.Slots) == 0 {
@@ -604,20 +617,20 @@ func (c *BeqClient) UnloadBeqProfile(ctx context.Context, m *BEQPayload) error {
 	var allErrors error
 
 	// Send PATCH request to each device using V2 API, collect errors
-	for _, deviceName := range m.Devices {
-		endpoint := fmt.Sprintf("%s/devices/%s", apiV2Prefix, deviceName)
+	for _, device := range c.DeviceInfo {
+		endpoint := fmt.Sprintf("%s/devices/%s", apiV2Prefix, device.Name)
 		_, err = c.makeReq(ctx, endpoint, jsonPayload, http.MethodPatch)
 		if err != nil {
-			deviceErr := fmt.Errorf("failed to unload profile from device %s: %w", deviceName, err)
+			deviceErr := fmt.Errorf("failed to unload profile from device %s: %w", device.Name, err)
 			log.Error("Error sending unload payload to device",
-				zap.String("device", deviceName),
+				zap.String("device", device.Name),
 				zap.String("json_payload", string(jsonPayload)),
 				zap.String("endpoint", endpoint),
 				zap.String("error", deviceErr.Error()), // Log the wrapped error
 			)
 			allErrors = errors.Join(allErrors, deviceErr) // Collect errors
 		} else {
-			log.Info("Successfully sent unload command to device for configured slots", zap.String("device", deviceName), zap.Any("slots_targeted_in_payload", m.Slots))
+			log.Info("Successfully sent unload command to device for configured slots", zap.String("device", device.Name), zap.Any("slots_targeted_in_payload", m.Slots))
 		}
 	}
 

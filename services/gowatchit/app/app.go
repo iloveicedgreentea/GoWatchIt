@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/iloveicedgreentea/gowatchit/pkg/beq"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app/command"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app/query"
-	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/beq"
 )
 
 type App struct {
@@ -15,8 +15,7 @@ type App struct {
 }
 
 type Commands struct {
-	LoadBeq        *command.LoadBeqHandler
-	ProcessWebhook *command.ProcessesWebhookHandler
+	ProcessWebhook *command.ProcessWebhookHandler
 }
 
 type Queries struct {
@@ -28,7 +27,7 @@ func NewApplication(ctx context.Context, beqClient *beq.BeqClient) (*App, error)
 		return nil, errors.New("beqClient is nil")
 	}
 
-	beqHandler, err := command.NewLoadBeqHandler(beqClient)
+	processWebhookHandler, err := command.NewProcessWebhookHandler(beqClient)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +36,9 @@ func NewApplication(ctx context.Context, beqClient *beq.BeqClient) (*App, error)
 	if err != nil {
 		return nil, err
 	}
-	processWebhookHandler, err := command.NewProcessesWebhookHandler(ctx)
-	if err != nil {
-		return nil, err
-	}
+
 	return &App{
 		Commands: Commands{
-			LoadBeq:        beqHandler,
 			ProcessWebhook: processWebhookHandler,
 		},
 		Queries: Queries{

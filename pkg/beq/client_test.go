@@ -837,7 +837,6 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "Extended",
 			MediaType:       "movie",
-			Devices:         []string{"master", "master2"},
 			Slots:           []int{1},
 		},
 		// {
@@ -851,7 +850,6 @@ func TestLoadProfile(t *testing.T) {
 		// 	PreferredAuthor: "none",
 		// 	Edition:         "",
 		// 	MediaType:       "movie",
-		// 	Devices:         []string{"master", "master2"},
 		// 	Slots:           []int{1},
 		// },
 		{
@@ -865,7 +863,6 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "",
 			MediaType:       "movie",
-			Devices:         []string{"master", "master2"},
 			Slots:           []int{1},
 		},
 		// DD+Atmos5.1Maybe //underwater
@@ -880,7 +877,6 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "",
 			MediaType:       "movie",
-			Devices:         []string{"master", "master2"},
 			Slots:           []int{1},
 		},
 		{
@@ -894,7 +890,6 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "",
 			MediaType:       "movie",
-			Devices:         []string{"master", "master2"},
 			Slots:           []int{1},
 		},
 	}
