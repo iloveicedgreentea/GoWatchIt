@@ -9,6 +9,7 @@ import (
 
 	l "log"
 
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,7 +54,7 @@ func TestMain(m *testing.M) {
 
 func TestEZBEQConfig(t *testing.T) {
 	// Test saving EZBEQ config
-	ezbeqConfig := &EZBEQConfig{
+	ezbeqConfig := &configmodels.EZBEQConfig{
 		AdjustMasterVolumeWithProfile: true,
 		DenonIP:                       "192.168.1.100",
 		DenonPort:                     "8080",
@@ -61,15 +62,15 @@ func TestEZBEQConfig(t *testing.T) {
 		Enabled:                       true,
 		EnableTVBEQ:                   true,
 		NotifyOnLoad:                  true,
-		NotifyOnUnLoad:                true,
+		NotifyOnUnload:                true,
 		Port:                          "8081",
 		PreferredAuthor:               "TestAuthor",
-		Slots:                         []int{1, 2, 3},
+		Slots:                         []int32{1, 2, 3},
 		StopPlexIfMismatch:            false,
-		URL:                           "http://ezbeq.example.com",
+		Url:                           "http://ezbeq.example.com",
 		UseAVRCodecSearch:             true,
-		AVRBrand:                      "TestBrand",
-		AVRURL:                        "http://avr.example.com",
+		AvrBrand:                      "TestBrand",
+		AvrURL:                        "http://avr.example.com",
 	}
 
 	err := GetConfig().SaveConfig(ezbeqConfig)
@@ -84,7 +85,7 @@ func TestEZBEQConfig(t *testing.T) {
 	assert.False(t, IsBeqDryRun(ctx))
 
 	// Test loading full config
-	var loadedConfig EZBEQConfig
+	var loadedConfig configmodels.EZBEQConfig
 	err = GetConfig().LoadConfig(context.Background(), &loadedConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, ezbeqConfig.AdjustMasterVolumeWithProfile, loadedConfig.AdjustMasterVolumeWithProfile)
@@ -94,29 +95,29 @@ func TestEZBEQConfig(t *testing.T) {
 	assert.Equal(t, ezbeqConfig.Enabled, loadedConfig.Enabled)
 	assert.Equal(t, ezbeqConfig.EnableTVBEQ, loadedConfig.EnableTVBEQ)
 	assert.Equal(t, ezbeqConfig.NotifyOnLoad, loadedConfig.NotifyOnLoad)
-	assert.Equal(t, ezbeqConfig.NotifyOnUnLoad, loadedConfig.NotifyOnUnLoad)
+	assert.Equal(t, ezbeqConfig.NotifyOnUnload, loadedConfig.NotifyOnUnload)
 	assert.Equal(t, ezbeqConfig.Port, loadedConfig.Port)
 	assert.Equal(t, ezbeqConfig.PreferredAuthor, loadedConfig.PreferredAuthor)
 	assert.Equal(t, ezbeqConfig.Slots, loadedConfig.Slots, "Slots should be equal to %v but got %v", ezbeqConfig.Slots, loadedConfig.Slots)
 	assert.Equal(t, ezbeqConfig.StopPlexIfMismatch, loadedConfig.StopPlexIfMismatch)
-	assert.Equal(t, ezbeqConfig.URL, loadedConfig.URL)
+	assert.Equal(t, ezbeqConfig.Url, loadedConfig.Url)
 	assert.Equal(t, ezbeqConfig.UseAVRCodecSearch, loadedConfig.UseAVRCodecSearch)
-	assert.Equal(t, ezbeqConfig.AVRBrand, loadedConfig.AVRBrand)
-	assert.Equal(t, ezbeqConfig.AVRURL, loadedConfig.AVRURL)
+	assert.Equal(t, ezbeqConfig.AvrBrand, loadedConfig.AvrBrand)
+	assert.Equal(t, ezbeqConfig.AvrURL, loadedConfig.AvrURL)
 }
 
 func TestHomeAssistantConfig(t *testing.T) {
 	// Test saving HomeAssistant config
-	haConfig := &HomeAssistantConfig{
+	haConfig := &configmodels.HomeAssistantConfig{
 		Enabled:                         true,
 		Port:                            "8123",
 		RemoteEntityName:                "remote.living_room",
 		Token:                           "test_token",
 		TriggerAspectRatioChangeOnEvent: true,
-		URL:                             "homeassistant.local",
-		Scheme:                          "http",
+		Url:                             "homeassistant.local",
+		Scheme:                          configmodels.HomeAssistantConfigSchemeHttp,
 		NotifyEndpointName:              "test_endpoint",
-		NotifyDisplayTime:               5,
+		NotifyDisplayTime:               5000,
 	}
 
 	err := GetConfig().SaveConfig(haConfig)
@@ -127,7 +128,7 @@ func TestHomeAssistantConfig(t *testing.T) {
 	assert.True(t, IsHomeAssistantEnabled(ctx))
 
 	// Test loading full config
-	var loadedConfig HomeAssistantConfig
+	var loadedConfig configmodels.HomeAssistantConfig
 	err = GetConfig().LoadConfig(context.Background(), &loadedConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, haConfig.Enabled, loadedConfig.Enabled)
@@ -135,7 +136,7 @@ func TestHomeAssistantConfig(t *testing.T) {
 	assert.Equal(t, haConfig.RemoteEntityName, loadedConfig.RemoteEntityName)
 	assert.Equal(t, haConfig.Token, loadedConfig.Token)
 	assert.Equal(t, haConfig.TriggerAspectRatioChangeOnEvent, loadedConfig.TriggerAspectRatioChangeOnEvent)
-	assert.Equal(t, haConfig.URL, loadedConfig.URL)
+	assert.Equal(t, haConfig.Url, loadedConfig.Url)
 	assert.Equal(t, haConfig.Scheme, loadedConfig.Scheme)
 	assert.Equal(t, haConfig.NotifyEndpointName, loadedConfig.NotifyEndpointName)
 	assert.Equal(t, haConfig.NotifyDisplayTime, loadedConfig.NotifyDisplayTime)

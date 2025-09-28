@@ -134,14 +134,19 @@ func (c *Config) SaveConfig(cfg interface{}) error {
 			columns = append(columns, dbTag)
 			placeholders = append(placeholders, "?")
 
-			// Special handling for slices - convert to JSON string
-			if v.Field(i).Kind() == reflect.Slice {
+			// Special handling for ID field - always use 1 for upsert behavior
+			switch {
+			case dbTag == "id":
+				var idValue int64 = 1
+				values = append(values, idValue)
+			case v.Field(i).Kind() == reflect.Slice:
+				// Special handling for slices - convert to JSON string
 				jsonBytes, err := json.Marshal(v.Field(i).Interface())
 				if err != nil {
 					return fmt.Errorf("failed to marshal slice field %s: %v", field.Name, err)
 				}
 				values = append(values, string(jsonBytes))
-			} else {
+			default:
 				values = append(values, v.Field(i).Interface())
 			}
 		}

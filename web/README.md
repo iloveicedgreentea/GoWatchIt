@@ -1,50 +1,133 @@
-# React + TypeScript + Vite
+# GoWatchIt Web Interface
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite web interface for GoWatchIt configuration management.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- [Bun](https://bun.sh/) - Fast JavaScript runtime and package manager
+- Node.js 18+ (for compatibility)
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+# Install dependencies
+bun install
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Development
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+```bash
+# Start development server
+bun run dev
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+# Build for production
+bun run build
+
+# Preview production build
+bun run preview
+
+# Run linting
+bun run lint
 ```
+
+## TypeSpec Integration
+
+This web interface uses automatically generated types and schemas from TypeSpec models. The configuration UI is dynamically generated from JSON Schema files.
+
+### Generated Files
+
+- `src/types/typespec-types.ts` - TypeScript types generated from OpenAPI
+- `src/schemas/*.json` - JSON Schema files for UI generation
+
+### Development Workflow
+
+1. Make changes to TypeSpec models in `../typespec/config/config.tsp`
+2. Run `just typespec-generate` from project root to regenerate all artifacts
+3. The web interface automatically uses the updated schemas
+
+### Configuration Schema Generation
+
+The configuration UI is automatically generated from TypeSpec JSON Schema files:
+
+- **Field Types**: Automatically mapped from JSON Schema types
+- **Validation**: Patterns, min/max values from schema
+- **Descriptions**: Documentation from TypeSpec `@doc` decorators
+- **Examples**: Placeholder values from TypeSpec `@example` decorators
+- **Default Values**: From TypeSpec model defaults
+
+### Manual Schema Updates
+
+If you need to manually update schemas (not recommended):
+
+```bash
+# Copy latest schemas from TypeSpec
+just typespec-copy-schemas
+```
+
+## Project Structure
+
+```
+web/
+├── src/
+│   ├── components/
+│   │   ├── config/         # Configuration form components
+│   │   ├── layout/         # Layout components
+│   │   └── ui/            # Reusable UI components
+│   ├── lib/
+│   │   └── schema-loader.ts # JSON Schema to UI transformation
+│   ├── pages/
+│   │   └── ConfigurationPage.tsx # Main config page
+│   ├── schemas/           # Generated JSON Schema files
+│   └── types/
+│       ├── config.ts      # Configuration types
+│       └── typespec-types.ts # Generated TypeScript types
+├── package.json
+└── vite.config.ts
+```
+
+## Configuration Components
+
+### ConfigurationPage
+
+Main page that loads and displays configuration sections dynamically from TypeSpec schemas.
+
+### ConfigSection
+
+Renders a configuration section with enable/disable toggle and fields.
+
+### Schema Loader
+
+Transforms JSON Schema files into UI-friendly configuration objects with proper field types, validation, and metadata.
+
+## Type Safety
+
+All configuration types are generated from TypeSpec models ensuring:
+
+- **Compile-time type checking** between frontend and backend
+- **Automatic UI updates** when schema changes
+- **Single source of truth** for all configuration models
+
+## API Integration
+
+The configuration interface communicates with the Go backend using TypeSpec-generated types:
+
+```typescript
+// All types are automatically generated and type-safe
+const config: AppConfig = await fetch("/api/config").then((r) => r.json());
+```
+
+## Troubleshooting
+
+### Schema Changes Not Reflecting
+
+Run `just typespec-generate` from the project root to regenerate all schemas and types.
+
+### TypeScript Errors
+
+Ensure TypeSpec generation completed successfully and all generated files are present in `src/schemas/` and `src/types/`.
+
+### Build Issues
+
+1. Clear node_modules: `rm -rf node_modules && bun install`
+2. Clear Vite cache: `rm -rf node_modules/.vite`
+3. Regenerate schemas: `just typespec-generate`

@@ -1,0 +1,35 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "AppConfig.json",
+    "type": "object",
+    "properties": {
+        "ezbeq": {
+            "$ref": "EZBEQConfig.json",
+            "description": "EzBEQ integration settings"
+        },
+        "homeAssistant": {
+            "$ref": "HomeAssistantConfig.json",
+            "description": "Home Assistant integration settings"
+        },
+        "player": {
+            "$ref": "PlayerConfig.json",
+            "description": "Media player settings"
+        },
+        "main": {
+            "$ref": "MainConfig.json",
+            "description": "Main application settings"
+        },
+        "hdmiSync": {
+            "$ref": "HDMISyncConfig.json",
+            "description": "HDMI sync settings"
+        }
+    },
+    "required": [
+        "ezbeq",
+        "homeAssistant",
+        "player",
+        "main",
+        "hdmiSync"
+    ],
+    "description": "Complete application configuration"
+}

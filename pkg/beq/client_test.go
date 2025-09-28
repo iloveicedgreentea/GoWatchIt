@@ -11,6 +11,7 @@ import (
 
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/editions"
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -49,12 +50,12 @@ func TestMain(m *testing.M) {
 		cf := config.GetConfig()
 
 		// populate test data
-		beqCfg := config.EZBEQConfig{
+		beqCfg := configmodels.EZBEQConfig{
 			Enabled:              true,
 			DryRun:               true,
-			URL:                  "ezbeq.local",
+			Url:                  "ezbeq.local",
 			Port:                 "8080",
-			Scheme:               "http",
+			Scheme:               configmodels.EZBEQConfigSchemeHttp,
 			LooseEditionMatching: false,
 			SkipEditionMatching:  false,
 		}
@@ -837,7 +838,7 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "Extended",
 			MediaType:       "movie",
-			Slots:           []int{1},
+			Slots:           []int32{1},
 		},
 		// {
 		// 	TMDB:            "56292",
@@ -863,7 +864,7 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "",
 			MediaType:       "movie",
-			Slots:           []int{1},
+			Slots:           []int32{1},
 		},
 		// DD+Atmos5.1Maybe //underwater
 		{
@@ -877,7 +878,7 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "",
 			MediaType:       "movie",
-			Slots:           []int{1},
+			Slots:           []int32{1},
 		},
 		{
 			TMDB:            "804095",
@@ -890,7 +891,7 @@ func TestLoadProfile(t *testing.T) {
 			PreferredAuthor: "none",
 			Edition:         "",
 			MediaType:       "movie",
-			Slots:           []int{1},
+			Slots:           []int32{1},
 		},
 	}
 

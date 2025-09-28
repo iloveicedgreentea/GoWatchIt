@@ -1,0 +1,167 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "EZBEQConfig.json",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database ID (internal use only)"
+        },
+        "adjustMasterVolumeWithProfile": {
+            "type": "boolean",
+            "default": true,
+            "description": "Adjust master volume with profile"
+        },
+        "denonIP": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "192.168.1.100"
+            ],
+            "pattern": "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$|^[a-z0-9.-]+$",
+            "description": "Denon AVR IP address"
+        },
+        "denonPort": {
+            "type": "string",
+            "default": "23",
+            "examples": [
+                "23"
+            ],
+            "description": "Denon AVR port"
+        },
+        "dryRun": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable dry run mode (no actual changes)"
+        },
+        "enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable EzBEQ integration"
+        },
+        "enableTVBEQ": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable TV BEQ profiles"
+        },
+        "notifyOnLoad": {
+            "type": "boolean",
+            "default": false,
+            "description": "Send notification when profile is loaded"
+        },
+        "notifyOnUnload": {
+            "type": "boolean",
+            "default": false,
+            "description": "Send notification when profile is unloaded"
+        },
+        "preferredAuthor": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "aron7awol"
+            ],
+            "description": "Preferred BEQ author"
+        },
+        "slots": {
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": -2147483648,
+                "maximum": 2147483647
+            },
+            "minItems": 0,
+            "maxItems": 4,
+            "description": "MiniDSP slot numbers"
+        },
+        "stopPlexIfMismatch": {
+            "type": "boolean",
+            "default": false,
+            "description": "Stop Plex playback if BEQ profile doesn't match"
+        },
+        "port": {
+            "type": "string",
+            "default": "8080",
+            "examples": [
+                "8080"
+            ],
+            "description": "EzBEQ server port"
+        },
+        "url": {
+            "type": "string",
+            "default": "ezbeq.local",
+            "examples": [
+                "ezbeq.local"
+            ],
+            "pattern": "^[a-z0-9.-]+$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+            "description": "EzBEQ server hostname or IP address"
+        },
+        "scheme": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "const": "http"
+                },
+                {
+                    "type": "string",
+                    "const": "https"
+                }
+            ],
+            "default": "http",
+            "description": "Connection protocol"
+        },
+        "useAVRCodecSearch": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use AVR codec search for BEQ profiles"
+        },
+        "avrBrand": {
+            "type": "string",
+            "default": "Denon",
+            "examples": [
+                "Denon"
+            ],
+            "description": "AVR brand (Denon, Marantz, etc.)"
+        },
+        "avrURL": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "http://192.168.1.100"
+            ],
+            "pattern": "^https?://",
+            "description": "AVR API URL"
+        },
+        "looseEditionMatching": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable loose edition matching"
+        },
+        "skipEditionMatching": {
+            "type": "boolean",
+            "default": false,
+            "description": "Skip edition matching entirely"
+        }
+    },
+    "required": [
+        "adjustMasterVolumeWithProfile",
+        "denonIP",
+        "denonPort",
+        "dryRun",
+        "enabled",
+        "enableTVBEQ",
+        "notifyOnLoad",
+        "notifyOnUnload",
+        "preferredAuthor",
+        "slots",
+        "stopPlexIfMismatch",
+        "port",
+        "url",
+        "scheme",
+        "useAVRCodecSearch",
+        "avrBrand",
+        "avrURL",
+        "looseEditionMatching",
+        "skipEditionMatching"
+    ],
+    "description": "EzBEQ integration configuration"
+}

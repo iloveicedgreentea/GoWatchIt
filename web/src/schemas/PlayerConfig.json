@@ -1,0 +1,114 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "PlayerConfig.json",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database ID (internal use only)"
+        },
+        "playerType": {
+            "$ref": "#/$defs/Player",
+            "default": "Plex",
+            "description": "Type of media player"
+        },
+        "token": {
+            "type": "string",
+            "default": "",
+            "format": "password",
+            "description": "Authentication token for the media player"
+        },
+        "userID": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "123456789"
+            ],
+            "description": "User ID for players that require it"
+        },
+        "url": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "plex.local"
+            ],
+            "pattern": "^[a-z0-9.-]+$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+            "description": "Media player URL"
+        },
+        "port": {
+            "type": "string",
+            "default": "32400",
+            "examples": [
+                "32400"
+            ],
+            "description": "Media player port"
+        },
+        "scheme": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "const": "http"
+                },
+                {
+                    "type": "string",
+                    "const": "https"
+                }
+            ],
+            "default": "http",
+            "description": "Connection protocol"
+        },
+        "deviceUUIDFilter": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "abc123,def456"
+            ],
+            "description": "Filter by device UUID (comma-separated for multiple)"
+        },
+        "ownerNameFilter": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "John Doe"
+            ],
+            "description": "Filter by owner name"
+        },
+        "skipTMDB": {
+            "type": "boolean",
+            "default": false,
+            "description": "Skip TMDB metadata lookup (Jellyfin only)"
+        },
+        "mediaEntityName": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "media_player.living_room"
+            ],
+            "description": "Media entity name (Home Assistant only)"
+        }
+    },
+    "required": [
+        "playerType",
+        "token",
+        "userID",
+        "url",
+        "port",
+        "scheme",
+        "deviceUUIDFilter",
+        "ownerNameFilter",
+        "skipTMDB",
+        "mediaEntityName"
+    ],
+    "description": "Media player configuration",
+    "$defs": {
+        "Player": {
+            "type": "string",
+            "enum": [
+                "Plex",
+                "Jellyfin",
+                "HomeAssistant"
+            ],
+            "description": "Supported media player types"
+        }
+    }
+}

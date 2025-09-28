@@ -5,15 +5,16 @@ import (
 	"fmt"
 
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 )
 
 func getDbModels() []interface{} {
 	return []interface{}{
-		&EZBEQConfig{},
-		&HomeAssistantConfig{},
-		&PlayerConfig{},
-		&MainConfig{},
-		&HDMISyncConfig{},
+		&configmodels.EZBEQConfig{},
+		&configmodels.HomeAssistantConfig{},
+		&configmodels.PlayerConfig{},
+		&configmodels.MainConfig{},
+		&configmodels.HDMISyncConfig{},
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
 	"github.com/iloveicedgreentea/gowatchit/pkg/events"
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/jellyfin"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/mediaplayer"
 	"github.com/stretchr/testify/assert"
@@ -84,10 +85,10 @@ func TestMain(m *testing.M) {
 		cf := config.GetConfig()
 
 		// populate test data
-		plexCfg := config.PlayerConfig{
-			URL:              "192.168.88.56",
+		plexCfg := configmodels.PlayerConfig{
+			Url:              "192.168.88.56",
 			Port:             "32400",
-			Scheme:           "http",
+			Scheme:           configmodels.PlayerConfigSchemeHttp,
 			DeviceUUIDFilter: "player-id",
 			OwnerNameFilter:  "o",
 		}

@@ -1,0 +1,78 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "HDMISyncConfig.json",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database ID (internal use only)"
+        },
+        "enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable HDMI sync"
+        },
+        "source": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "HDMI1"
+            ],
+            "description": "HDMI source input"
+        },
+        "time": {
+            "type": "string",
+            "default": "500",
+            "examples": [
+                "500"
+            ],
+            "description": "Sync timing in milliseconds"
+        },
+        "envy": {
+            "type": "string",
+            "default": "",
+            "description": "Envy device identifier"
+        },
+        "playerIP": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "192.168.1.50"
+            ],
+            "pattern": "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+            "description": "Media player IP address"
+        },
+        "playerMachineIdentifier": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "abc123def456"
+            ],
+            "description": "Media player machine identifier"
+        },
+        "scheme": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "const": "http"
+                },
+                {
+                    "type": "string",
+                    "const": "https"
+                }
+            ],
+            "default": "http",
+            "description": "Connection protocol"
+        }
+    },
+    "required": [
+        "enabled",
+        "source",
+        "time",
+        "envy",
+        "playerIP",
+        "playerMachineIdentifier",
+        "scheme"
+    ],
+    "description": "HDMI sync configuration"
+}

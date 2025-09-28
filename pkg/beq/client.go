@@ -529,7 +529,7 @@ func (c *BeqClient) LoadBeqProfile(ctx context.Context, m *BEQPayload) error {
 		log.Info("Targeting all configured BEQ slots for load operation", zap.Any("slots", m.Slots))
 		for _, slotNum := range m.Slots {
 			payload.Slots = append(payload.Slots, SlotsV2{
-				ID:     strconv.Itoa(slotNum),
+				ID:     strconv.Itoa(int(slotNum)),
 				Gains:  []float64{m.MVAdjust, m.MVAdjust},
 				Active: true,
 				Mutes:  []bool{false, false},
@@ -598,7 +598,7 @@ func (c *BeqClient) UnloadBeqProfile(ctx context.Context, m *BEQPayload) error {
 		log.Info("Targeting all configured BEQ slots for unload operation", zap.Any("slots", m.Slots))
 		for _, slotNum := range m.Slots {
 			payload.Slots = append(payload.Slots, SlotsV2{
-				ID:     strconv.Itoa(slotNum),
+				ID:     strconv.Itoa(int(slotNum)),
 				Active: false,
 				Entry:  "",
 				Gains:  []float64{0, 0},

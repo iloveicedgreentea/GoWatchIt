@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "MainConfig.json",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database ID (internal use only)"
+        },
+        "listenPort": {
+            "type": "string",
+            "default": "9999",
+            "examples": [
+                "9999"
+            ],
+            "description": "Port for the webhook server to listen on"
+        }
+    },
+    "required": [
+        "listenPort"
+    ],
+    "description": "Main application configuration"
+}

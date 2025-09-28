@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -29,15 +30,15 @@ func (h *SaveConfigHandler) Handle(ctx context.Context, cmd *SaveConfigCommand) 
 	}
 
 	configTypes := map[string]interface{}{
-		"ezbeq":         &config.EZBEQConfig{},
-		"homeassistant": &config.HomeAssistantConfig{},
-		"hdmisync":      &config.HDMISyncConfig{},
-		"main":          &config.MainConfig{},
+		"ezbeq":         &configmodels.EZBEQConfig{},
+		"homeassistant": &configmodels.HomeAssistantConfig{},
+		"hdmisync":      &configmodels.HDMISyncConfig{},
+		"main":          &configmodels.MainConfig{},
 	}
 
 	for name, data := range cmd.ConfigData {
 		if name == "players" {
-			var playerConfigs []config.PlayerConfig
+			var playerConfigs []configmodels.PlayerConfig
 			if err := json.Unmarshal(data, &playerConfigs); err != nil {
 				return fmt.Errorf("invalid player configs: %w", err)
 			}

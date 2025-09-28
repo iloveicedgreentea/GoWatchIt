@@ -1,0 +1,469 @@
+openapi: 3.0.0
+info:
+  title: GoWatchIt Configuration API
+  version: 0.0.0
+tags: []
+paths:
+  /config:
+    get:
+      operationId: ConfigAPI_getConfig
+      description: Get the complete application configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfig'
+    put:
+      operationId: ConfigAPI_updateConfig
+      description: Update the complete application configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfig'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppConfig'
+  /config/ezbeq:
+    get:
+      operationId: ConfigAPI_getEzbeqConfig
+      description: Get EzBEQ configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EZBEQConfig'
+  /config/hdmi-sync:
+    get:
+      operationId: ConfigAPI_getHdmiSyncConfig
+      description: Get HDMI sync configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HDMISyncConfig'
+  /config/homeassistant:
+    get:
+      operationId: ConfigAPI_getHaConfig
+      description: Get Home Assistant configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeAssistantConfig'
+  /config/main:
+    get:
+      operationId: ConfigAPI_getMainConfig
+      description: Get main configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConfig'
+  /config/player:
+    get:
+      operationId: ConfigAPI_getPlayerConfig
+      description: Get player configuration
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerConfig'
+components:
+  schemas:
+    AppConfig:
+      type: object
+      required:
+        - ezbeq
+        - homeAssistant
+        - player
+        - main
+        - hdmiSync
+      properties:
+        ezbeq:
+          allOf:
+            - $ref: '#/components/schemas/EZBEQConfig'
+          description: EzBEQ integration settings
+        homeAssistant:
+          allOf:
+            - $ref: '#/components/schemas/HomeAssistantConfig'
+          description: Home Assistant integration settings
+        player:
+          allOf:
+            - $ref: '#/components/schemas/PlayerConfig'
+          description: Media player settings
+        main:
+          allOf:
+            - $ref: '#/components/schemas/MainConfig'
+          description: Main application settings
+        hdmiSync:
+          allOf:
+            - $ref: '#/components/schemas/HDMISyncConfig'
+          description: HDMI sync settings
+      description: Complete application configuration
+    EZBEQConfig:
+      type: object
+      required:
+        - adjustMasterVolumeWithProfile
+        - denonIP
+        - denonPort
+        - dryRun
+        - enabled
+        - enableTVBEQ
+        - notifyOnLoad
+        - notifyOnUnload
+        - preferredAuthor
+        - slots
+        - stopPlexIfMismatch
+        - port
+        - url
+        - scheme
+        - useAVRCodecSearch
+        - avrBrand
+        - avrURL
+        - looseEditionMatching
+        - skipEditionMatching
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Database ID (internal use only)
+          readOnly: true
+        adjustMasterVolumeWithProfile:
+          type: boolean
+          description: Adjust master volume with profile
+          default: true
+        denonIP:
+          type: string
+          pattern: ^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[a-z0-9.-]+$
+          description: Denon AVR IP address
+          example: 192.168.1.100
+          default: ''
+        denonPort:
+          type: string
+          description: Denon AVR port
+          example: '23'
+          default: '23'
+        dryRun:
+          type: boolean
+          description: Enable dry run mode (no actual changes)
+          default: false
+        enabled:
+          type: boolean
+          description: Enable EzBEQ integration
+          default: false
+        enableTVBEQ:
+          type: boolean
+          description: Enable TV BEQ profiles
+          default: false
+        notifyOnLoad:
+          type: boolean
+          description: Send notification when profile is loaded
+          default: false
+        notifyOnUnload:
+          type: boolean
+          description: Send notification when profile is unloaded
+          default: false
+        preferredAuthor:
+          type: string
+          description: Preferred BEQ author
+          example: aron7awol
+          default: ''
+        slots:
+          type: array
+          items:
+            type: integer
+            format: int32
+          minItems: 0
+          maxItems: 4
+          description: MiniDSP slot numbers
+          default: []
+        stopPlexIfMismatch:
+          type: boolean
+          description: Stop Plex playback if BEQ profile doesn't match
+          default: false
+        port:
+          type: string
+          description: EzBEQ server port
+          example: '8080'
+          default: '8080'
+        url:
+          type: string
+          pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
+          description: EzBEQ server hostname or IP address
+          example: ezbeq.local
+          default: ezbeq.local
+        scheme:
+          type: string
+          enum:
+            - http
+            - https
+          description: Connection protocol
+          default: http
+        useAVRCodecSearch:
+          type: boolean
+          description: Use AVR codec search for BEQ profiles
+          default: false
+        avrBrand:
+          type: string
+          description: AVR brand (Denon, Marantz, etc.)
+          example: Denon
+          default: Denon
+        avrURL:
+          type: string
+          pattern: ^https?://
+          description: AVR API URL
+          example: http://192.168.1.100
+          default: ''
+        looseEditionMatching:
+          type: boolean
+          description: Enable loose edition matching
+          default: false
+        skipEditionMatching:
+          type: boolean
+          description: Skip edition matching entirely
+          default: false
+      description: EzBEQ integration configuration
+    HDMISyncConfig:
+      type: object
+      required:
+        - enabled
+        - source
+        - time
+        - envy
+        - playerIP
+        - playerMachineIdentifier
+        - scheme
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Database ID (internal use only)
+          readOnly: true
+        enabled:
+          type: boolean
+          description: Enable HDMI sync
+          default: false
+        source:
+          type: string
+          description: HDMI source input
+          example: HDMI1
+          default: ''
+        time:
+          type: string
+          description: Sync timing in milliseconds
+          example: '500'
+          default: '500'
+        envy:
+          type: string
+          description: Envy device identifier
+          default: ''
+        playerIP:
+          type: string
+          pattern: ^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
+          description: Media player IP address
+          example: 192.168.1.50
+          default: ''
+        playerMachineIdentifier:
+          type: string
+          description: Media player machine identifier
+          example: abc123def456
+          default: ''
+        scheme:
+          type: string
+          enum:
+            - http
+            - https
+          description: Connection protocol
+          default: http
+      description: HDMI sync configuration
+    HomeAssistantConfig:
+      type: object
+      required:
+        - enabled
+        - remoteEntityName
+        - token
+        - triggerAspectRatioChangeOnEvent
+        - notifyEndpointName
+        - notifyDisplayTime
+        - url
+        - port
+        - scheme
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Database ID (internal use only)
+          readOnly: true
+        enabled:
+          type: boolean
+          description: Enable Home Assistant integration
+          default: false
+        remoteEntityName:
+          type: string
+          description: Remote entity name in Home Assistant
+          example: remote.shield_tv
+          default: ''
+        token:
+          type: string
+          format: password
+          description: Home Assistant authentication token
+          default: ''
+        triggerAspectRatioChangeOnEvent:
+          type: boolean
+          description: Trigger aspect ratio change on media events
+          default: false
+        notifyEndpointName:
+          type: string
+          description: Notification endpoint name
+          example: notify.tv
+          default: ''
+        notifyDisplayTime:
+          type: integer
+          format: int32
+          minimum: 1000
+          maximum: 30000
+          description: Notification display time in milliseconds
+          default: 5000
+        url:
+          type: string
+          pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
+          description: Home Assistant URL
+          example: homeassistant.local
+          default: ''
+        port:
+          type: string
+          description: Home Assistant port
+          example: '8123'
+          default: '8123'
+        scheme:
+          type: string
+          enum:
+            - http
+            - https
+          description: Connection protocol
+          default: http
+      description: Home Assistant integration configuration
+    MainConfig:
+      type: object
+      required:
+        - listenPort
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Database ID (internal use only)
+          readOnly: true
+        listenPort:
+          type: string
+          description: Port for the webhook server to listen on
+          example: '9999'
+          default: '9999'
+      description: Main application configuration
+    Player:
+      type: string
+      enum:
+        - Plex
+        - Jellyfin
+        - HomeAssistant
+      description: Supported media player types
+    PlayerConfig:
+      type: object
+      required:
+        - playerType
+        - token
+        - userID
+        - url
+        - port
+        - scheme
+        - deviceUUIDFilter
+        - ownerNameFilter
+        - skipTMDB
+        - mediaEntityName
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Database ID (internal use only)
+          readOnly: true
+        playerType:
+          allOf:
+            - $ref: '#/components/schemas/Player'
+          description: Type of media player
+          default: Plex
+        token:
+          type: string
+          format: password
+          description: Authentication token for the media player
+          default: ''
+        userID:
+          type: string
+          description: User ID for players that require it
+          example: '123456789'
+          default: ''
+        url:
+          type: string
+          pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
+          description: Media player URL
+          example: plex.local
+          default: ''
+        port:
+          type: string
+          description: Media player port
+          example: '32400'
+          default: '32400'
+        scheme:
+          type: string
+          enum:
+            - http
+            - https
+          description: Connection protocol
+          default: http
+        deviceUUIDFilter:
+          type: string
+          description: Filter by device UUID (comma-separated for multiple)
+          example: abc123,def456
+          default: ''
+        ownerNameFilter:
+          type: string
+          description: Filter by owner name
+          example: John Doe
+          default: ''
+        skipTMDB:
+          type: boolean
+          description: Skip TMDB metadata lookup (Jellyfin only)
+          default: false
+        mediaEntityName:
+          type: string
+          description: Media entity name (Home Assistant only)
+          example: media_player.living_room
+          default: ''
+      description: Media player configuration
+servers:
+  - url: http://localhost:8080
+    description: Development server
+    variables: {}

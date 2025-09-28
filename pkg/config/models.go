@@ -1,75 +1,9 @@
 package config
 
-type EZBEQConfig struct {
-	ID                            int64  `json:"-" db:"id"`
-	AdjustMasterVolumeWithProfile bool   `json:"adjustmastervolumewithprofile" db:"adjust_master_volume_with_profile"`
-	DenonIP                       string `json:"denonip" db:"denon_ip"`
-	DenonPort                     string `json:"denonport" db:"denon_port"`
-	DryRun                        bool   `json:"dryrun" db:"dry_run"`
-	Enabled                       bool   `json:"enabled" db:"enabled"`
-	EnableTVBEQ                   bool   `json:"enabletvbeq" db:"enable_tv_beq"`
-	NotifyOnLoad                  bool   `json:"notifyonload" db:"notify_on_load"`
-	NotifyOnUnLoad                bool   `json:"notifyonunload" db:"notify_on_unload"`
-	PreferredAuthor               string `json:"preferredauthor" db:"preferred_author"`
-	Slots                         []int  `json:"slots" db:"slots"` // Store as JSON string in DB
-	StopPlexIfMismatch            bool   `json:"stopplexifmismatch" db:"stop_plex_if_mismatch"`
-	Port                          string `json:"port" db:"port"`
-	URL                           string `json:"url" db:"url"`
-	Scheme                        string `json:"scheme" db:"scheme"`
-	UseAVRCodecSearch             bool   `json:"useavrcodecsearch" db:"use_avr_codec_search"`
-	AVRBrand                      string `json:"avrbrand" db:"avr_brand"`
-	AVRURL                        string `json:"avrurl" db:"avr_url"`
-	LooseEditionMatching          bool   `json:"looseeditionmatching" db:"loose_edition_matching"`
-	SkipEditionMatching           bool   `json:"skipeditionmatching" db:"skip_edition_matching"`
-}
-
-type HomeAssistantConfig struct {
-	ID                              int64  `json:"-" db:"id"`
-	Enabled                         bool   `json:"enabled" db:"enabled"`
-	RemoteEntityName                string `json:"remoteentityname" db:"remote_entity_name"`
-	Token                           string `json:"token" db:"token"`
-	TriggerAspectRatioChangeOnEvent bool   `json:"triggeraspectratiochangeonevent" db:"trigger_aspect_ratio_change_on_event"`
-	NotifyEndpointName              string `json:"notifyendpointname" db:"notify_endpoint_name"`
-	NotifyDisplayTime               int    `json:"notifydisplaytime" db:"notify_display_time"`
-	URL                             string `json:"url" db:"url"`
-	Port                            string `json:"port" db:"port"`
-	Scheme                          string `json:"scheme" db:"scheme"`
-}
-
-type Player string
+import configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 
 const (
-	PlayerPlex          Player = "Plex"
-	PlayerJellyfin      Player = "Jellyfin"
-	PlayerHomeAssistant Player = "HomeAssistant"
+	PlayerPlex          configmodels.Player = "Plex"
+	PlayerJellyfin      configmodels.Player = "Jellyfin"
+	PlayerHomeAssistant configmodels.Player = "HomeAssistant"
 )
-
-type PlayerConfig struct {
-	ID               int64  `json:"-" db:"id"`
-	PlayerType       Player `json:"playertype" db:"player_type"` // Plex, Jellyfin, HomeAssistant, etc
-	Token            string `json:"token" db:"token"`            // Generic token field for players that use tokens
-	UserID           string `json:"userid" db:"user_id"`         // Generic userID field for players that use user IDs
-	URL              string `json:"url" db:"url"`
-	Port             string `json:"port" db:"port"`
-	Scheme           string `json:"scheme" db:"scheme"`
-	DeviceUUIDFilter string `json:"deviceuuidfilter" db:"device_uuid_filter"`
-	OwnerNameFilter  string `json:"ownernamefilter" db:"owner_name_filter"`
-	SkipTMDB         bool   `json:"skiptmdb" db:"skip_tmdb"`                // Specific to Jellyfin
-	MediaEntityName  string `json:"mediaentityname" db:"media_entity_name"` // Specific to HomeAssistant
-}
-
-type MainConfig struct {
-	ID         int64  `json:"-" db:"id"`
-	ListenPort string `json:"listenport" db:"listen_port"`
-}
-
-type HDMISyncConfig struct {
-	ID                      int64  `json:"-" db:"id"`
-	Enabled                 bool   `json:"enabled" db:"enabled"`
-	Source                  string `json:"source" db:"source"`
-	Time                    string `json:"time" db:"time"`
-	Envy                    string `json:"envy" db:"envy"`
-	PlayerIP                string `json:"playerip" db:"player_ip"`
-	PlayerMachineIdentifier string `json:"playermachineidentifier" db:"player_machine_identifier"`
-	Scheme                  string `json:"scheme" db:"scheme"`
-}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -14,8 +15,8 @@ func santizeURL(url string) string {
 	return url
 }
 
-func getHdmiSyncConfig(ctx context.Context) *HDMISyncConfig {
-	var config HDMISyncConfig
+func getHdmiSyncConfig(ctx context.Context) *configmodels.HDMISyncConfig {
+	var config configmodels.HDMISyncConfig
 	if err := globalConfig.LoadConfig(ctx, &config); err != nil {
 		log := logger.GetLoggerFromContext(ctx)
 		log.Error("Failed to load HDMISync config", zap.Error(err))
@@ -24,8 +25,8 @@ func getHdmiSyncConfig(ctx context.Context) *HDMISyncConfig {
 	return &config
 }
 
-func getHAConfig(ctx context.Context) *HomeAssistantConfig {
-	var config HomeAssistantConfig
+func getHAConfig(ctx context.Context) *configmodels.HomeAssistantConfig {
+	var config configmodels.HomeAssistantConfig
 	if err := globalConfig.LoadConfig(ctx, &config); err != nil {
 		log := logger.GetLoggerFromContext(ctx)
 		log.Error("Failed to load HomeAssistant config", zap.Error(err))
@@ -33,8 +34,8 @@ func getHAConfig(ctx context.Context) *HomeAssistantConfig {
 	return &config
 }
 
-func getEZBEQConfig(ctx context.Context) *EZBEQConfig {
-	var config EZBEQConfig
+func getEZBEQConfig(ctx context.Context) *configmodels.EZBEQConfig {
+	var config configmodels.EZBEQConfig
 	if err := globalConfig.LoadConfig(ctx, &config); err != nil {
 		log := logger.GetLoggerFromContext(ctx)
 		log.Error("Failed to load EZBEQ config", zap.Error(err))
@@ -42,17 +43,8 @@ func getEZBEQConfig(ctx context.Context) *EZBEQConfig {
 	return &config
 }
 
-func getMainConfig(ctx context.Context) *MainConfig {
-	var config MainConfig
-	if err := globalConfig.LoadConfig(ctx, &config); err != nil {
-		log := logger.GetLoggerFromContext(ctx)
-		log.Error("Failed to load Main config", zap.Error(err))
-	}
-	return &config
-}
-
-func getPlayerConfig(ctx context.Context) *PlayerConfig {
-	var config PlayerConfig
+func getPlayerConfig(ctx context.Context) *configmodels.PlayerConfig {
+	var config configmodels.PlayerConfig
 	if err := globalConfig.LoadConfig(ctx, &config); err != nil {
 		log := logger.GetLoggerFromContext(ctx)
 		log.Error("Failed to load Player config", zap.Error(err))
@@ -100,7 +92,7 @@ func GetHDMISyncMachineIdentifier(ctx context.Context) string {
 
 func GetHomeAssistantUrl(ctx context.Context) string {
 	if config := getHAConfig(ctx); config != nil {
-		url := santizeURL(config.URL)
+		url := santizeURL(config.Url)
 		if url == "" {
 			return "homeassistant.local"
 		}
@@ -114,7 +106,7 @@ func GetHomeAssistantScheme(ctx context.Context) string {
 		if config.Scheme == "" {
 			return "http"
 		}
-		return config.Scheme
+		return string(config.Scheme)
 	}
 	return "http"
 }
@@ -158,7 +150,7 @@ func GetHomeAssistantNotifyDisplayTime(ctx context.Context) int {
 			return 15 * 1000
 		}
 		// Convert configured seconds to milliseconds
-		return config.NotifyDisplayTime * 1000
+		return int(config.NotifyDisplayTime) * 1000
 	}
 	return 15 * 1000
 }
@@ -166,7 +158,7 @@ func GetHomeAssistantNotifyDisplayTime(ctx context.Context) int {
 // EZBeq
 func GetEZBeqUrl(ctx context.Context) string {
 	if config := getEZBEQConfig(ctx); config != nil {
-		url := santizeURL(config.URL)
+		url := santizeURL(config.Url)
 		if url == "" {
 			return "ezbeq.local"
 		}
@@ -180,7 +172,7 @@ func GetEZBeqScheme(ctx context.Context) string {
 		if config.Scheme == "" {
 			return "http"
 		}
-		return config.Scheme
+		return string(config.Scheme)
 	}
 	return "http"
 }
@@ -197,23 +189,23 @@ func GetEZBeqPort(ctx context.Context) string {
 
 func GetEZBeqAvrURL(ctx context.Context) string {
 	if config := getEZBEQConfig(ctx); config != nil {
-		return config.AVRURL
+		return config.AvrURL
 	}
 	return ""
 }
 
 func GetEZBeqAvrBrand(ctx context.Context) string {
 	if config := getEZBEQConfig(ctx); config != nil {
-		return config.AVRBrand
+		return config.AvrBrand
 	}
 	return ""
 }
 
-func GetEZBeqSlots(ctx context.Context) []int {
+func GetEZBeqSlots(ctx context.Context) []int32 {
 	if config := getEZBEQConfig(ctx); config != nil {
 		return config.Slots
 	}
-	return []int{}
+	return []int32{}
 }
 
 func GetEZBeqPreferredAuthor(ctx context.Context) string {
@@ -225,7 +217,7 @@ func GetEZBeqPreferredAuthor(ctx context.Context) string {
 
 // Player
 
-func GetPlayerType(ctx context.Context) Player {
+func GetPlayerType(ctx context.Context) configmodels.Player {
 	if config := getPlayerConfig(ctx); config != nil {
 		return config.PlayerType
 	}
@@ -234,7 +226,7 @@ func GetPlayerType(ctx context.Context) Player {
 
 func GetPlayerURL(ctx context.Context) string {
 	if config := getPlayerConfig(ctx); config != nil {
-		return santizeURL(config.URL)
+		return santizeURL(config.Url)
 	}
 	return ""
 }
@@ -261,7 +253,7 @@ func GetPlayerScheme(ctx context.Context) string {
 		if config.Scheme == "" {
 			return "http"
 		}
-		return config.Scheme
+		return string(config.Scheme)
 	}
 	return "http"
 }
@@ -300,7 +292,7 @@ func IsPlayerEnabled(ctx context.Context) bool {
 	// PlayerConfig doesn't have Enabled field, need to check if it's configured
 	if config := getPlayerConfig(ctx); config != nil {
 		// Check if player is configured (has URL or token)
-		return config.URL != "" || config.Token != ""
+		return config.Url != "" || config.Token != ""
 	}
 	return false
 }
@@ -329,7 +321,7 @@ func IsBeqNotifyOnLoadEnabled(ctx context.Context) bool {
 
 func IsBeqNotifyOnUnLoadEnabled(ctx context.Context) bool {
 	if config := getEZBEQConfig(ctx); config != nil {
-		return config.NotifyOnUnLoad
+		return config.NotifyOnUnload
 	}
 	return false
 }

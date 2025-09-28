@@ -19,7 +19,7 @@ type BEQPayload struct {
 	MVAdjust        float64
 	PreferredAuthor string
 	SkipSearch      bool
-	Slots           []int
+	Slots           []int32
 	Title           string
 	TMDB            string
 	Year            int

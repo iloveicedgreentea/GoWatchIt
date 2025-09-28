@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/iloveicedgreentea/gowatchit/pkg/config"
+	configmodels "github.com/iloveicedgreentea/gowatchit/pkg/gen/config"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -26,10 +27,10 @@ func (h *GetConfigHandler) Handle(ctx context.Context, query *GetConfigQuery) (m
 
 	configMap := make(map[string]interface{})
 
-	ezbeqConfig := &config.EZBEQConfig{}
-	haConfig := &config.HomeAssistantConfig{}
-	hdmiConfig := &config.HDMISyncConfig{}
-	mainConfig := &config.MainConfig{}
+	ezbeqConfig := &configmodels.EZBEQConfig{}
+	haConfig := &configmodels.HomeAssistantConfig{}
+	hdmiConfig := &configmodels.HDMISyncConfig{}
+	mainConfig := &configmodels.MainConfig{}
 
 	configs := map[string]interface{}{
 		"ezbeq":         ezbeqConfig,
@@ -47,7 +48,7 @@ func (h *GetConfigHandler) Handle(ctx context.Context, query *GetConfigQuery) (m
 	}
 
 	// Load player configs if they exist
-	playerConfig := &config.PlayerConfig{}
+	playerConfig := &configmodels.PlayerConfig{}
 	if err := cfg.LoadConfig(ctx, playerConfig); err == nil {
 		configMap["player"] = playerConfig
 	}

@@ -1,0 +1,13 @@
+emit:
+  - "@typespec/openapi3"
+  - "@typespec/json-schema"
+options:
+  "@typespec/openapi3":
+    emitter-output-dir: "{project-root}/generated/openapi"
+    omit-unreachable-types: true
+    file-type: yaml
+    output-file: "openapi.yaml"
+  "@typespec/json-schema":
+    emitter-output-dir: "{project-root}/generated/json-schema"
+    int64-strategy: number
+    file-type: json

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container } from '../components/layout/Container';
 import { ConfigSection } from '../components/config/Section';
 import { ConfigValue } from '../types/config';
-import { CONFIG_SCHEMA } from '../types/configOptions';
+import { generateConfigSchema } from '../lib/schema-loader';
 import { Form, FloatingButton, SaveButton } from '../components/ui/form';
 import { PageHeader } from '../components/layout/PageHeader';
 import { useToast } from '../components/providers/toast';
@@ -16,10 +16,25 @@ export default function ConfigurationPage() {
   const [config, setConfig] = useState<ConfigValue>({});
   const { addToast } = useToast();
 
+  // Generate config schema from TypeSpec JSON schemas
+  const configSchema = generateConfigSchema();
+
   // get config
   useEffect(() => {
     fetch(`${API_BASE_URL}${API_ENDPOINTS.CONFIG}`)
-      .then(res => res.json())
+      .then(async res => {
+        const text = await res.text();
+        console.log('Raw response:', text);
+        console.log('Response status:', res.status);
+        console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+
+        try {
+          return JSON.parse(text);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Invalid JSON response: ${text}`);
+        }
+      })
       .then(setConfig)
       .catch(error => {
         console.error('Error loading config:', error);
@@ -75,7 +90,7 @@ export default function ConfigurationPage() {
     <Container>
       <PageHeader title={TITLE} />
       <Form onSubmit={handleSubmit}>
-        {CONFIG_SCHEMA.map(section => (
+        {configSchema.map(section => (
           <ConfigSection
             key={section.name}
             name={section.name}

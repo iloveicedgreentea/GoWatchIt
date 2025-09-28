@@ -1,0 +1,22 @@
+{
+  "name": "@gowatchit/typespec",
+  "version": "1.0.0",
+  "description": "TypeSpec definitions for GoWatchIt configuration models",
+  "type": "module",
+  "scripts": {
+    "compile": "tsp compile .",
+    "watch": "tsp compile . --watch",
+    "format": "tsp format **/*.tsp",
+    "generate-go": "oapi-codegen -generate types -package config -o ../pkg/gen/config/models.go generated/openapi/openapi.yaml && cd ../scripts && go run . ../pkg/gen/config/models.go",
+    "generate-ts": "openapi-typescript generated/openapi/openapi.yaml -o generated/typescript/types.ts",
+    "generate-all": "bun run compile && bun run generate-go && bun run generate-ts"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "^0.64.0",
+    "@typespec/http": "^0.64.0",
+    "@typespec/json-schema": "^0.64.0",
+    "@typespec/openapi3": "^0.64.0",
+    "@typespec/rest": "^0.64.0",
+    "openapi-typescript": "^7.0.0"
+  }
+}

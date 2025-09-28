@@ -1,0 +1,93 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "HomeAssistantConfig.json",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database ID (internal use only)"
+        },
+        "enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable Home Assistant integration"
+        },
+        "remoteEntityName": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "remote.shield_tv"
+            ],
+            "description": "Remote entity name in Home Assistant"
+        },
+        "token": {
+            "type": "string",
+            "default": "",
+            "format": "password",
+            "description": "Home Assistant authentication token"
+        },
+        "triggerAspectRatioChangeOnEvent": {
+            "type": "boolean",
+            "default": false,
+            "description": "Trigger aspect ratio change on media events"
+        },
+        "notifyEndpointName": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "notify.tv"
+            ],
+            "description": "Notification endpoint name"
+        },
+        "notifyDisplayTime": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 30000,
+            "default": 5000,
+            "description": "Notification display time in milliseconds"
+        },
+        "url": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "homeassistant.local"
+            ],
+            "pattern": "^[a-z0-9.-]+$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$",
+            "description": "Home Assistant URL"
+        },
+        "port": {
+            "type": "string",
+            "default": "8123",
+            "examples": [
+                "8123"
+            ],
+            "description": "Home Assistant port"
+        },
+        "scheme": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "const": "http"
+                },
+                {
+                    "type": "string",
+                    "const": "https"
+                }
+            ],
+            "default": "http",
+            "description": "Connection protocol"
+        }
+    },
+    "required": [
+        "enabled",
+        "remoteEntityName",
+        "token",
+        "triggerAspectRatioChangeOnEvent",
+        "notifyEndpointName",
+        "notifyDisplayTime",
+        "url",
+        "port",
+        "scheme"
+    ],
+    "description": "Home Assistant integration configuration"
+}
