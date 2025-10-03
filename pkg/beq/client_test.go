@@ -486,44 +486,36 @@ func TestDualDevice(t *testing.T) {
 	}
 }
 
-func TestHasAuthor(t *testing.T) {
+func TestHasAuthors(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	type testStruct struct {
-		author   string
+		authors  []string
 		expected bool
 	}
 	tt := []testStruct{
 		{
-			author:   "aron7awol",
+			authors:  []string{"aron7awol"},
 			expected: true,
 		},
 		{
-			author:   "None",
+			authors:  []string{},
 			expected: false,
 		},
 		{
-			author:   " ",
+			authors:  nil,
 			expected: false,
 		},
 		{
-			author:   "",
-			expected: false,
-		},
-		{
-			author:   "none",
-			expected: false,
-		},
-		{
-			author:   "aron7awol, mobe1969",
+			authors:  []string{"aron7awol", "mobe1969"},
 			expected: true,
 		},
 	}
 	for i := range tt {
 		tc := tt[i] // Capture range variable
-		t.Run(fmt.Sprintf("Author_%s", tc.author), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Authors_%v", tc.authors), func(t *testing.T) {
 			t.Parallel()
-			s := hasAuthor(tc.author)
+			s := hasAuthors(tc.authors)
 			a.Equal(tc.expected, s)
 		})
 	}
@@ -548,11 +540,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// Stargate (1994) {edition-Extended Edition} Remux 1080p
 			m: BEQPayload{
-				TMDB:            "2164",
-				Year:            1994,
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "none",
-				Edition:         "Extended",
+				TMDB:             "2164",
+				Year:             1994,
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "Extended",
 			},
 			expectedEdition:  "Extended Cut",
 			expectedDigest:   "6d9cfaed8335a348491eebae27f7f5fb11752e32df64b46d24d6f995dd74d96d",
@@ -561,10 +553,10 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// Stargate (1994) {edition-Extended Edition} Remux 1080p no year
 			m: BEQPayload{
-				TMDB:            "2164",
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "none",
-				Edition:         "Extended",
+				TMDB:             "2164",
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "Extended",
 			},
 			expectedEdition:  "Extended Cut",
 			expectedDigest:   "6d9cfaed8335a348491eebae27f7f5fb11752e32df64b46d24d6f995dd74d96d",
@@ -573,11 +565,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// fast five extended
 			m: BEQPayload{
-				TMDB:            "51497",
-				Year:            2011,
-				Codec:           "DTS-X",
-				PreferredAuthor: "none",
-				Edition:         "Extended",
+				TMDB:             "51497",
+				Year:             2011,
+				Codec:            "DTS-X",
+				PreferredAuthors: []string{},
+				Edition:          "Extended",
 			},
 			expectedEdition:  "Extended",
 			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
@@ -586,22 +578,22 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// Jung E
 			m: BEQPayload{
-				TMDB:            "843794",
-				Year:            2023,
-				Codec:           "DD+ Atmos",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "843794",
+				Year:             2023,
+				Codec:            "DD+ Atmos",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition: "",
 			expectedDigest:  "1678d7860ead948132f70ba3d823d7493bb3bb79302f308d135176bf4ff6f7d0",
 		},
 		{
 			m: BEQPayload{
-				TMDB:            "51497",
-				Year:            2011,
-				Codec:           "DTS-X",
-				PreferredAuthor: "",
-				Edition:         "Extended",
+				TMDB:             "51497",
+				Year:             2011,
+				Codec:            "DTS-X",
+				PreferredAuthors: []string{},
+				Edition:          "Extended",
 			},
 			expectedEdition:  "Extended",
 			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
@@ -609,11 +601,11 @@ func TestSearchCatalog(t *testing.T) {
 		},
 		{
 			m: BEQPayload{
-				TMDB:            "51497",
-				Year:            2011,
-				Codec:           "DTS-X",
-				PreferredAuthor: "None",
-				Edition:         "Extended",
+				TMDB:             "51497",
+				Year:             2011,
+				Codec:            "DTS-X",
+				PreferredAuthors: []string{},
+				Edition:          "Extended",
 			},
 			expectedEdition:  "Extended",
 			expectedDigest:   "cd630eb58b05beb95ca47355c1d5014ea84e00ae8c8133573b77ee604cf7119c",
@@ -623,11 +615,11 @@ func TestSearchCatalog(t *testing.T) {
 			// 12 strong has multiple codecs AND authors, so good for testing
 			// return 7.1 version of aron7awol
 			m: BEQPayload{
-				TMDB:            "429351",
-				Year:            2018,
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "429351",
+				Year:             2018,
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
@@ -636,11 +628,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// return 7.1 version of mobe1969
 			m: BEQPayload{
-				TMDB:            "429351",
-				Year:            2018,
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "mobe1969",
-				Edition:         "",
+				TMDB:             "429351",
+				Year:             2018,
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{"mobe1969"},
+				Edition:          "",
 			},
 			expectedEdition: "",
 			expectedDigest:  "73a1eef9ce33abba7df0a9d2b4cec41254f6a521d521e104fa3cd2e7297c26d9",
@@ -648,11 +640,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// return 7.1 version with multiple authors
 			m: BEQPayload{
-				TMDB:            "429351",
-				Year:            2018,
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "mobe1969, aron7awol",
-				Edition:         "",
+				TMDB:             "429351",
+				Year:             2018,
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{"mobe1969", "aron7awol"},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
@@ -661,11 +653,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// return 7.1 version with multiple authors
 			m: BEQPayload{
-				TMDB:            "429351",
-				Year:            2018,
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "aron7awol,mobe1969",
-				Edition:         "",
+				TMDB:             "429351",
+				Year:             2018,
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{"aron7awol", "mobe1969"},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
@@ -675,11 +667,11 @@ func TestSearchCatalog(t *testing.T) {
 			// 12 strong has multiple codecs AND authors, so good for testing
 			// return 7.1 version of aron7awol
 			m: BEQPayload{
-				TMDB:            "429351",
-				Year:            2018,
-				Codec:           "DTS-HD MA 7.1",
-				PreferredAuthor: "aron7awol",
-				Edition:         "",
+				TMDB:             "429351",
+				Year:             2018,
+				Codec:            "DTS-HD MA 7.1",
+				PreferredAuthors: []string{"aron7awol"},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "c694bb4c1f67903aebc51998cd1aae417983368e784ed04bf92d873ee1ca213d",
@@ -688,11 +680,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// return 5.1 version of aron7awol
 			m: BEQPayload{
-				TMDB:            "429351",
-				Year:            2018,
-				Codec:           "DTS-HD MA 5.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "429351",
+				Year:             2018,
+				Codec:            "DTS-HD MA 5.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "8788e00d86868bb894fbed2f73a41e9c1d1cd277815262b7fd8ae37524c0b8a5",
@@ -701,11 +693,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// return 5.1 version of aron7awol
 			m: BEQPayload{
-				TMDB:            "547016",
-				Year:            2020,
-				Codec:           "DD+ Atmos",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "547016",
+				Year:             2020,
+				Codec:            "DD+ Atmos",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "f9bb40bed45c6e7bb2e2cdacd31e6aed3837ee23ffdfaef4c045113beec44c5d",
@@ -714,11 +706,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			// should be TrueHD 7.1
 			m: BEQPayload{
-				TMDB:            "56292",
-				Year:            2011,
-				Codec:           "TrueHD 7.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "56292",
+				Year:             2011,
+				Codec:            "TrueHD 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
@@ -727,11 +719,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			//  spiderman universe
 			m: BEQPayload{
-				TMDB:            "56292",
-				Year:            2011,
-				Codec:           "TrueHD 7.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "56292",
+				Year:             2011,
+				Codec:            "TrueHD 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
@@ -740,11 +732,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			//  spiderman universe blank year
 			m: BEQPayload{
-				TMDB:            "56292",
-				Year:            0,
-				Codec:           "TrueHD 7.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "56292",
+				Year:             0,
+				Codec:            "TrueHD 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
@@ -753,10 +745,10 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			//  spiderman universe no year
 			m: BEQPayload{
-				TMDB:            "56292",
-				Codec:           "TrueHD 7.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "56292",
+				Codec:            "TrueHD 7.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "",
 			expectedDigest:   "f7e8c32e58b372f1ea410165607bc1f6b3f589a832fda87edaa32a17715438f7",
@@ -765,11 +757,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			//  Star Wars (1977) {edition-Project 4K77} Remux 2160p DTS-HD MA
 			m: BEQPayload{
-				TMDB:            "11",
-				Year:            1977,
-				Codec:           "DTS-HD MA 5.1",
-				PreferredAuthor: "none",
-				Edition:         "",
+				TMDB:             "11",
+				Year:             1977,
+				Codec:            "DTS-HD MA 5.1",
+				PreferredAuthors: []string{},
+				Edition:          "",
 			},
 			expectedEdition:  "Project 4K77",
 			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",
@@ -778,11 +770,11 @@ func TestSearchCatalog(t *testing.T) {
 		{
 			//  Star Wars (1977) {edition-Project 4K77} Remux 2160p DTS-HD MA
 			m: BEQPayload{
-				TMDB:            "11",
-				Year:            1977,
-				Codec:           "DTS-HD MA 5.1",
-				PreferredAuthor: "none",
-				Edition:         "Project 4K77",
+				TMDB:             "11",
+				Year:             1977,
+				Codec:            "DTS-HD MA 5.1",
+				PreferredAuthors: []string{},
+				Edition:          "Project 4K77",
 			},
 			expectedEdition:  "Project 4K77",
 			expectedDigest:   "83954ea27172605f8bdd8c4731bfc5f164075ce05d436cd319ea13db9978110a",
@@ -803,11 +795,11 @@ func TestSearchCatalog(t *testing.T) {
 	}
 	// should always fail
 	_, err = c.searchCatalog(ctx, &BEQPayload{
-		TMDB:            "ojdsfojnekfw",
-		Year:            2018,
-		Codec:           "DTS-HD MA 5.1",
-		PreferredAuthor: "none",
-		Edition:         "",
+		TMDB:             "ojdsfojnekfw",
+		Year:             2018,
+		Codec:            "DTS-HD MA 5.1",
+		PreferredAuthors: []string{},
+		Edition:          "",
 	})
 	a.Error(err)
 }
@@ -828,17 +820,17 @@ func TestLoadProfile(t *testing.T) {
 
 	tt := []BEQPayload{
 		{
-			TMDB:            "51497",
-			Year:            2011,
-			Codec:           "DTS-X",
-			SkipSearch:      false,
-			EntryID:         "bd4577c143e73851d6db0697e0940a8f34633eec\n_416",
-			MVAdjust:        -1.5,
-			DryrunMode:      false,
-			PreferredAuthor: "none",
-			Edition:         "Extended",
-			MediaType:       "movie",
-			Slots:           []int32{1},
+			TMDB:             "51497",
+			Year:             2011,
+			Codec:            "DTS-X",
+			SkipSearch:       false,
+			EntryID:          "bd4577c143e73851d6db0697e0940a8f34633eec\n_416",
+			MVAdjust:         -1.5,
+			DryrunMode:       false,
+			PreferredAuthors: []string{},
+			Edition:          "Extended",
+			MediaType:        "movie",
+			Slots:            []int32{1},
 		},
 		// {
 		// 	TMDB:            "56292",
@@ -848,50 +840,50 @@ func TestLoadProfile(t *testing.T) {
 		// 	EntryID:         "",
 		// 	MVAdjust:        0.0,
 		// 	DryrunMode:      false,
-		// 	PreferredAuthor: "none",
+		// 	PreferredAuthors: []string{},
 		// 	Edition:         "",
 		// 	MediaType:       "movie",
 		// 	Slots:           []int{1},
 		// },
 		{
-			TMDB:            "399579",
-			Year:            2019,
-			Codec:           "AtmosMaybe",
-			SkipSearch:      false,
-			EntryID:         "",
-			MVAdjust:        0.0,
-			DryrunMode:      false,
-			PreferredAuthor: "none",
-			Edition:         "",
-			MediaType:       "movie",
-			Slots:           []int32{1},
+			TMDB:             "399579",
+			Year:             2019,
+			Codec:            "AtmosMaybe",
+			SkipSearch:       false,
+			EntryID:          "",
+			MVAdjust:         0.0,
+			DryrunMode:       false,
+			PreferredAuthors: []string{},
+			Edition:          "",
+			MediaType:        "movie",
+			Slots:            []int32{1},
 		},
 		// DD+Atmos5.1Maybe //underwater
 		{
-			TMDB:            "443791",
-			Year:            2020,
-			Codec:           "DD+Atmos5.1Maybe",
-			SkipSearch:      false,
-			EntryID:         "",
-			MVAdjust:        0.0,
-			DryrunMode:      false,
-			PreferredAuthor: "none",
-			Edition:         "",
-			MediaType:       "movie",
-			Slots:           []int32{1},
+			TMDB:             "443791",
+			Year:             2020,
+			Codec:            "DD+Atmos5.1Maybe",
+			SkipSearch:       false,
+			EntryID:          "",
+			MVAdjust:         0.0,
+			DryrunMode:       false,
+			PreferredAuthors: []string{},
+			Edition:          "",
+			MediaType:        "movie",
+			Slots:            []int32{1},
 		},
 		{
-			TMDB:            "804095",
-			Year:            2022,
-			Codec:           "DD+Atmos7.1Maybe",
-			SkipSearch:      false,
-			EntryID:         "",
-			MVAdjust:        0.0,
-			DryrunMode:      false,
-			PreferredAuthor: "none",
-			Edition:         "",
-			MediaType:       "movie",
-			Slots:           []int32{1},
+			TMDB:             "804095",
+			Year:             2022,
+			Codec:            "DD+Atmos7.1Maybe",
+			SkipSearch:       false,
+			EntryID:          "",
+			MVAdjust:         0.0,
+			DryrunMode:       false,
+			PreferredAuthors: []string{},
+			Edition:          "",
+			MediaType:        "movie",
+			Slots:            []int32{1},
 		},
 	}
 

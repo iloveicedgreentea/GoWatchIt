@@ -198,6 +198,11 @@ func generateIndexSQL(structType interface{}) string {
 }
 
 func getSQLType(t reflect.Type) string {
+	// Handle pointers by getting the underlying type
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
 	switch t.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return "INTEGER"

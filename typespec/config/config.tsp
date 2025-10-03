@@ -46,11 +46,10 @@ model EZBEQConfig {
   @doc("Send notification when profile is unloaded")
   notifyOnUnload: boolean = false;
 
-  @doc("Preferred BEQ author")
-  @example("aron7awol")
-  preferredAuthor: string = "";
+  @doc("Preferred BEQ authors. Select authors to allow. Leave empty to match any author")
+  preferredAuthors: string[] = #[];
 
-  @doc("MiniDSP slot numbers")
+  @doc("Profile slot numbers to load into")
   @minItems(0)
   @maxItems(4)
   slots: int32[] = #[];
@@ -73,16 +72,16 @@ model EZBEQConfig {
   @doc("Use AVR codec search for BEQ profiles")
   useAVRCodecSearch: boolean = false;
 
-  @doc("AVR brand (Denon, Marantz, etc.)")
+  @doc("AVR brand")
   @example("Denon")
-  avrBrand: string = "Denon";
+  avrBrand: "Denon" | "Marantz" = "Denon";
 
-  @doc("AVR API URL")
+  @doc("AVR URL with protocol")
   @example("http://192.168.1.100")
   @pattern("^https?://")
   avrURL: string = "";
 
-  @doc("Enable loose edition matching")
+  @doc("Match ANY edition IF your client sends a blank edition")
   looseEditionMatching: boolean = false;
 
   @doc("Skip edition matching entirely")
@@ -146,6 +145,9 @@ model PlayerConfig {
   @visibility("read")
   id?: int64;
 
+  @doc("Enable player integration")
+  enabled: boolean = false;
+
   @doc("Type of media player")
   playerType: Player = Player.Plex;
 
@@ -185,19 +187,6 @@ model PlayerConfig {
   mediaEntityName: string = "";
 }
 
-@doc("Main application configuration")
-@jsonSchema
-model MainConfig {
-  @doc("Database ID (internal use only)")
-  @visibility("read")
-  id?: int64;
-
-  @doc("Port for the webhook server to listen on")
-  @example("9999")
-  // UI hint: min=1024, max=65535
-  listenPort: string = "9999";
-}
-
 @doc("HDMI sync configuration")
 @jsonSchema
 model HDMISyncConfig {
@@ -232,6 +221,20 @@ model HDMISyncConfig {
   scheme: "http" | "https" = "http";
 }
 
+@doc("BEQ Author from catalogue")
+@jsonSchema
+model BEQAuthor {
+  @doc("Database ID (internal use only)")
+  @visibility("read")
+  id?: int64;
+
+  @doc("Author name from BEQ catalogue")
+  name: string = "";
+
+  @doc("Last updated timestamp (ISO 8601)")
+  updatedAt?: string;
+}
+
 @doc("Complete application configuration")
 @jsonSchema
 model AppConfig {
@@ -243,9 +246,6 @@ model AppConfig {
 
   @doc("Media player settings")
   player: PlayerConfig;
-
-  @doc("Main application settings")
-  main: MainConfig;
 
   @doc("HDMI sync settings")
   hdmiSync: HDMISyncConfig;
@@ -277,13 +277,13 @@ interface ConfigAPI {
   @doc("Get player configuration")
   getPlayerConfig(): PlayerConfig;
 
-  @route("/main")
-  @get
-  @doc("Get main configuration")
-  getMainConfig(): MainConfig;
-
   @route("/hdmi-sync")
   @get
   @doc("Get HDMI sync configuration")
   getHdmiSyncConfig(): HDMISyncConfig;
+
+  @route("/authors")
+  @get
+  @doc("Get available BEQ authors from catalogue")
+  getAuthors(): string[];
 }

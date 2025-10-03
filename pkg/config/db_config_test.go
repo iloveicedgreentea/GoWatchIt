@@ -64,7 +64,7 @@ func TestEZBEQConfig(t *testing.T) {
 		NotifyOnLoad:                  true,
 		NotifyOnUnload:                true,
 		Port:                          "8081",
-		PreferredAuthor:               "TestAuthor",
+		PreferredAuthors:              []string{"Author1", "Author2"},
 		Slots:                         []int32{1, 2, 3},
 		StopPlexIfMismatch:            false,
 		Url:                           "http://ezbeq.example.com",
@@ -97,7 +97,7 @@ func TestEZBEQConfig(t *testing.T) {
 	assert.Equal(t, ezbeqConfig.NotifyOnLoad, loadedConfig.NotifyOnLoad)
 	assert.Equal(t, ezbeqConfig.NotifyOnUnload, loadedConfig.NotifyOnUnload)
 	assert.Equal(t, ezbeqConfig.Port, loadedConfig.Port)
-	assert.Equal(t, ezbeqConfig.PreferredAuthor, loadedConfig.PreferredAuthor)
+	assert.Equal(t, ezbeqConfig.PreferredAuthors, loadedConfig.PreferredAuthors)
 	assert.Equal(t, ezbeqConfig.Slots, loadedConfig.Slots, "Slots should be equal to %v but got %v", ezbeqConfig.Slots, loadedConfig.Slots)
 	assert.Equal(t, ezbeqConfig.StopPlexIfMismatch, loadedConfig.StopPlexIfMismatch)
 	assert.Equal(t, ezbeqConfig.Url, loadedConfig.Url)

@@ -30,6 +30,10 @@ func addRoutes(router *gin.Engine, appInst *app.App) {
 	router.GET("/api/v1/profile", func(ctx *gin.Context) {
 		GetBeqProfile(ctx, appInst)
 	})
+	// get beq authors
+	router.GET("/api/v1/config/authors", func(ctx *gin.Context) {
+		GetAuthors(ctx, appInst)
+	})
 }
 
 // GetConfig returns all configurations from the database
@@ -127,4 +131,22 @@ func GetBeqProfile(c *gin.Context, appInst *app.App) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"profile": profile})
+}
+
+// GetAuthors returns available BEQ authors from the catalogue
+func GetAuthors(c *gin.Context, appInst *app.App) {
+	if appInst == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "app is nil"})
+		return
+	}
+
+	qu := &query.GetAuthorsQuery{}
+	authors, err := appInst.Queries.GetAuthors.Handle(c.Request.Context(), qu)
+	if err != nil {
+		// Return empty array on error to allow all authors
+		c.JSON(http.StatusOK, []string{})
+		return
+	}
+
+	c.JSON(http.StatusOK, authors)
 }

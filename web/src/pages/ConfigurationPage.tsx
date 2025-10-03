@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Container } from '../components/layout/Container';
 import { ConfigSection } from '../components/config/Section';
-import { ConfigValue } from '../types/config';
+import { ConfigValue, ConfigSection as ConfigSectionType } from '../types/config';
 import { generateConfigSchema } from '../lib/schema-loader';
 import { Form, FloatingButton, SaveButton } from '../components/ui/form';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -14,10 +14,13 @@ const SAVE_BUTTON_TEXT = 'Save Configuration';
 
 export default function ConfigurationPage() {
   const [config, setConfig] = useState<ConfigValue>({});
+  const [configSchema, setConfigSchema] = useState<ConfigSectionType[]>([]);
   const { addToast } = useToast();
 
-  // Generate config schema from TypeSpec JSON schemas
-  const configSchema = generateConfigSchema();
+  // Load config schema
+  useEffect(() => {
+    generateConfigSchema().then(setConfigSchema);
+  }, []);
 
   // get config
   useEffect(() => {

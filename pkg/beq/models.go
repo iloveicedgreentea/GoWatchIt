@@ -15,14 +15,14 @@ type BEQPayload struct {
 	Edition    editions.Edition
 	EntryID    string
 	// show, movie, etc
-	MediaType       events.MediaType
-	MVAdjust        float64
-	PreferredAuthor string
-	SkipSearch      bool
-	Slots           []int32
-	Title           string
-	TMDB            string
-	Year            int
+	MediaType        events.MediaType
+	MVAdjust         float64
+	PreferredAuthors []string
+	SkipSearch       bool
+	Slots            []int32
+	Title            string
+	TMDB             string
+	Year             int
 }
 
 type BeqCatalog struct {

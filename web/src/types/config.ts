@@ -1,14 +1,16 @@
 import type { components } from './typespec-types';
+import type { Validator } from '../lib/validators';
 
 export interface ConfigOption {
     key: string;
     label: string;
     description: string;
-    type: 'text' | 'checkbox' | 'number' | 'select' | 'password' | 'numberArray';
-    defaultValue?: string | boolean | number | number[];
+    type: 'text' | 'checkbox' | 'number' | 'select' | 'password' | 'numberArray' | 'stringArray';
+    defaultValue?: string | boolean | number | number[] | string[];
     options?: { label: string; value: string }[];
     section: string;
     placeholder?: string;
+    validator?: Validator;
   }
 
   export interface ConfigSection {

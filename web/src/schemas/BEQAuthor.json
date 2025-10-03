@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "BEQAuthor.json",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database ID (internal use only)"
+        },
+        "name": {
+            "type": "string",
+            "default": "",
+            "description": "Author name from BEQ catalogue"
+        },
+        "updatedAt": {
+            "type": "string",
+            "description": "Last updated timestamp (ISO 8601)"
+        }
+    },
+    "required": [
+        "name"
+    ],
+    "description": "BEQ Author from catalogue"
+}

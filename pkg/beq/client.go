@@ -247,16 +247,14 @@ func (c *BeqClient) MakeCommand(ctx context.Context, payload []byte) error {
 	return nil
 }
 
-// authorCompare returns true if there is an author
-func hasAuthor(s string) bool {
-	hasAuthor := strings.ToLower(strings.TrimSpace(s))
-	// Use constant for "none" author check
-	return hasAuthor != authorNone && hasAuthor != ""
+// hasAuthors returns true if there are any authors in the slice
+func hasAuthors(authors []string) bool {
+	return len(authors) > 0
 }
 
 // buildAuthorWhitelist returns a string of authors to search for
-func buildAuthorWhitelist(preferredAuthors string, q url.Values) url.Values {
-	for _, author := range strings.Split(preferredAuthors, ",") {
+func buildAuthorWhitelist(preferredAuthors []string, q url.Values) url.Values {
+	for _, author := range preferredAuthors {
 		q.Add("authors", strings.TrimSpace(author))
 	}
 
@@ -283,8 +281,8 @@ func (c *BeqClient) searchCatalog(ctx context.Context, m *BEQPayload) (BeqCatalo
 	q.Add("tmdbid", m.TMDB)
 
 	// Add authors if present
-	if hasAuthor(m.PreferredAuthor) {
-		q = buildAuthorWhitelist(m.PreferredAuthor, q)
+	if hasAuthors(m.PreferredAuthors) {
+		q = buildAuthorWhitelist(m.PreferredAuthors, q)
 	}
 
 	// Note: Still using V1 API endpoint for search as V2 equivalent might not exist or behave differently.

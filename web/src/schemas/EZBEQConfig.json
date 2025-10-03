@@ -54,13 +54,12 @@
             "default": false,
             "description": "Send notification when profile is unloaded"
         },
-        "preferredAuthor": {
-            "type": "string",
-            "default": "",
-            "examples": [
-                "aron7awol"
-            ],
-            "description": "Preferred BEQ author"
+        "preferredAuthors": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Preferred BEQ authors. Select authors to allow. Leave empty to match any author"
         },
         "slots": {
             "type": "array",
@@ -71,7 +70,7 @@
             },
             "minItems": 0,
             "maxItems": 4,
-            "description": "MiniDSP slot numbers"
+            "description": "Profile slot numbers to load into"
         },
         "stopPlexIfMismatch": {
             "type": "boolean",
@@ -115,12 +114,21 @@
             "description": "Use AVR codec search for BEQ profiles"
         },
         "avrBrand": {
-            "type": "string",
+            "anyOf": [
+                {
+                    "type": "string",
+                    "const": "Denon"
+                },
+                {
+                    "type": "string",
+                    "const": "Marantz"
+                }
+            ],
             "default": "Denon",
             "examples": [
                 "Denon"
             ],
-            "description": "AVR brand (Denon, Marantz, etc.)"
+            "description": "AVR brand"
         },
         "avrURL": {
             "type": "string",
@@ -129,12 +137,12 @@
                 "http://192.168.1.100"
             ],
             "pattern": "^https?://",
-            "description": "AVR API URL"
+            "description": "AVR URL with protocol"
         },
         "looseEditionMatching": {
             "type": "boolean",
             "default": false,
-            "description": "Enable loose edition matching"
+            "description": "Match ANY edition IF your client sends a blank edition"
         },
         "skipEditionMatching": {
             "type": "boolean",
@@ -151,7 +159,7 @@
         "enableTVBEQ",
         "notifyOnLoad",
         "notifyOnUnload",
-        "preferredAuthor",
+        "preferredAuthors",
         "slots",
         "stopPlexIfMismatch",
         "port",

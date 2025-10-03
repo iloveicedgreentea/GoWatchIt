@@ -33,6 +33,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AppConfig'
+  /config/authors:
+    get:
+      operationId: ConfigAPI_getAuthors
+      description: Get available BEQ authors from catalogue
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
   /config/ezbeq:
     get:
       operationId: ConfigAPI_getEzbeqConfig
@@ -69,18 +83,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HomeAssistantConfig'
-  /config/main:
-    get:
-      operationId: ConfigAPI_getMainConfig
-      description: Get main configuration
-      parameters: []
-      responses:
-        '200':
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MainConfig'
   /config/player:
     get:
       operationId: ConfigAPI_getPlayerConfig
@@ -101,7 +103,6 @@ components:
         - ezbeq
         - homeAssistant
         - player
-        - main
         - hdmiSync
       properties:
         ezbeq:
@@ -116,10 +117,6 @@ components:
           allOf:
             - $ref: '#/components/schemas/PlayerConfig'
           description: Media player settings
-        main:
-          allOf:
-            - $ref: '#/components/schemas/MainConfig'
-          description: Main application settings
         hdmiSync:
           allOf:
             - $ref: '#/components/schemas/HDMISyncConfig'
@@ -136,7 +133,7 @@ components:
         - enableTVBEQ
         - notifyOnLoad
         - notifyOnUnload
-        - preferredAuthor
+        - preferredAuthors
         - slots
         - stopPlexIfMismatch
         - port
@@ -188,11 +185,12 @@ components:
           type: boolean
           description: Send notification when profile is unloaded
           default: false
-        preferredAuthor:
-          type: string
-          description: Preferred BEQ author
-          example: aron7awol
-          default: ''
+        preferredAuthors:
+          type: array
+          items:
+            type: string
+          description: Preferred BEQ authors. Select authors to allow. Leave empty to match any author
+          default: []
         slots:
           type: array
           items:
@@ -200,7 +198,7 @@ components:
             format: int32
           minItems: 0
           maxItems: 4
-          description: MiniDSP slot numbers
+          description: Profile slot numbers to load into
           default: []
         stopPlexIfMismatch:
           type: boolean
@@ -230,18 +228,21 @@ components:
           default: false
         avrBrand:
           type: string
-          description: AVR brand (Denon, Marantz, etc.)
+          enum:
+            - Denon
+            - Marantz
+          description: AVR brand
           example: Denon
           default: Denon
         avrURL:
           type: string
           pattern: ^https?://
-          description: AVR API URL
+          description: AVR URL with protocol
           example: http://192.168.1.100
           default: ''
         looseEditionMatching:
           type: boolean
-          description: Enable loose edition matching
+          description: Match ANY edition IF your client sends a blank edition
           default: false
         skipEditionMatching:
           type: boolean
@@ -368,22 +369,6 @@ components:
           description: Connection protocol
           default: http
       description: Home Assistant integration configuration
-    MainConfig:
-      type: object
-      required:
-        - listenPort
-      properties:
-        id:
-          type: integer
-          format: int64
-          description: Database ID (internal use only)
-          readOnly: true
-        listenPort:
-          type: string
-          description: Port for the webhook server to listen on
-          example: '9999'
-          default: '9999'
-      description: Main application configuration
     Player:
       type: string
       enum:
@@ -394,6 +379,7 @@ components:
     PlayerConfig:
       type: object
       required:
+        - enabled
         - playerType
         - token
         - userID
@@ -410,6 +396,10 @@ components:
           format: int64
           description: Database ID (internal use only)
           readOnly: true
+        enabled:
+          type: boolean
+          description: Enable player integration
+          default: false
         playerType:
           allOf:
             - $ref: '#/components/schemas/Player'

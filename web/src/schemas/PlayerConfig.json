@@ -7,6 +7,11 @@
             "type": "integer",
             "description": "Database ID (internal use only)"
         },
+        "enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable player integration"
+        },
         "playerType": {
             "$ref": "#/$defs/Player",
             "default": "Plex",
@@ -88,6 +93,7 @@
         }
     },
     "required": [
+        "enabled",
         "playerType",
         "token",
         "userID",

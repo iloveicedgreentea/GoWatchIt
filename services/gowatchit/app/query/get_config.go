@@ -27,17 +27,7 @@ func (h *GetConfigHandler) Handle(ctx context.Context, query *GetConfigQuery) (m
 
 	configMap := make(map[string]interface{})
 
-	ezbeqConfig := &configmodels.EZBEQConfig{}
-	haConfig := &configmodels.HomeAssistantConfig{}
-	hdmiConfig := &configmodels.HDMISyncConfig{}
-	mainConfig := &configmodels.MainConfig{}
-
-	configs := map[string]interface{}{
-		"ezbeq":         ezbeqConfig,
-		"homeassistant": haConfig,
-		"hdmisync":      hdmiConfig,
-		"main":          mainConfig,
-	}
+	configs := config.GetConfigTypeRegistry()
 
 	for name, conf := range configs {
 		if err := cfg.LoadConfig(ctx, conf); err != nil {

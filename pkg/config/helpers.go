@@ -194,7 +194,7 @@ func GetEZBeqAvrURL(ctx context.Context) string {
 	return ""
 }
 
-func GetEZBeqAvrBrand(ctx context.Context) string {
+func GetEZBeqAvrBrand(ctx context.Context) configmodels.EZBEQConfigAvrBrand {
 	if config := getEZBEQConfig(ctx); config != nil {
 		return config.AvrBrand
 	}
@@ -208,11 +208,11 @@ func GetEZBeqSlots(ctx context.Context) []int32 {
 	return []int32{}
 }
 
-func GetEZBeqPreferredAuthor(ctx context.Context) string {
+func GetEZBeqPreferredAuthors(ctx context.Context) []string {
 	if config := getEZBEQConfig(ctx); config != nil {
-		return config.PreferredAuthor
+		return config.PreferredAuthors
 	}
-	return ""
+	return []string{}
 }
 
 // Player

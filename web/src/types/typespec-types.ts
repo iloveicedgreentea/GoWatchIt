@@ -22,6 +22,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/config/authors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get available BEQ authors from catalogue */
+        get: operations["ConfigAPI_getAuthors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/config/ezbeq": {
         parameters: {
             query?: never;
@@ -73,23 +90,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/config/main": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Get main configuration */
-        get: operations["ConfigAPI_getMainConfig"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/config/player": {
         parameters: {
             query?: never;
@@ -119,8 +119,6 @@ export interface components {
             homeAssistant: components["schemas"]["HomeAssistantConfig"];
             /** @description Media player settings */
             player: components["schemas"]["PlayerConfig"];
-            /** @description Main application settings */
-            main: components["schemas"]["MainConfig"];
             /** @description HDMI sync settings */
             hdmiSync: components["schemas"]["HDMISyncConfig"];
         };
@@ -174,13 +172,12 @@ export interface components {
              */
             notifyOnUnload: boolean;
             /**
-             * @description Preferred BEQ author
-             * @default
-             * @example aron7awol
+             * @description Preferred BEQ authors. Select authors to allow. Leave empty to match any author
+             * @default []
              */
-            preferredAuthor: string;
+            preferredAuthors: string[];
             /**
-             * @description MiniDSP slot numbers
+             * @description Profile slot numbers to load into
              * @default []
              */
             slots: number[];
@@ -213,19 +210,20 @@ export interface components {
              */
             useAVRCodecSearch: boolean;
             /**
-             * @description AVR brand (Denon, Marantz, etc.)
+             * @description AVR brand
              * @default Denon
              * @example Denon
+             * @enum {string}
              */
-            avrBrand: string;
+            avrBrand: "Denon" | "Marantz";
             /**
-             * @description AVR API URL
+             * @description AVR URL with protocol
              * @default
              * @example http://192.168.1.100
              */
             avrURL: string;
             /**
-             * @description Enable loose edition matching
+             * @description Match ANY edition IF your client sends a blank edition
              * @default false
              */
             looseEditionMatching: boolean;
@@ -343,20 +341,6 @@ export interface components {
              */
             scheme: "http" | "https";
         };
-        /** @description Main application configuration */
-        MainConfig: {
-            /**
-             * Format: int64
-             * @description Database ID (internal use only)
-             */
-            readonly id?: number;
-            /**
-             * @description Port for the webhook server to listen on
-             * @default 9999
-             * @example 9999
-             */
-            listenPort: string;
-        };
         /**
          * @description Supported media player types
          * @enum {string}
@@ -369,6 +353,11 @@ export interface components {
              * @description Database ID (internal use only)
              */
             readonly id?: number;
+            /**
+             * @description Enable player integration
+             * @default false
+             */
+            enabled: boolean;
             /**
              * @description Type of media player
              * @default Plex
@@ -481,6 +470,26 @@ export interface operations {
             };
         };
     };
+    ConfigAPI_getAuthors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
     ConfigAPI_getEzbeqConfig: {
         parameters: {
             query?: never;
@@ -537,26 +546,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HomeAssistantConfig"];
-                };
-            };
-        };
-    };
-    ConfigAPI_getMainConfig: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MainConfig"];
                 };
             };
         };

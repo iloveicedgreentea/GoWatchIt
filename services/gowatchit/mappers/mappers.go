@@ -45,18 +45,18 @@ func EventToBEQPayload(ctx context.Context, event *events.Event, player mediapla
 
 	// Build the BEQ payload
 	payload := &beq.BEQPayload{
-		Codec:           codec,
-		DryrunMode:      config.IsBeqDryRun(ctx),
-		Edition:         edition,
-		EntryID:         "", // Will be populated by search
-		MediaType:       event.Metadata.Type,
-		MVAdjust:        0, // Will be populated by search
-		PreferredAuthor: config.GetEZBeqPreferredAuthor(ctx),
-		SkipSearch:      false, // Always search on initial load
-		Slots:           config.GetEZBeqSlots(ctx),
-		Title:           event.Metadata.Title,
-		TMDB:            event.Metadata.TMDB,
-		Year:            event.Metadata.Year,
+		Codec:            codec,
+		DryrunMode:       config.IsBeqDryRun(ctx),
+		Edition:          edition,
+		EntryID:          "", // Will be populated by search
+		MediaType:        event.Metadata.Type,
+		MVAdjust:         0, // Will be populated by search
+		PreferredAuthors: config.GetEZBeqPreferredAuthors(ctx),
+		SkipSearch:       false, // Always search on initial load
+		Slots:            config.GetEZBeqSlots(ctx),
+		Title:            event.Metadata.Title,
+		TMDB:             event.Metadata.TMDB,
+		Year:             event.Metadata.Year,
 	}
 
 	log.Debug("Mapped Event to BEQPayload",

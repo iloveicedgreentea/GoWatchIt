@@ -15,10 +15,6 @@
             "$ref": "PlayerConfig.json",
             "description": "Media player settings"
         },
-        "main": {
-            "$ref": "MainConfig.json",
-            "description": "Main application settings"
-        },
         "hdmiSync": {
             "$ref": "HDMISyncConfig.json",
             "description": "HDMI sync settings"
@@ -28,7 +24,6 @@
         "ezbeq",
         "homeAssistant",
         "player",
-        "main",
         "hdmiSync"
     ],
     "description": "Complete application configuration"

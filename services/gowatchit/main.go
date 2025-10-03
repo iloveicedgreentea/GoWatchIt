@@ -18,6 +18,7 @@ import (
 	"github.com/iloveicedgreentea/gowatchit/pkg/database"
 	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/app/command"
 	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/ports/webhooks"
 	"go.uber.org/zap"
 )
@@ -84,13 +85,39 @@ func run(ctx context.Context) error {
 	}
 
 	// initialize app
-	app, err := app.NewApplication(ctx, beqClient)
+	application, err := app.NewApplication(ctx, beqClient, db)
 	if err != nil {
 		return fmt.Errorf("failed to create application: %w", err)
 	}
 
+	// Start background author scraper
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+
+		// Run immediately on startup
+		log.Info("Running initial BEQ author scrape")
+		if err := application.Commands.ScrapeAuthors.Handle(ctx, &command.ScrapeAuthorsCommand{}); err != nil {
+			log.Error("Failed to scrape authors on startup", zap.Error(err))
+		}
+
+		// Then run hourly
+		for {
+			select {
+			case <-ticker.C:
+				log.Info("Running scheduled BEQ author scrape")
+				if err := application.Commands.ScrapeAuthors.Handle(ctx, &command.ScrapeAuthorsCommand{}); err != nil {
+					log.Error("Failed to scrape authors", zap.Error(err))
+				}
+			case <-ctx.Done():
+				log.Info("Stopping author scraper")
+				return
+			}
+		}
+	}()
+
 	// set up routes
-	router, err := webhooks.NewRouter(ctx, app)
+	router, err := webhooks.NewRouter(ctx, application)
 	if err != nil {
 		return err
 	}

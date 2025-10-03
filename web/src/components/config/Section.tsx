@@ -12,7 +12,12 @@ interface ConfigSectionProps {
 
 export function ConfigSection({ name, options, values, onChange }: ConfigSectionProps) {
     const isEnabled = Boolean(values[name]?.enabled);
-    const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+    // Convert camelCase section name to readable title (e.g., hdmiSync -> Hdmi Sync)
+    const displayName = name
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+        .replace(/^./, (str) => str.toUpperCase())
+        .trim();
 
     return (
         <Card className="mb-6">

@@ -54,7 +54,7 @@ func (c *Config) LoadConfig(ctx context.Context, cfg any) error {
 	var columns []string
 	var scanDest []interface{}
 	// Map to store slice field indices and their corresponding scan destinations
-	sliceFields := make(map[int]*string)
+	sliceFields := make(map[int]*sql.NullString)
 
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
@@ -64,11 +64,11 @@ func (c *Config) LoadConfig(ctx context.Context, cfg any) error {
 
 			// Special handling for slices because sqlite doesn't support them
 			if v.Field(i).Kind() == reflect.Slice {
-				var jsonStr string
-				// Store the pointer to the JSON string in the map
-				sliceFields[i] = &jsonStr
+				var nullStr sql.NullString
+				// Store the pointer to the NullString in the map
+				sliceFields[i] = &nullStr
 				// data will be written to the pointer
-				scanDest = append(scanDest, &jsonStr)
+				scanDest = append(scanDest, &nullStr)
 			} else {
 				scanDest = append(scanDest, v.Field(i).Addr().Interface())
 			}
@@ -86,12 +86,12 @@ func (c *Config) LoadConfig(ctx context.Context, cfg any) error {
 	}
 
 	// Process slice fields after successful scan
-	for fieldIndex, jsonStrPtr := range sliceFields {
-		if jsonStrPtr != nil && *jsonStrPtr != "" {
+	for fieldIndex, nullStrPtr := range sliceFields {
+		if nullStrPtr != nil && nullStrPtr.Valid && nullStrPtr.String != "" {
 			sliceField := v.Field(fieldIndex)
 			// Create a new slice value of the correct type
 			newSlice := reflect.New(sliceField.Type())
-			if err := json.Unmarshal([]byte(*jsonStrPtr), newSlice.Interface()); err != nil {
+			if err := json.Unmarshal([]byte(nullStrPtr.String), newSlice.Interface()); err != nil {
 				return fmt.Errorf("failed to unmarshal slice for field %s: %v", t.Field(fieldIndex).Name, err)
 			}
 			// Set the slice value in the struct

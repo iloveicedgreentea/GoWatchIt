@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ConfigOption } from "../../types/config";
 
 interface ConfigInputProps {
@@ -8,7 +9,22 @@ interface ConfigInputProps {
 
 export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
     const id = `${option.section}-${option.key}`;
+    const [error, setError] = useState<string | null>(null);
     const baseClass = "rounded-md border border-border bg-background p-2";
+    const errorClass = error ? "border-red-500" : "";
+
+    // Validate input and update state
+    const handleTextChange = (newValue: string) => {
+        if (option.validator) {
+            const result = option.validator(newValue);
+            if (result === true) {
+                setError(null);
+            } else {
+                setError(result);
+            }
+        }
+        onChange(newValue);
+    };
 
     switch (option.type) {
         case 'checkbox':
@@ -62,16 +78,44 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
                 </div>
             );
 
+        case 'stringArray':
+            // Handle string arrays as checkboxes
+            const selectedItems = Array.isArray(value) ? value : [];
+            if (!option.options) return null;
+            return (
+                <div className="flex flex-col gap-2">
+                    {option.options.map(opt => (
+                        <label key={opt.value} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={selectedItems.includes(opt.value)}
+                                onChange={e => {
+                                    const newItems = e.target.checked
+                                        ? [...selectedItems, opt.value]
+                                        : selectedItems.filter(item => item !== opt.value);
+                                    onChange(newItems);
+                                }}
+                                className="h-4 w-4 rounded border-border bg-background"
+                            />
+                            <span className="text-sm">{opt.label}</span>
+                        </label>
+                    ))}
+                </div>
+            );
+
         case 'password':
             return (
-                <input
-                    type="password"
-                    id={id}
-                    value={String(value ?? '')}
-                    onChange={e => onChange(e.target.value)}
-                    placeholder={option.placeholder}
-                    className={baseClass}
-                />
+                <div className="flex flex-col gap-1">
+                    <input
+                        type="password"
+                        id={id}
+                        value={String(value ?? '')}
+                        onChange={e => handleTextChange(e.target.value)}
+                        placeholder={option.placeholder}
+                        className={`${baseClass} ${errorClass}`}
+                    />
+                    {error && <span className="text-xs text-red-500">{error}</span>}
+                </div>
             );
 
         case 'number':
@@ -88,14 +132,17 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
 
         default:
             return (
-                <input
-                    type="text"
-                    id={id}
-                    value={String(value ?? '')}
-                    onChange={e => onChange(e.target.value)}
-                    placeholder={option.placeholder}
-                    className={baseClass}
-                />
+                <div className="flex flex-col gap-1">
+                    <input
+                        type="text"
+                        id={id}
+                        value={String(value ?? '')}
+                        onChange={e => handleTextChange(e.target.value)}
+                        placeholder={option.placeholder}
+                        className={`${baseClass} ${errorClass}`}
+                    />
+                    {error && <span className="text-xs text-red-500">{error}</span>}
+                </div>
             );
     }
 }

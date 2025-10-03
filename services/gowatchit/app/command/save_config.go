@@ -29,14 +29,11 @@ func (h *SaveConfigHandler) Handle(ctx context.Context, cmd *SaveConfigCommand) 
 		return fmt.Errorf("config manager not initialized")
 	}
 
-	configTypes := map[string]interface{}{
-		"ezbeq":         &configmodels.EZBEQConfig{},
-		"homeassistant": &configmodels.HomeAssistantConfig{},
-		"hdmisync":      &configmodels.HDMISyncConfig{},
-		"main":          &configmodels.MainConfig{},
-	}
+	// Use centralized config registry instead of hardcoded map
+	configTypes := config.GetConfigTypeRegistry()
 
 	for name, data := range cmd.ConfigData {
+		// Special handling for multiple players (if frontend sends "players" array)
 		if name == "players" {
 			var playerConfigs []configmodels.PlayerConfig
 			if err := json.Unmarshal(data, &playerConfigs); err != nil {
