@@ -82,7 +82,7 @@ type EZBEQConfig struct {
 	Enabled bool `json:"enabled" db:"enabled"`
 
 	// Id Database ID (internal use only)
-	Id *int64 `db:"id" json:"-"`
+	Id *int64 `json:"-" db:"id"`
 
 	// LooseEditionMatching Match ANY edition IF your client sends a blank edition
 	LooseEditionMatching bool `json:"looseEditionMatching" db:"loose_edition_matching"`
@@ -196,7 +196,7 @@ type Player string
 // PlayerConfig Media player configuration
 type PlayerConfig struct {
 	// DeviceUUIDFilter Filter by device UUID (comma-separated for multiple)
-	DeviceUUIDFilter string `json:"deviceUUIDFilter" db:"device_uu_id_filter"`
+	DeviceUUIDFilter string `json:"deviceUUIDFilter" db:"device_uuid_filter"`
 
 	// Enabled Enable player integration
 	Enabled bool `json:"enabled" db:"enabled"`

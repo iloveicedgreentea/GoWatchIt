@@ -130,68 +130,10 @@ export interface components {
              */
             readonly id?: number;
             /**
-             * @description Adjust master volume with profile
-             * @default true
-             */
-            adjustMasterVolumeWithProfile: boolean;
-            /**
-             * @description Denon AVR IP address
-             * @default
-             * @example 192.168.1.100
-             */
-            denonIP: string;
-            /**
-             * @description Denon AVR port
-             * @default 23
-             * @example 23
-             */
-            denonPort: string;
-            /**
-             * @description Enable dry run mode (no actual changes)
-             * @default false
-             */
-            dryRun: boolean;
-            /**
              * @description Enable EzBEQ integration
              * @default false
              */
             enabled: boolean;
-            /**
-             * @description Enable TV BEQ profiles
-             * @default false
-             */
-            enableTVBEQ: boolean;
-            /**
-             * @description Send notification when profile is loaded
-             * @default false
-             */
-            notifyOnLoad: boolean;
-            /**
-             * @description Send notification when profile is unloaded
-             * @default false
-             */
-            notifyOnUnload: boolean;
-            /**
-             * @description Preferred BEQ authors. Select authors to allow. Leave empty to match any author
-             * @default []
-             */
-            preferredAuthors: string[];
-            /**
-             * @description Profile slot numbers to load into
-             * @default []
-             */
-            slots: number[];
-            /**
-             * @description Stop Plex playback if BEQ profile doesn't match
-             * @default false
-             */
-            stopPlexIfMismatch: boolean;
-            /**
-             * @description EzBEQ server port
-             * @default 8080
-             * @example 8080
-             */
-            port: string;
             /**
              * @description EzBEQ server hostname or IP address
              * @default ezbeq.local
@@ -199,16 +141,17 @@ export interface components {
              */
             url: string;
             /**
+             * @description EzBEQ server port
+             * @default 8080
+             * @example 8080
+             */
+            port: string;
+            /**
              * @description Connection protocol
              * @default http
              * @enum {string}
              */
             scheme: "http" | "https";
-            /**
-             * @description Use AVR codec search for BEQ profiles
-             * @default false
-             */
-            useAVRCodecSearch: boolean;
             /**
              * @description AVR brand
              * @default Denon
@@ -223,6 +166,43 @@ export interface components {
              */
             avrURL: string;
             /**
+             * @description Denon AVR IP address
+             * @default
+             * @example 192.168.1.100
+             */
+            denonIP: string;
+            /**
+             * @description Denon AVR port
+             * @default 23
+             * @example 23
+             */
+            denonPort: string;
+            /**
+             * @description Preferred BEQ authors. Select authors to allow. Leave empty to match any author
+             * @default []
+             */
+            preferredAuthors: string[];
+            /**
+             * @description Profile slot numbers to load into
+             * @default []
+             */
+            slots: number[];
+            /**
+             * @description Use AVR codec search for BEQ profiles
+             * @default false
+             */
+            useAVRCodecSearch: boolean;
+            /**
+             * @description Adjust master volume with profile
+             * @default true
+             */
+            adjustMasterVolumeWithProfile: boolean;
+            /**
+             * @description Enable TV BEQ profiles
+             * @default false
+             */
+            enableTVBEQ: boolean;
+            /**
              * @description Match ANY edition IF your client sends a blank edition
              * @default false
              */
@@ -232,6 +212,26 @@ export interface components {
              * @default false
              */
             skipEditionMatching: boolean;
+            /**
+             * @description Stop Plex playback if BEQ profile doesn't match
+             * @default false
+             */
+            stopPlexIfMismatch: boolean;
+            /**
+             * @description Send notification when profile is loaded
+             * @default false
+             */
+            notifyOnLoad: boolean;
+            /**
+             * @description Send notification when profile is unloaded
+             * @default false
+             */
+            notifyOnUnload: boolean;
+            /**
+             * @description Enable dry run mode (no actual changes)
+             * @default false
+             */
+            dryRun: boolean;
         };
         /** @description HDMI sync configuration */
         HDMISyncConfig: {
@@ -294,35 +294,6 @@ export interface components {
              */
             enabled: boolean;
             /**
-             * @description Remote entity name in Home Assistant
-             * @default
-             * @example remote.shield_tv
-             */
-            remoteEntityName: string;
-            /**
-             * Format: password
-             * @description Home Assistant authentication token
-             * @default
-             */
-            token: string;
-            /**
-             * @description Trigger aspect ratio change on media events
-             * @default false
-             */
-            triggerAspectRatioChangeOnEvent: boolean;
-            /**
-             * @description Notification endpoint name
-             * @default
-             * @example notify.tv
-             */
-            notifyEndpointName: string;
-            /**
-             * Format: int32
-             * @description Notification display time in milliseconds
-             * @default 5000
-             */
-            notifyDisplayTime: number;
-            /**
              * @description Home Assistant URL
              * @default
              * @example homeassistant.local
@@ -340,6 +311,35 @@ export interface components {
              * @enum {string}
              */
             scheme: "http" | "https";
+            /**
+             * Format: password
+             * @description Home Assistant authentication token
+             * @default
+             */
+            token: string;
+            /**
+             * @description Remote entity name in Home Assistant
+             * @default
+             * @example remote.shield_tv
+             */
+            remoteEntityName: string;
+            /**
+             * @description Notification endpoint name
+             * @default
+             * @example notify.tv
+             */
+            notifyEndpointName: string;
+            /**
+             * Format: int32
+             * @description Notification display time in milliseconds
+             * @default 5000
+             */
+            notifyDisplayTime: number;
+            /**
+             * @description Trigger aspect ratio change on media events
+             * @default false
+             */
+            triggerAspectRatioChangeOnEvent: boolean;
         };
         /**
          * @description Supported media player types
@@ -359,23 +359,6 @@ export interface components {
              */
             enabled: boolean;
             /**
-             * @description Type of media player
-             * @default Plex
-             */
-            playerType: components["schemas"]["Player"];
-            /**
-             * Format: password
-             * @description Authentication token for the media player
-             * @default
-             */
-            token: string;
-            /**
-             * @description User ID for players that require it
-             * @default
-             * @example 123456789
-             */
-            userID: string;
-            /**
              * @description Media player URL
              * @default
              * @example plex.local
@@ -393,6 +376,23 @@ export interface components {
              * @enum {string}
              */
             scheme: "http" | "https";
+            /**
+             * @description Type of media player
+             * @default Plex
+             */
+            playerType: components["schemas"]["Player"];
+            /**
+             * Format: password
+             * @description Authentication token for the media player
+             * @default
+             */
+            token: string;
+            /**
+             * @description User ID for players that require it
+             * @default
+             * @example 123456789
+             */
+            userID: string;
             /**
              * @description Filter by device UUID (comma-separated for multiple)
              * @default

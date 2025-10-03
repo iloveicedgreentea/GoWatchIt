@@ -18,59 +18,20 @@ model EZBEQConfig {
   @visibility("read")
   id?: int64;
 
-  @doc("Adjust master volume with profile")
-  @jsonSchema
-  adjustMasterVolumeWithProfile: boolean = true;
-
-  @doc("Denon AVR IP address")
-  @example("192.168.1.100")
-  @pattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$|^[a-z0-9.-]+$")
-  denonIP: string = "";
-
-  @doc("Denon AVR port")
-  @example("23")
-  denonPort: string = "23";
-
-  @doc("Enable dry run mode (no actual changes)")
-  dryRun: boolean = false;
-
   @doc("Enable EzBEQ integration")
   enabled: boolean = false;
-
-  @doc("Enable TV BEQ profiles")
-  enableTVBEQ: boolean = false;
-
-  @doc("Send notification when profile is loaded")
-  notifyOnLoad: boolean = false;
-
-  @doc("Send notification when profile is unloaded")
-  notifyOnUnload: boolean = false;
-
-  @doc("Preferred BEQ authors. Select authors to allow. Leave empty to match any author")
-  preferredAuthors: string[] = #[];
-
-  @doc("Profile slot numbers to load into")
-  @minItems(0)
-  @maxItems(4)
-  slots: int32[] = #[];
-
-  @doc("Stop Plex playback if BEQ profile doesn't match")
-  stopPlexIfMismatch: boolean = false;
-
-  @doc("EzBEQ server port")
-  @example("8080")
-  port: string = "8080";
 
   @doc("EzBEQ server hostname or IP address")
   @example("ezbeq.local")
   @pattern("^[a-z0-9.-]+$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$")
   url: string = "ezbeq.local";
 
+  @doc("EzBEQ server port")
+  @example("8080")
+  port: string = "8080";
+
   @doc("Connection protocol")
   scheme: "http" | "https" = "http";
-
-  @doc("Use AVR codec search for BEQ profiles")
-  useAVRCodecSearch: boolean = false;
 
   @doc("AVR brand")
   @example("Denon")
@@ -81,11 +42,50 @@ model EZBEQConfig {
   @pattern("^https?://")
   avrURL: string = "";
 
+  @doc("Denon AVR IP address")
+  @example("192.168.1.100")
+  @pattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$|^[a-z0-9.-]+$")
+  denonIP: string = "";
+
+  @doc("Denon AVR port")
+  @example("23")
+  denonPort: string = "23";
+
+  @doc("Preferred BEQ authors. Select authors to allow. Leave empty to match any author")
+  preferredAuthors: string[] = #[];
+
+  @doc("Profile slot numbers to load into")
+  @minItems(0)
+  @maxItems(4)
+  slots: int32[] = #[];
+
+  @doc("Use AVR codec search for BEQ profiles")
+  useAVRCodecSearch: boolean = false;
+
+  @doc("Adjust master volume with profile")
+  @jsonSchema
+  adjustMasterVolumeWithProfile: boolean = true;
+
+  @doc("Enable TV BEQ profiles")
+  enableTVBEQ: boolean = false;
+
   @doc("Match ANY edition IF your client sends a blank edition")
   looseEditionMatching: boolean = false;
 
   @doc("Skip edition matching entirely")
   skipEditionMatching: boolean = false;
+
+  @doc("Stop Plex playback if BEQ profile doesn't match")
+  stopPlexIfMismatch: boolean = false;
+
+  @doc("Send notification when profile is loaded")
+  notifyOnLoad: boolean = false;
+
+  @doc("Send notification when profile is unloaded")
+  notifyOnUnload: boolean = false;
+
+  @doc("Enable dry run mode (no actual changes)")
+  dryRun: boolean = false;
 }
 
 @doc("Home Assistant integration configuration")
@@ -98,26 +98,6 @@ model HomeAssistantConfig {
   @doc("Enable Home Assistant integration")
   enabled: boolean = false;
 
-  @doc("Remote entity name in Home Assistant")
-  @example("remote.shield_tv")
-  remoteEntityName: string = "";
-
-  @doc("Home Assistant authentication token")
-  @format("password")
-  token: string = "";
-
-  @doc("Trigger aspect ratio change on media events")
-  triggerAspectRatioChangeOnEvent: boolean = false;
-
-  @doc("Notification endpoint name")
-  @example("notify.tv")
-  notifyEndpointName: string = "";
-
-  @doc("Notification display time in milliseconds")
-  @minValue(1000)
-  @maxValue(30000)
-  notifyDisplayTime: int32 = 5000;
-
   @doc("Home Assistant URL")
   @example("homeassistant.local")
   @pattern("^[a-z0-9.-]+$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$")
@@ -129,6 +109,26 @@ model HomeAssistantConfig {
 
   @doc("Connection protocol")
   scheme: "http" | "https" = "http";
+
+  @doc("Home Assistant authentication token")
+  @format("password")
+  token: string = "";
+
+  @doc("Remote entity name in Home Assistant")
+  @example("remote.shield_tv")
+  remoteEntityName: string = "";
+
+  @doc("Notification endpoint name")
+  @example("notify.tv")
+  notifyEndpointName: string = "";
+
+  @doc("Notification display time in milliseconds")
+  @minValue(1000)
+  @maxValue(30000)
+  notifyDisplayTime: int32 = 5000;
+
+  @doc("Trigger aspect ratio change on media events")
+  triggerAspectRatioChangeOnEvent: boolean = false;
 }
 
 @doc("Supported media player types")
@@ -148,17 +148,6 @@ model PlayerConfig {
   @doc("Enable player integration")
   enabled: boolean = false;
 
-  @doc("Type of media player")
-  playerType: Player = Player.Plex;
-
-  @doc("Authentication token for the media player")
-  @format("password")
-  token: string = "";
-
-  @doc("User ID for players that require it")
-  @example("123456789")
-  userID: string = "";
-
   @doc("Media player URL")
   @example("plex.local")
   @pattern("^[a-z0-9.-]+$|^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$")
@@ -170,6 +159,17 @@ model PlayerConfig {
 
   @doc("Connection protocol")
   scheme: "http" | "https" = "http";
+
+  @doc("Type of media player")
+  playerType: Player = Player.Plex;
+
+  @doc("Authentication token for the media player")
+  @format("password")
+  token: string = "";
+
+  @doc("User ID for players that require it")
+  @example("123456789")
+  userID: string = "";
 
   @doc("Filter by device UUID (comma-separated for multiple)")
   @example("abc123,def456")

@@ -125,35 +125,67 @@ components:
     EZBEQConfig:
       type: object
       required:
-        - adjustMasterVolumeWithProfile
-        - denonIP
-        - denonPort
-        - dryRun
         - enabled
-        - enableTVBEQ
-        - notifyOnLoad
-        - notifyOnUnload
-        - preferredAuthors
-        - slots
-        - stopPlexIfMismatch
-        - port
         - url
+        - port
         - scheme
-        - useAVRCodecSearch
         - avrBrand
         - avrURL
+        - denonIP
+        - denonPort
+        - preferredAuthors
+        - slots
+        - useAVRCodecSearch
+        - adjustMasterVolumeWithProfile
+        - enableTVBEQ
         - looseEditionMatching
         - skipEditionMatching
+        - stopPlexIfMismatch
+        - notifyOnLoad
+        - notifyOnUnload
+        - dryRun
       properties:
         id:
           type: integer
           format: int64
           description: Database ID (internal use only)
           readOnly: true
-        adjustMasterVolumeWithProfile:
+        enabled:
           type: boolean
-          description: Adjust master volume with profile
-          default: true
+          description: Enable EzBEQ integration
+          default: false
+        url:
+          type: string
+          pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
+          description: EzBEQ server hostname or IP address
+          example: ezbeq.local
+          default: ezbeq.local
+        port:
+          type: string
+          description: EzBEQ server port
+          example: '8080'
+          default: '8080'
+        scheme:
+          type: string
+          enum:
+            - http
+            - https
+          description: Connection protocol
+          default: http
+        avrBrand:
+          type: string
+          enum:
+            - Denon
+            - Marantz
+          description: AVR brand
+          example: Denon
+          default: Denon
+        avrURL:
+          type: string
+          pattern: ^https?://
+          description: AVR URL with protocol
+          example: http://192.168.1.100
+          default: ''
         denonIP:
           type: string
           pattern: ^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^[a-z0-9.-]+$
@@ -165,26 +197,6 @@ components:
           description: Denon AVR port
           example: '23'
           default: '23'
-        dryRun:
-          type: boolean
-          description: Enable dry run mode (no actual changes)
-          default: false
-        enabled:
-          type: boolean
-          description: Enable EzBEQ integration
-          default: false
-        enableTVBEQ:
-          type: boolean
-          description: Enable TV BEQ profiles
-          default: false
-        notifyOnLoad:
-          type: boolean
-          description: Send notification when profile is loaded
-          default: false
-        notifyOnUnload:
-          type: boolean
-          description: Send notification when profile is unloaded
-          default: false
         preferredAuthors:
           type: array
           items:
@@ -200,46 +212,18 @@ components:
           maxItems: 4
           description: Profile slot numbers to load into
           default: []
-        stopPlexIfMismatch:
-          type: boolean
-          description: Stop Plex playback if BEQ profile doesn't match
-          default: false
-        port:
-          type: string
-          description: EzBEQ server port
-          example: '8080'
-          default: '8080'
-        url:
-          type: string
-          pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
-          description: EzBEQ server hostname or IP address
-          example: ezbeq.local
-          default: ezbeq.local
-        scheme:
-          type: string
-          enum:
-            - http
-            - https
-          description: Connection protocol
-          default: http
         useAVRCodecSearch:
           type: boolean
           description: Use AVR codec search for BEQ profiles
           default: false
-        avrBrand:
-          type: string
-          enum:
-            - Denon
-            - Marantz
-          description: AVR brand
-          example: Denon
-          default: Denon
-        avrURL:
-          type: string
-          pattern: ^https?://
-          description: AVR URL with protocol
-          example: http://192.168.1.100
-          default: ''
+        adjustMasterVolumeWithProfile:
+          type: boolean
+          description: Adjust master volume with profile
+          default: true
+        enableTVBEQ:
+          type: boolean
+          description: Enable TV BEQ profiles
+          default: false
         looseEditionMatching:
           type: boolean
           description: Match ANY edition IF your client sends a blank edition
@@ -247,6 +231,22 @@ components:
         skipEditionMatching:
           type: boolean
           description: Skip edition matching entirely
+          default: false
+        stopPlexIfMismatch:
+          type: boolean
+          description: Stop Plex playback if BEQ profile doesn't match
+          default: false
+        notifyOnLoad:
+          type: boolean
+          description: Send notification when profile is loaded
+          default: false
+        notifyOnUnload:
+          type: boolean
+          description: Send notification when profile is unloaded
+          default: false
+        dryRun:
+          type: boolean
+          description: Enable dry run mode (no actual changes)
           default: false
       description: EzBEQ integration configuration
     HDMISyncConfig:
@@ -306,14 +306,14 @@ components:
       type: object
       required:
         - enabled
-        - remoteEntityName
-        - token
-        - triggerAspectRatioChangeOnEvent
-        - notifyEndpointName
-        - notifyDisplayTime
         - url
         - port
         - scheme
+        - token
+        - remoteEntityName
+        - notifyEndpointName
+        - notifyDisplayTime
+        - triggerAspectRatioChangeOnEvent
       properties:
         id:
           type: integer
@@ -324,32 +324,6 @@ components:
           type: boolean
           description: Enable Home Assistant integration
           default: false
-        remoteEntityName:
-          type: string
-          description: Remote entity name in Home Assistant
-          example: remote.shield_tv
-          default: ''
-        token:
-          type: string
-          format: password
-          description: Home Assistant authentication token
-          default: ''
-        triggerAspectRatioChangeOnEvent:
-          type: boolean
-          description: Trigger aspect ratio change on media events
-          default: false
-        notifyEndpointName:
-          type: string
-          description: Notification endpoint name
-          example: notify.tv
-          default: ''
-        notifyDisplayTime:
-          type: integer
-          format: int32
-          minimum: 1000
-          maximum: 30000
-          description: Notification display time in milliseconds
-          default: 5000
         url:
           type: string
           pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
@@ -368,6 +342,32 @@ components:
             - https
           description: Connection protocol
           default: http
+        token:
+          type: string
+          format: password
+          description: Home Assistant authentication token
+          default: ''
+        remoteEntityName:
+          type: string
+          description: Remote entity name in Home Assistant
+          example: remote.shield_tv
+          default: ''
+        notifyEndpointName:
+          type: string
+          description: Notification endpoint name
+          example: notify.tv
+          default: ''
+        notifyDisplayTime:
+          type: integer
+          format: int32
+          minimum: 1000
+          maximum: 30000
+          description: Notification display time in milliseconds
+          default: 5000
+        triggerAspectRatioChangeOnEvent:
+          type: boolean
+          description: Trigger aspect ratio change on media events
+          default: false
       description: Home Assistant integration configuration
     Player:
       type: string
@@ -380,12 +380,12 @@ components:
       type: object
       required:
         - enabled
-        - playerType
-        - token
-        - userID
         - url
         - port
         - scheme
+        - playerType
+        - token
+        - userID
         - deviceUUIDFilter
         - ownerNameFilter
         - skipTMDB
@@ -400,21 +400,6 @@ components:
           type: boolean
           description: Enable player integration
           default: false
-        playerType:
-          allOf:
-            - $ref: '#/components/schemas/Player'
-          description: Type of media player
-          default: Plex
-        token:
-          type: string
-          format: password
-          description: Authentication token for the media player
-          default: ''
-        userID:
-          type: string
-          description: User ID for players that require it
-          example: '123456789'
-          default: ''
         url:
           type: string
           pattern: ^[a-z0-9.-]+$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$
@@ -433,6 +418,21 @@ components:
             - https
           description: Connection protocol
           default: http
+        playerType:
+          allOf:
+            - $ref: '#/components/schemas/Player'
+          description: Type of media player
+          default: Plex
+        token:
+          type: string
+          format: password
+          description: Authentication token for the media player
+          default: ''
+        userID:
+          type: string
+          description: User ID for players that require it
+          example: '123456789'
+          default: ''
         deviceUUIDFilter:
           type: string
           description: Filter by device UUID (comma-separated for multiple)

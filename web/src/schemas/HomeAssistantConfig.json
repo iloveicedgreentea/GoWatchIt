@@ -12,40 +12,6 @@
             "default": false,
             "description": "Enable Home Assistant integration"
         },
-        "remoteEntityName": {
-            "type": "string",
-            "default": "",
-            "examples": [
-                "remote.shield_tv"
-            ],
-            "description": "Remote entity name in Home Assistant"
-        },
-        "token": {
-            "type": "string",
-            "default": "",
-            "format": "password",
-            "description": "Home Assistant authentication token"
-        },
-        "triggerAspectRatioChangeOnEvent": {
-            "type": "boolean",
-            "default": false,
-            "description": "Trigger aspect ratio change on media events"
-        },
-        "notifyEndpointName": {
-            "type": "string",
-            "default": "",
-            "examples": [
-                "notify.tv"
-            ],
-            "description": "Notification endpoint name"
-        },
-        "notifyDisplayTime": {
-            "type": "integer",
-            "minimum": 1000,
-            "maximum": 30000,
-            "default": 5000,
-            "description": "Notification display time in milliseconds"
-        },
         "url": {
             "type": "string",
             "default": "",
@@ -76,18 +42,52 @@
             ],
             "default": "http",
             "description": "Connection protocol"
+        },
+        "token": {
+            "type": "string",
+            "default": "",
+            "format": "password",
+            "description": "Home Assistant authentication token"
+        },
+        "remoteEntityName": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "remote.shield_tv"
+            ],
+            "description": "Remote entity name in Home Assistant"
+        },
+        "notifyEndpointName": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "notify.tv"
+            ],
+            "description": "Notification endpoint name"
+        },
+        "notifyDisplayTime": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 30000,
+            "default": 5000,
+            "description": "Notification display time in milliseconds"
+        },
+        "triggerAspectRatioChangeOnEvent": {
+            "type": "boolean",
+            "default": false,
+            "description": "Trigger aspect ratio change on media events"
         }
     },
     "required": [
         "enabled",
-        "remoteEntityName",
-        "token",
-        "triggerAspectRatioChangeOnEvent",
-        "notifyEndpointName",
-        "notifyDisplayTime",
         "url",
         "port",
-        "scheme"
+        "scheme",
+        "token",
+        "remoteEntityName",
+        "notifyEndpointName",
+        "notifyDisplayTime",
+        "triggerAspectRatioChangeOnEvent"
     ],
     "description": "Home Assistant integration configuration"
 }

@@ -12,25 +12,6 @@
             "default": false,
             "description": "Enable player integration"
         },
-        "playerType": {
-            "$ref": "#/$defs/Player",
-            "default": "Plex",
-            "description": "Type of media player"
-        },
-        "token": {
-            "type": "string",
-            "default": "",
-            "format": "password",
-            "description": "Authentication token for the media player"
-        },
-        "userID": {
-            "type": "string",
-            "default": "",
-            "examples": [
-                "123456789"
-            ],
-            "description": "User ID for players that require it"
-        },
         "url": {
             "type": "string",
             "default": "",
@@ -61,6 +42,25 @@
             ],
             "default": "http",
             "description": "Connection protocol"
+        },
+        "playerType": {
+            "$ref": "#/$defs/Player",
+            "default": "Plex",
+            "description": "Type of media player"
+        },
+        "token": {
+            "type": "string",
+            "default": "",
+            "format": "password",
+            "description": "Authentication token for the media player"
+        },
+        "userID": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "123456789"
+            ],
+            "description": "User ID for players that require it"
         },
         "deviceUUIDFilter": {
             "type": "string",
@@ -94,12 +94,12 @@
     },
     "required": [
         "enabled",
-        "playerType",
-        "token",
-        "userID",
         "url",
         "port",
         "scheme",
+        "playerType",
+        "token",
+        "userID",
         "deviceUUIDFilter",
         "ownerNameFilter",
         "skipTMDB",

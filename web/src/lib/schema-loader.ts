@@ -225,9 +225,9 @@ async function jsonSchemaToConfigSection(schema: JSONSchema, sectionName: string
 // Generate all configuration sections from schemas
 export async function generateConfigSchema(): Promise<ConfigSection[]> {
   const schemas = [
+    { schema: playerSchema as JSONSchema, name: 'player' },
     { schema: ezbeqSchema as JSONSchema, name: 'ezbeq' },
     { schema: homeAssistantSchema as JSONSchema, name: 'homeassistant' },
-    { schema: playerSchema as JSONSchema, name: 'player' },
     { schema: hdmiSyncSchema as JSONSchema, name: 'hdmisync' },
   ];
 
