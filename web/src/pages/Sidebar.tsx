@@ -1,56 +1,62 @@
 import { NavLink } from "react-router-dom";
-import { Layout, LayoutDashboard, Settings, Logs } from "lucide-react";
-import { cn } from "../lib/utils";
+import { Layout, LayoutDashboard, Settings, FileText } from "lucide-react";
 
 const navItems = [
-  {
-    title: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard
-  },
   {
     title: "Configuration",
     href: "/configuration",
     icon: Settings
   },
   {
+    title: "Dashboard",
+    href: "/",
+    icon: LayoutDashboard
+  },
+  {
     title: "Logs",
     href: "/logs",
-    icon: Logs
+    icon: FileText
   }
 ] as const;
 
 export function Sidebar() {
   return (
-    <div className="flex h-screen w-64 flex-col fixed border-r border-border bg-background">
-      <div className="p-4">
+    <div className="flex h-screen w-64 flex-col fixed border-r border-base-300 bg-base-200">
+      {/* Header */}
+      <div className="p-4 border-b border-base-300">
         <div className="flex items-center gap-2 mb-6">
           <Layout className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold text-foreground">
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             GoWatchIt
           </span>
         </div>
+      </div>
 
-        <nav className="space-y-2">
+      {/* Navigation */}
+      <nav className="flex-1 p-4">
+        <ul className="menu menu-lg gap-2">
           {navItems.map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              end={item.href === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center w-full rounded-lg px-3 py-2 transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )
-              }
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              {item.title}
-            </NavLink>
+            <li key={item.href}>
+              <NavLink
+                to={item.href}
+                end={item.href === "/"}
+                className={({ isActive }) =>
+                  isActive ? "active" : ""
+                }
+              >
+                <item.icon className="h-5 w-5" />
+                {item.title}
+              </NavLink>
+            </li>
           ))}
-        </nav>
+        </ul>
+      </nav>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-base-300">
+        <div className="text-xs text-base-content/50 text-center">
+          v0.1.0
+        </div>
       </div>
     </div>
   );

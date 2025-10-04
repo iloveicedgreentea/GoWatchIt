@@ -1,20 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Container } from '../components/layout/Container';
+import { Settings, Save, Loader2 } from 'lucide-react';
 import { ConfigSection } from '../components/config/Section';
 import { ConfigValue, ConfigSection as ConfigSectionType } from '../types/config';
 import { generateConfigSchema } from '../lib/schema-loader';
-import { Form, FloatingButton, SaveButton } from '../components/ui/form';
-import { PageHeader } from '../components/layout/PageHeader';
 import { useToast } from '../components/providers/toast';
 import { API_BASE_URL, API_ENDPOINTS } from '../lib/const';
-
-// the backend API base URL
-const TITLE = 'Configuration';
-const SAVE_BUTTON_TEXT = 'Save Configuration';
 
 export default function ConfigurationPage() {
   const [config, setConfig] = useState<ConfigValue>({});
   const [configSchema, setConfigSchema] = useState<ConfigSectionType[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const { addToast } = useToast();
 
   // Load config schema
@@ -62,6 +57,7 @@ export default function ConfigurationPage() {
   // submit changes
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CONFIG}`, {
         method: 'POST',
@@ -86,13 +82,25 @@ export default function ConfigurationPage() {
         description: error instanceof Error ? error.message : 'Failed to save configuration',
         variant: 'destructive',
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <Container>
-      <PageHeader title={TITLE} />
-      <Form onSubmit={handleSubmit}>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Configuration
+        </h1>
+        <p className="text-base-content/60 mt-2">
+          Configure your application settings and integrations
+        </p>
+      </div>
+
+      {/* Configuration Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
         {configSchema.map(section => (
           <ConfigSection
             key={section.name}
@@ -102,10 +110,28 @@ export default function ConfigurationPage() {
             onChange={handleChange}
           />
         ))}
-        <FloatingButton>
-          <SaveButton>{SAVE_BUTTON_TEXT}</SaveButton>
-        </FloatingButton>
-      </Form>
-    </Container>
+
+        {/* Save Button */}
+        <div className="sticky bottom-8 flex justify-end">
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="btn btn-primary btn-lg gap-2 shadow-xl"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                Save Configuration
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

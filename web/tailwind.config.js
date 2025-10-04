@@ -60,5 +60,32 @@ module.exports = {
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+  	require("tailwindcss-animate"),
+  	require("daisyui")
+  ],
+  daisyui: {
+  	themes: [
+  		{
+  			dark: {
+  				"primary": "#a855f7",        // Purple 500
+  				"secondary": "#7c3aed",      // Violet 600
+  				"accent": "#c084fc",         // Purple 400
+  				"neutral": "#18181b",        // Zinc 900
+  				"base-100": "#09090b",       // Zinc 950 - Deep black
+  				"base-200": "#18181b",       // Zinc 900
+  				"base-300": "#27272a",       // Zinc 800
+  				"base-content": "#fafafa",   // Zinc 50
+  				"info": "#8b5cf6",           // Violet 500
+  				"success": "#10b981",        // Emerald 500
+  				"warning": "#f59e0b",        // Amber 500
+  				"error": "#ef4444",          // Red 500
+  			},
+  		},
+  	],
+  	darkTheme: "dark",
+  	base: true,
+  	styled: true,
+  	utils: true,
+  },
 }

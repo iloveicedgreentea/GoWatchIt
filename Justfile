@@ -68,7 +68,7 @@ docker-run: docker-build
 
 [group('run')]
 run:
-	LOG_ENV=local LOG_FILE=false LOG_LEVEL=debug go run ./services/gowatchit
+	LOG_ENV=local LOG_FILE=true LOG_LEVEL=debug go run ./services/gowatchit
 
 # Web development commands
 

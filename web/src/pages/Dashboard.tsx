@@ -1,26 +1,20 @@
-import { Container } from "../components/layout/Container";
-import { PageHeader } from "../components/layout/PageHeader";
 import { DeviceProfilesGrid } from "../components/dashboard/DeviceProfile";
-// import { DashboardCard } from "../components/dashboard/DashboardCard";
 
 export function Dashboard() {
     return (
-        <Container>
-            <PageHeader title="Dashboard" />
-
-            <div className="space-y-6">
-                <DeviceProfilesGrid />
-
-                {/* <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                    <DashboardCard title="Media Info">
-                        <p className="text-muted-foreground">No media playing</p>
-                    </DashboardCard>
-
-                    <DashboardCard title="System Status">
-                        <p className="text-muted-foreground">All systems operational</p>
-                    </DashboardCard>
-                </div> */}
+        <div className="space-y-8">
+            {/* Header */}
+            <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    Dashboard
+                </h1>
+                <p className="text-base-content/60 mt-2">
+                    Connected Devices
+                </p>
             </div>
-        </Container>
+
+            {/* Device Profiles */}
+            <DeviceProfilesGrid />
+        </div>
     );
 }

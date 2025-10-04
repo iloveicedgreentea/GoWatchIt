@@ -1,6 +1,6 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import { ThemeProvider } from "./components/ThemeProvider"
+import { ThemeProvider } from "./theme/provider"
 import { AppLayout } from "./components/layout/AppLayout"
 import { Dashboard } from "./pages/Dashboard"
 import ConfigurationPage from "./pages/ConfigurationPage"

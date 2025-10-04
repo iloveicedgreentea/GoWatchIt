@@ -1,59 +1,133 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 221 83% 53%;    /* Blue color */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221 83% 53%;    /* Blue color */
     --radius: 0.5rem;
   }
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 221 83% 53%;    /* Blue color */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 221 83% 53%;    /* Blue color */
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-base-100 text-base-content;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions for theme changes - excluding text color to prevent fade-in */
+  * {
+    transition-property: background-color, border-color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Custom scrollbar for dark themes */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-base-200;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-base-300 rounded-lg;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral;
+  }
+
+  /* Ensure clickable elements have pointer cursor */
+  button,
+  [role="button"],
+  .btn,
+  .collapse-title,
+  .dropdown,
+  .menu li,
+  a,
+  label[for] {
+    cursor: pointer;
+  }
+
+  /* Minimum width for badges to prevent text cutoff */
+  .badge {
+    min-width: 3.5rem;
+    justify-content: center;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .badge-sm {
+    min-width: 3rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .badge-lg {
+    min-width: 4rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Remove tap/click highlight on mobile and hover states */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  /* Remove focus outline highlight (but keep for accessibility with custom styles) */
+  *:focus {
+    outline: none;
+  }
+
+  /* Add subtle focus ring for accessibility */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Remove DaisyUI table row hover background */
+  .table tr.hover:hover,
+  .table tbody tr:hover {
+    background-color: transparent !important;
+  }
+
+  /* Override any default user-select highlight */
+  *::selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: inherit;
+  }
+}
+
+/* Preserve some shadcn/ui compatibility for existing components */
+@layer base {
+  :root,
+  [data-theme] {
+    --background: var(--b1);
+    --foreground: var(--bc);
+    --card: var(--b2);
+    --card-foreground: var(--bc);
+    --popover: var(--b2);
+    --popover-foreground: var(--bc);
+    --primary: var(--p);
+    --primary-foreground: var(--pc);
+    --secondary: var(--s);
+    --secondary-foreground: var(--sc);
+    --muted: var(--b3);
+    --muted-foreground: var(--bc);
+    --accent: var(--a);
+    --accent-foreground: var(--ac);
+    --destructive: var(--er);
+    --destructive-foreground: var(--erc);
+    --border: var(--b3);
+    --input: var(--b3);
+    --ring: var(--p);
   }
 }

@@ -1,11 +1,15 @@
 package query
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
 	"os"
-	"strings"
+
+	"github.com/iloveicedgreentea/gowatchit/pkg/logger"
+	"github.com/iloveicedgreentea/gowatchit/services/gowatchit/domain/logs"
+	"go.uber.org/zap"
 )
 
 type GetLogsQuery struct{}
@@ -16,49 +20,56 @@ func NewGetLogsHandler() (*GetLogsHandler, error) {
 	return &GetLogsHandler{}, nil
 }
 
-func (h *GetLogsHandler) Handle(ctx context.Context, query *GetLogsQuery) ([]string, error) {
-	logFilePath := getLogFilePath()
+func (h *GetLogsHandler) Handle(ctx context.Context, query *GetLogsQuery) ([]logs.LogEntry, error) {
+	log := logger.GetLoggerFromContext(ctx)
+	logFilePath := logger.GetLogFilePath()
 
 	file, err := os.Open(logFilePath) // nolint:gosec // We want to read the log file
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []string{}, nil
+			return []logs.LogEntry{}, nil
 		}
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
 	defer func() {
-		err = file.Close()
-		if err != nil {
-			fmt.Printf("failed to close log file: %v\n", err)
+		if closeErr := file.Close(); closeErr != nil {
+			log.Error("Failed to close log file", zap.Error(closeErr))
 		}
 	}()
 
-	content, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read log file: %w", err)
-	}
+	var entries []logs.LogEntry
+	scanner := bufio.NewScanner(file)
 
-	lines := strings.Split(string(content), "\n")
+	// Create a larger buffer for scanner to handle long lines (like stacktraces)
+	const maxCapacity = 512 * 1024 // 512KB
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
 
-	maxLines := 1000
-	if len(lines) > maxLines {
-		lines = lines[len(lines)-maxLines:]
-	}
-
-	var nonEmptyLines []string
-	for _, line := range lines {
-		if strings.TrimSpace(line) != "" {
-			nonEmptyLines = append(nonEmptyLines, line)
+	// Read each line and parse as JSON
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
 		}
+
+		var entry logs.LogEntry
+		if err := json.Unmarshal(line, &entry); err != nil {
+			// Skip malformed lines instead of failing
+			log.Debug("Skipping malformed log line", zap.Error(err), zap.ByteString("line", line))
+			continue
+		}
+		entries = append(entries, entry)
 	}
 
-	return nonEmptyLines, nil
-}
-
-func getLogFilePath() string {
-	baseDir := os.Getenv("BASE_DIR")
-	if baseDir == "" {
-		baseDir = "./"
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading log file: %w", err)
 	}
-	return baseDir + "/app.log"
+
+	// Return last 1000 entries
+	maxEntries := 1000
+	if len(entries) > maxEntries {
+		entries = entries[len(entries)-maxEntries:]
+	}
+
+	return entries, nil
 }

@@ -36,7 +36,7 @@ func InitLoggerFile() error {
 	defer logMu.Unlock()
 
 	if os.Getenv("LOG_FILE") == "true" {
-		logFilePath := getLogFilePath()
+		logFilePath := GetLogFilePath()
 
 		// Create log directory if it doesn't exist
 		if err := os.MkdirAll(getLogDir(), 0o750); err != nil {
@@ -93,7 +93,8 @@ func getLogLevel() zapcore.Level {
 	return zap.InfoLevel
 }
 
-func getLogFilePath() string {
+// GetLogFilePath returns the path to the log file based on environment
+func GetLogFilePath() string {
 	// if this is unset assume running in docker
 	env, ok := os.LookupEnv("LOG_ENV")
 	if env == "" || !ok {

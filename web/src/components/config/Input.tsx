@@ -10,8 +10,8 @@ interface ConfigInputProps {
 export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
     const id = `${option.section}-${option.key}`;
     const [error, setError] = useState<string | null>(null);
-    const baseClass = "rounded-md border border-border bg-background p-2";
-    const errorClass = error ? "border-red-500" : "";
+    const baseClass = "input input-bordered w-full";
+    const errorClass = error ? "input-error" : "";
 
     // Validate input and update state
     const handleTextChange = (newValue: string) => {
@@ -34,7 +34,7 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
                     id={id}
                     checked={Boolean(value)}
                     onChange={e => onChange(e.target.checked)}
-                    className="h-4 w-4 rounded border-border bg-background"
+                    className="checkbox checkbox-primary"
                 />
             );
 
@@ -44,7 +44,7 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
                     id={id}
                     value={String(value ?? '')}
                     onChange={e => onChange(e.target.value)}
-                    className={baseClass}
+                    className="select select-bordered w-full"
                 >
                     {option.options?.map(opt => (
                         <option key={opt.value} value={opt.value}>
@@ -60,7 +60,7 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
             return (
                 <div className="flex gap-4">
                     {[1, 2, 3, 4].map(num => (
-                        <label key={num} className="flex items-center gap-2">
+                        <label key={num} className="label cursor-pointer gap-2">
                             <input
                                 type="checkbox"
                                 checked={slots.includes(num)}
@@ -70,9 +70,9 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
                                         : slots.filter(slot => slot !== num);
                                     onChange(newSlots);
                                 }}
-                                className="h-4 w-4 rounded border-border bg-background"
+                                className="checkbox checkbox-primary"
                             />
-                            <span className="text-sm">{num}</span>
+                            <span className="label-text">{num}</span>
                         </label>
                     ))}
                 </div>
@@ -85,7 +85,7 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
             return (
                 <div className="flex flex-col gap-2">
                     {option.options.map(opt => (
-                        <label key={opt.value} className="flex items-center gap-2">
+                        <label key={opt.value} className="label cursor-pointer justify-start gap-3">
                             <input
                                 type="checkbox"
                                 checked={selectedItems.includes(opt.value)}
@@ -95,9 +95,9 @@ export function ConfigInput({ option, value, onChange }: ConfigInputProps) {
                                         : selectedItems.filter(item => item !== opt.value);
                                     onChange(newItems);
                                 }}
-                                className="h-4 w-4 rounded border-border bg-background"
+                                className="checkbox checkbox-primary"
                             />
-                            <span className="text-sm">{opt.label}</span>
+                            <span className="label-text">{opt.label}</span>
                         </label>
                     ))}
                 </div>
