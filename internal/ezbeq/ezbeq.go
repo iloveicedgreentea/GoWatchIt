@@ -416,6 +416,16 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 					}
 				}
 			}
+		} else if m.Codec == "imax dts:x" {
+                        catalog, err = c.searchCatalog(m)
+                        // else try DD+ 7.1
+                        if err != nil {
+                                m.Codec = "dts:x"
+                                catalog, err = c.searchCatalog(m)
+                                if err != nil {
+                                        return err
+                                }
+                        }
 		} else {
 			catalog, err = c.searchCatalog(m)
 			if err != nil {

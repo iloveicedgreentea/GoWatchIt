@@ -49,13 +49,13 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 		n, err := conn.Read(p) // will block if nothing else to send
 		if n > 0 {
 			data := p[:n]
-			// store val in final result
-			result = append(result, data[0])
 			// read response one at a time
 			// if char is 13 (CR) then break
 			if bytes.Equal(data, []byte{13}) {
 				break
 			}
+			// store val in final result
+			result = append(result, data[0])
 		}
 
 		if err != nil {

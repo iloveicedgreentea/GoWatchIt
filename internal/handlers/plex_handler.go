@@ -657,7 +657,7 @@ func PlexWorker(plexChan <-chan models.PlexWebhookPayload, readyChan chan<- bool
 	}
 	if config.GetBool("ezbeq.useAVRCodecSearch") {
 		log.Info("Started with AVR codec search enabled")
-		avrClient = avr.GetAVRClient(config.GetString("ezbeq.avrurl"))
+		avrClient = avr.GetAVRClient(config.GetString("ezbeq.avrip"))
 		if avrClient != nil {
 			useAvrCodec = true
 		}
