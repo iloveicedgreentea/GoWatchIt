@@ -21,6 +21,7 @@ function populateFields(config) {
     document.getElementById('ezbeq-url').value = config.ezbeq.url;
     document.getElementById('ezbeq-useavrcodecsearch').checked = config.ezbeq.useavrcodecsearch;
     document.getElementById('ezbeq-avrbrand').value = config.ezbeq.avrbrand;
+    document.getElementById('ezbeq-forcedtsx').checked = config.ezbeq.forcedtsx;
 
 
     // HomeAssistant
@@ -94,7 +95,8 @@ function buildFinalConfig() {
         "stopplexifmismatch": document.getElementById('ezbeq-stopplexifmismatch').checked,
         "url": document.getElementById('ezbeq-url').value,
         "avrbrand": document.getElementById('ezbeq-avrbrand').value,
-        "useavrcodecsearch": document.getElementById('ezbeq-useavrcodecsearch').checked
+        "useavrcodecsearch": document.getElementById('ezbeq-useavrcodecsearch').checked,
+	"forcedtsx": document.getElementById('ezbeq-forcedtsx').checked
     };
     const homeAssistantConfig = {
         "enabled": document.getElementById('homeassistant-enabled').checked,
