@@ -32,13 +32,13 @@ type BeqClient struct {
 	DeviceInfo          []models.BeqDevices
 }
 
-// return a new instance of a plex client
+// return a new instance of a beq client
 func NewClient(url, port string) (*BeqClient, error) {
 	c := &BeqClient{
 		ServerURL: url,
 		Port:      port,
 		HTTPClient: http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 10 * time.Second,
 		},
 	}
 
@@ -308,7 +308,7 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 		}
 		if m.Year != 0 {
 			if val.MovieDbID == m.TMDB && val.Year == m.Year && audioMatch {
-				log.Debugf("%s matched with codecs %v, checking further", val.Title, val.AudioTypes)
+				log.Debugf("%s matched with codecs %v, verifing edition", val.Title, val.AudioTypes)
 				// if it matches, check edition
 				if checkEdition(val, m.Edition) {
 					log.Infof("Found a match in catalog from author %s", val.Author)
@@ -319,7 +319,7 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 			}
 		} else {
                         if val.MovieDbID == m.TMDB && audioMatch {
-                                log.Debugf("%s matched with codecs %v, checking further", val.Title, val.AudioTypes)
+                                log.Debugf("%s matched with codecs %v, verifying edition", val.Title, val.AudioTypes)
                                 // if it matches, check edition
                                 if checkEdition(val, m.Edition) {
                                         log.Infof("Found a match in catalog from author %s", val.Author)
