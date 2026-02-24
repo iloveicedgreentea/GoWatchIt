@@ -349,6 +349,10 @@ func checkEdition(val models.BeqCatalog, edition string) bool {
 	return false
 }
 
+func insensitiveContains(s string, sub string) bool {
+        return strings.Contains(strings.ToLower(s), strings.ToLower(sub))
+}
+
 // Edition support doesn't seem important ATM, might revisit later
 // LoadBeqProfile will load a profile into slot 1. If skipSearch true, rest of the params will be used (good for quick reload)
 func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
@@ -416,9 +420,19 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 					}
 				}
 			}
-		} else if m.Codec == "imax dts:x" {
+		} else if insensitiveContains(m.Codec, "imax dts:x") {
                         catalog, err = c.searchCatalog(m)
-                        // else try DD+ 7.1
+                        // else try DTS:X
+                        if err != nil {
+                                m.Codec = "dts:x"
+                                catalog, err = c.searchCatalog(m)
+                                if err != nil {
+                                        return err
+                                }
+                        }
+                } else if insensitiveContains(m.Codec, "DTS-HD MA 7.1") {
+                        catalog, err = c.searchCatalog(m)
+                        // else try DTS:X
                         if err != nil {
                                 m.Codec = "dts:x"
                                 catalog, err = c.searchCatalog(m)
