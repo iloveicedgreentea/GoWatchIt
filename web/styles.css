@@ -56,6 +56,11 @@ input[type="checkbox"] {
     margin-right: 10px;
 }
 
+input[type="radio"] {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
 /* Buttons */
 button {
     background-color: #005792;
