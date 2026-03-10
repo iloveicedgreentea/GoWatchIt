@@ -73,7 +73,19 @@ func (c *DenonClient) makeReq(command string) (string, error) {
 }
 
 // GetAudioMode returns the current audio mode like dolby atmos, stereo, etc
+// Getting some weird garbage out of an AVR-X4700H I'm testing against, so
+// I've added a 10 retry loop for if it gets any of that noise
 func (c *DenonClient) GetCodec() (string, error) {
-	mode, err := c.makeReq("MS?")
-	return strings.ToLower(mode[2:]), err
+    var mode string
+    var err error
+    for i:=0; i<10; i++ {
+        mode, err = c.makeReq("MS?")
+        if strings.Contains(mode, "OPSMLALL") || strings.Contains(mode, "OPINFINS") {
+            time.Sleep(750 * time.Millisecond)
+            continue
+        } else {
+            return strings.ToLower(mode[2:]), err
+        }
+    }
+    return strings.ToLower(mode[2:]), err
 }

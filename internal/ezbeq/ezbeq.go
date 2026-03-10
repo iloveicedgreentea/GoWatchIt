@@ -378,8 +378,14 @@ func (c *BeqClient) LoadBeqProfile(m *models.SearchRequest) error {
 
 	// skip searching when resuming for speed
 	if !m.SkipSearch {
+		if insensitiveContains(m.Codec, "dolby atmos") {
+			m.Codec = "Atmos"
+			catalog, err = c.searchCatalog(m)
+			if err != nil {
+				return err
+			}
 		// if AtmosMaybe, check if its really truehd 7.1. If fails, its atmos
-		if m.Codec == "AtmosMaybe" {
+	        } else if m.Codec == "AtmosMaybe" {
 			m.Codec = "TrueHD 7.1"
 			catalog, err = c.searchCatalog(m)
 			if err != nil {
