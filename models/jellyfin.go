@@ -68,9 +68,9 @@ type JellyfinMetadata struct {
 	// IsPlaceHolder                bool             `json:"IsPlaceHolder"`
 	// Number                       string           `json:"Number"`
 	// ChannelNumber                string           `json:"ChannelNumber"`
-	// IndexNumber                  int              `json:"IndexNumber"`
+	IndexNumber                  int              `json:"IndexNumber"`
 	// IndexNumberEnd               int              `json:"IndexNumberEnd"`
-	// ParentIndexNumber            int              `json:"ParentIndexNumber"`
+	ParentIndexNumber            int              `json:"ParentIndexNumber"`
 	// RemoteTrailers               []RemoteTrailers `json:"RemoteTrailers"`
 	// ProviderIds                  ProviderIds      `json:"ProviderIds"`
 	// IsHD                         bool             `json:"IsHD"`
