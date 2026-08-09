@@ -239,9 +239,7 @@ func buildAuthorWhitelist(preferredAuthors string, endpoint string) string {
 
 // searchCatalog will use ezbeq to search the catalog and then find the right match. tmdb data comes from plex, matched to ezbeq catalog
 func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, error) {
-	// url encode because of spaces and stuff
-	code := urlEncode(m.Codec)
-	endpoint := fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
+	endpoint := buildSearchEndpoint(m)
 
 	// this is an author whitelist for each non-empty author append it to search
 	if hasAuthor(m.PreferredAuthor) {
@@ -259,6 +257,10 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 	if err != nil {
 		return models.BeqCatalog{}, fmt.Errorf("error: %v // response: %v", err, string(res))
 	}
+
+	// a whole season entry is kept aside in case no entry names the episode
+	var seasonMatch models.BeqCatalog
+	var hasSeasonMatch bool
 
 	// search through results and find match
 	for _, val := range payload {
@@ -285,10 +287,31 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 				break
 			}
 		}
-		if val.MovieDbID == m.TMDB && val.Year == m.Year && audioMatch {
+		// see buildSearchEndpoint for why year is not compared for tv
+		if val.MovieDbID == m.TMDB && (isTVSearch(m) || val.Year == m.Year) && audioMatch {
 			log.Debugf("%s matched with codecs %v, checking further", val.Title, val.AudioTypes)
 			// if it matches, check edition
 			if checkEdition(val, m.Edition) {
+				// every episode of a show shares one tmdb id, so the catalog entries for a
+				// show are only told apart by season and episode
+				if isTVSearch(m) {
+					switch matchTVEntry(val, m) {
+					case tvMatchEpisode:
+						log.Infof("Found a match in catalog from author %s", val.Author)
+						return val, nil
+					case tvMatchSeason:
+						// an entry covering the whole season is right unless a more
+						// specific one turns up later in the results
+						if !hasSeasonMatch {
+							seasonMatch = val
+							hasSeasonMatch = true
+						}
+						continue
+					default:
+						log.Debugf("%s (season %q episodes %q) did not cover S%dE%d", val.Title, val.Season, val.Episodes, m.Season, m.Episode)
+						continue
+					}
+				}
 				log.Infof("Found a match in catalog from author %s", val.Author)
 				return val, nil
 			} else {
@@ -297,7 +320,126 @@ func (c *BeqClient) searchCatalog(m *models.SearchRequest) (models.BeqCatalog, e
 		}
 	}
 
+	if hasSeasonMatch {
+		log.Infof("Found a match in catalog from author %s", seasonMatch.Author)
+		return seasonMatch, nil
+	}
+
 	return models.BeqCatalog{}, errors.New("beq profile was not found in catalog")
+}
+
+// showItemType is what plex and jellyfin call an episode, in their own casing
+const showItemType = "episode"
+
+// buildSearchEndpoint builds the ezbeq catalog query.
+//
+// Year is deliberately left out for TV. The catalog dates an entry by the year
+// the show first aired, not by the year the season aired, so a later season
+// carries the original year while the media server reports the episode's own.
+// Filtering on it drops the entry that would have matched. The tmdb id already
+// pins the show, and season and episode tell its entries apart.
+func buildSearchEndpoint(m *models.SearchRequest) string {
+	// url encode because of spaces and stuff
+	code := urlEncode(m.Codec)
+	if isTVSearch(m) {
+		return fmt.Sprintf("/api/1/search?audiotypes=%s&tmdbid=%s", code, m.TMDB)
+	}
+
+	return fmt.Sprintf("/api/1/search?audiotypes=%s&years=%d&tmdbid=%s", code, m.Year, m.TMDB)
+}
+
+type tvMatch int
+
+const (
+	tvMatchNone tvMatch = iota
+	// the entry covers the whole season and does not name episodes
+	tvMatchSeason
+	// the entry names the episode being played
+	tvMatchEpisode
+)
+
+// isTVSearch reports whether the search has the season/episode data needed to
+// tell one catalog entry of a show from another
+func isTVSearch(m *models.SearchRequest) bool {
+	return strings.EqualFold(m.MediaType, showItemType) && m.Season > 0 && m.Episode > 0
+}
+
+// parseCatalogSeason reads the season number and episode list of an entry.
+// Authors are not consistent: some fill in the episode field, others write the
+// episodes into the season field as "1E4, 6-9" or "03E01-06".
+func parseCatalogSeason(val models.BeqCatalog) (season int, episodes string, ok bool) {
+	raw := strings.TrimSpace(val.Season)
+	if raw == "" {
+		return 0, "", false
+	}
+
+	seasonPart, episodePart, hasEpisodes := strings.Cut(strings.ToUpper(raw), "E")
+	season, err := strconv.Atoi(strings.TrimSpace(seasonPart))
+	if err != nil {
+		log.Debugf("Could not parse season %s", raw)
+		return 0, "", false
+	}
+
+	episodes = strings.TrimSpace(val.Episodes)
+	if episodes == "" && hasEpisodes {
+		episodes = strings.TrimSpace(episodePart)
+	}
+
+	return season, episodes, true
+}
+
+// matchTVEntry compares a catalog entry against the season and episode being played
+func matchTVEntry(val models.BeqCatalog, m *models.SearchRequest) tvMatch {
+	season, episodes, ok := parseCatalogSeason(val)
+	if !ok || season != m.Season {
+		return tvMatchNone
+	}
+
+	// an entry with no episodes listed applies to the whole season
+	if episodes == "" {
+		return tvMatchSeason
+	}
+
+	if episodesContain(episodes, m.Episode) {
+		return tvMatchEpisode
+	}
+
+	return tvMatchNone
+}
+
+// episodesContain parses the episode list of a catalog entry, a comma separated
+// list of numbers and ranges like "1-3, 5, 10", and reports whether it covers ep
+func episodesContain(episodes string, ep int) bool {
+	for _, part := range strings.Split(episodes, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		start, end, isRange := strings.Cut(part, "-")
+		from, err := strconv.Atoi(strings.TrimSpace(start))
+		if err != nil {
+			log.Debugf("Could not parse episode %s", part)
+			continue
+		}
+		if !isRange {
+			if from == ep {
+				return true
+			}
+			continue
+		}
+
+		to, err := strconv.Atoi(strings.TrimSpace(end))
+		if err != nil {
+			log.Debugf("Could not parse episode range %s", part)
+			continue
+		}
+		if ep >= from && ep <= to {
+			return true
+		}
+	}
+
+	return false
 }
 
 // map to Unrated, Ultimate, Theatrical, Extended, Director, Criterion

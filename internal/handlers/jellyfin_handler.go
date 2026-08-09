@@ -117,6 +117,9 @@ func jfEventRouter(jfClient *jellyfin.JellyfinClient, beqClient *ezbeq.BeqClient
 	model.Codec = codec
 	// add title
 	model.Title = data.OriginalTitle
+	// beq indexes tv profiles by season and episode, jellyfin calls them the parent index and index
+	model.Season = data.ParentIndexNumber
+	model.Episode = data.IndexNumber
 
 	switch payload.NotificationType {
 	// unload BEQ on pause OR stop because I never press stop, just pause and then back.

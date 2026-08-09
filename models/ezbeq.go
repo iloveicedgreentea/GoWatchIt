@@ -14,6 +14,8 @@ type SearchRequest struct {
 	Devices         []string
 	Slots           []int
 	Title           string
+	Season          int
+	Episode         int
 }
 
 type BeqCatalog struct {
@@ -27,6 +29,8 @@ type BeqCatalog struct {
 	Edition    string   `json:"edition"`
 	MovieDbID  string   `json:"theMovieDB"`
 	Author     string   `json:"author"`
+	Season     string   `json:"season"`
+	Episodes   string   `json:"episode"`
 }
 
 type BeqDevices struct {
