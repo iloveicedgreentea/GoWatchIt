@@ -170,20 +170,43 @@ func (c *JellyfinClient) GetEdition(payload models.JellyfinMetadata) (edition st
 	}
 }
 
+// tmdbURLNames are the names jellyfin has used for the tmdb entry in ExternalUrls.
+// Up to 10.10 the name came from the external id provider ("TheMovieDb"); 10.11
+// removed that path in favor of IExternalUrlProvider, which reports "TMDB".
+var tmdbURLNames = []string{"TheMovieDb", "TMDB"}
+
+// tmdbURLPattern pulls the id out of a themoviedb.org url. Jellyfin emits
+// movie/{id} for movies and tv/{id}[/season/{n}/episode/{n}] for episodes, so
+// anchoring on the trailing number would yield an episode number instead of an id.
+// The series id is the right one to search ezbeq with - its TV entries are keyed
+// on the series, not the episode.
+var tmdbURLPattern = regexp.MustCompile(`themoviedb\.org/(?:movie|tv)/(\d+)`)
+
+func isTMDBURLName(name string) bool {
+	for _, known := range tmdbURLNames {
+		if strings.EqualFold(name, known) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // GetJfTMDB extracts the tmdb id of a given itemID because its not returned directly in the metadata for some reason
 func (c *JellyfinClient) GetJfTMDB(payload models.JellyfinMetadata) (string, error) {
 	urls := payload.ExternalUrls
 	log.Debugf("External urls: %#v", urls)
 	for _, u := range urls {
-		if u.Name == "TheMovieDb" {
-			s := strings.Replace(u.URL, "https://www.themoviedb.org/", "", -1)
-			// extract the numbers
-			re, err := regexp.Compile(`\d+$`)
-			if err != nil {
-				return "", err
-			}
-			return re.FindString(s), nil
+		if !isTMDBURLName(u.Name) {
+			continue
 		}
+		match := tmdbURLPattern.FindStringSubmatch(u.URL)
+		if len(match) < 2 {
+			log.Debugf("No tmdb id in url %s", u.URL)
+			continue
+		}
+
+		return match[1], nil
 	}
 
 	return "", errors.New("no tmdb id found")
